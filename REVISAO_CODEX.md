@@ -56,7 +56,7 @@ da conta (`account.js`), então não existe `profile.data.progress.eggs`; o rela
 |---|---|---|---|
 | 1 | `index.html` não tinha `<div id="ui">`: abrir baú/loja/altar pelo servidor local lançava `TypeError` (só o bundle tinha o elemento) | `index.html` | navegador (http): os três painéis abrem |
 | 2 | Loja/baú usavam `player.stats.gold` (multiplicador) como carteira | `events.js` | teste + navegador |
-| 3 | Upgrades de golpe mostrados na carta **nunca eram aplicados** (`rollChoices` não enviava `ups` a `applyChoice`) | `run.js` | `regressions.test.mjs` |
+| 3 | Upgrades de golpe mostrados na carta **nunca eram aplicados** (`rollChoices` não enviava `ups` a `applyChoice`) | `run.js` | `regressions.test.mjs`; **parcial até a 9.ª rodada** (§14): pierce/crit/status/bounce só chegavam a `mv.mods`, sem efeito no combate — hoje `effectiveDef` os aplica (`tests/moveups.test.mjs`) |
 | 4 | Reroll descontado duas vezes (painel e handler) — 2 rerolls viravam 1 | `main.js` | leitura + código |
 | 5 | `endRun` podia rodar duas vezes (timeout de morte após Quit) e quebrar em `showResults(null)` | `main.js` | leitura + código |
 | 6 | Tecla 1–3 com as cartas abertas sobre a loja também comprava o item 1–3 (dois listeners em `window`) | `main.js` (`stopImmediatePropagation`) | navegador |
@@ -378,6 +378,14 @@ ressalvas**, 2 achados, ambos aceitos:
 |---|---|
 | Nos 900 ms entre a vitória/morte e os resultados, P/Esc ainda abria a pausa e "Quit to menu" chamava `endRun(false)`: uma vitória virava derrota sem Campeão (P2) | Corrigido em `main.js`: `endRun` deriva o resultado de `run.state` (`victory`) e `togglePause` não abre a pausa quando a run já terminou. Validado no navegador (P após a vitória não pausa; resultados "Victory!"). |
 | O teste do bot honesto aceitava `dead` (P3) — a §15 anunciava "sobrevive" sem proteger a propriedade | Corrigido: o teste exige run viva (ou vitória) após os 600 s, nível ≥ 10, > 200 kills e zona ≥ 2. Se um rebalanceamento matar o bot, esse teste avisa. |
+
+**Nona rodada** (`94acc78..3affa6f`, `reviews/codex-2026-10-23-23-18-94acc78..HEAD.md`): **Aprovado com
+ressalvas**, 2 achados, ambos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| Cartas de upgrade de golpe ofereciam `pierce`, `crit`, `status` e `bounce`, mas o combate só lia `def.pierce`/`def.critBonus`/`def.statusChance` e ricochete não existia — a correção do item 3 da §3 era parcial (P2) | Corrigido: `Run.effectiveDef(mv)` funde os mods no def usado por cada disparo e acerto (`pierce` soma, `critBonus` soma, `statusChance` multiplica, `bounces`); `spawnProjectile` usa `def.pierce` (antes dobrava o valor); ricochete implementado (`bounceProjectile`: redireciona ao inimigo mais próximo ainda não atingido, até `bounces` vezes). |
+| O teste dos upgrades só verificava `mv.mods` (P3) | `tests/moveups.test.mjs` testa efeitos observáveis: 2.º inimigo em linha atingido só com pierce, inimigo fora da linha atingido só com bounce, dano × `critDamage` com +crit, status aplicado com +status. |
 
 ---
 

@@ -517,9 +517,42 @@ export class Run {
     return { x: p.facingX, z: p.facingZ, target };
   }
 
+  /** The move's definition with its card upgrades folded in: pierce, crit, status chance, bounces. */
+  effectiveDef(mv) {
+    const m = mv.mods;
+    if (!m.pierce && !m.crit && !m.bounce && m.status === 1) return mv.def;
+    return {
+      ...mv.def,
+      pierce: (mv.def.pierce ?? 0) + m.pierce,
+      critBonus: (mv.def.critBonus ?? 0) + m.crit,
+      statusChance: (mv.def.statusChance ?? 0) * m.status,
+      bounces: m.bounce,
+    };
+  }
+
+  /** Ricochet: aim the projectile at the nearest enemy it has not hit yet. False when there is none. */
+  bounceProjectile(pr) {
+    let best = null;
+    let bestD = 14 * 14;
+    for (const e of this.enemies) {
+      if (!e.alive || e.dying > 0 || pr.hits.has(e.id)) continue;
+      const d = dist2(pr.x, pr.z, e.x, e.z);
+      if (d < bestD) {
+        bestD = d;
+        best = e;
+      }
+    }
+    if (!best) return false;
+    const a = Math.atan2(best.z - pr.z, best.x - pr.x);
+    pr.vx = Math.cos(a) * pr.speed;
+    pr.vz = Math.sin(a) * pr.speed;
+    pr.life = Math.max(pr.life, 0.6);
+    return true;
+  }
+
   fireMove(mv) {
     const p = this.player;
-    const def = mv.def;
+    const def = this.effectiveDef(mv); // upgrades bought on the cards reach every hit and projectile
     const dmg = this.moveDamage(mv);
     const area = def.area * mv.mods.area * p.stats.area;
     const count = Math.max(1, Math.floor(def.count + mv.mods.count + (def.arch === "barrage" ? p.stats.projectiles : 0)));
@@ -797,7 +830,8 @@ export class Run {
       radius: o.radius ?? 0.4,
       dmg: o.dmg,
       def: o.def,
-      pierce: (o.def.pierce ?? 0) + Math.round(o.def.pierce ?? 0),
+      pierce: o.def.pierce ?? 0,
+      bounces: o.def.bounces ?? 0,
       homing: o.homing ?? 0,
       explodeR: o.explodeR ?? 0,
       lob: !!o.lob,
@@ -873,6 +907,10 @@ export class Run {
           this.hitEnemy(e, pr.dmg, pr.def);
           if (pr.explodeR > 0) {
             this.explode(pr);
+            break;
+          }
+          if (pr.bounces > 0 && this.bounceProjectile(pr)) {
+            pr.bounces--;
             break;
           }
           if (pr.pierce > 0) pr.pierce--;
