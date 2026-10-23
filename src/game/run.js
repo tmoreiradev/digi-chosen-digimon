@@ -1,0 +1,1690 @@
+// The run simulation: player, enemies, projectiles, pickups and the spawn director.
+
+import { clamp, dist, dist2, lerp, TAU } from "../core/math.js";
+import { makeRng } from "../core/rng.js";
+import {
+  applyMods,
+  basePlayerStats,
+  buildMoveDef,
+  clampStats,
+  describeUpgrade,
+  effectiveness,
+  enemyDamage,
+  enemyHpCurve,
+  enemySpeed,
+  enemyXp,
+  evolutionPlan,
+  rollRarity,
+  toughness,
+  xpForLevel,
+} from "./rules.js";
+import { Director } from "./director.js";
+import { Boss } from "./boss.js";
+import { Allies, Capture } from "./capture.js";
+import { Tower } from "./tower.js";
+import { WorldEvents } from "./events.js";
+import { AchievementTracker, EggSystem } from "./achievements.js";
+import { applyFusion, fusionChoices } from "./fusion.js";
+import { applyVitaminPick, vitaminChoices, vitaminGroups } from "./vitamins.js";
+
+const ENEMY_CAP = 260;
+const PICKUP_CAP = 400;
+const SHINY_RATE = 1 / 256; // ~0.39% chance de um selvagem nascer shiny
+const SHINY_XP_BONUS = 0.5; // +50% de XP/dust ao derrotar um shiny
+
+/**
+ * Enemy tiers, mapped onto the upstream flag enum:
+ * Elite 1, Alpha 2, Boss 4, Ranged 8, Flying 16, Healer 32, Shielder 64,
+ * Capture 128, Charger 256, Swarm 512, Stampede 1024, Shiny 2048,
+ * Totem 4096, Summoner 8192, Treasure 16384, Object 32768.
+ *
+ * `tough` is false for the flags that skip the stage toughness multiplier
+ * upstream (Alpha/Boss/Totem/Summoner/Capture/Shiny/Ranged).
+ */
+export const ENEMY_TIER = {
+  normal: { flag: 0, hpMul: 1, hpScale: 1, dmgMul: 1, scale: 1, xpMul: 1, speedMul: 1, tough: true },
+  swarm: { flag: 512, hpMul: 1, hpScale: 0.6, dmgMul: 1, scale: 1, xpMul: 1, speedMul: 1, tough: true },
+  stampede: { flag: 1024, hpMul: 1, hpScale: 0.8, dmgMul: 1.3, scale: 1, xpMul: 1, speedMul: 1, tough: true },
+  elite: { flag: 1, hpMul: 4.5, hpScale: 1, dmgMul: 1.4, scale: 1.35, xpMul: 6, speedMul: 1, tough: true },
+  alpha: { flag: 2, hpMul: 22, hpScale: 1, dmgMul: 1.8, scale: 2, xpMul: 25, speedMul: 0.9, tough: false },
+  totem: { flag: 4096, hpMul: 30, hpScale: 1, dmgMul: 1.6, scale: 2.2, xpMul: 35, speedMul: 0.9, tough: false },
+  summoner: { flag: 8192, hpMul: 14, hpScale: 1, dmgMul: 1.2, scale: 1.9, xpMul: 20, speedMul: 1, tough: false },
+  boss: { flag: 4, hpMul: 70, hpScale: 1, dmgMul: 2.2, scale: 2.6, xpMul: 60, speedMul: 0.85, tough: false },
+};
+
+let nextId = 1;
+
+export class Run {
+  constructor(data, opts) {
+    this.data = data;
+    this.opts = opts;
+    this.rng = makeRng(opts.seed ?? ((Math.random() * 1e9) | 0));
+    this.rules = data.rules;
+
+    this.biome = this.rules.biomes.find((b) => b.id === opts.biomeId) ?? this.rules.biomes[0];
+    this.difficulty = opts.difficulty;
+
+    this.time = 0;
+    this.stage = 1;
+    this.stageTime = 0;
+    this.state = "running"; // running | dead | victory
+    this.weather = "none";
+    this.mode = opts.mode ?? "classic"; // classic | endless | tower
+
+    this.enemies = [];
+    this.projectiles = [];
+    this.pickups = [];
+    this.zones = [];
+    this.effects = [];
+    this.floaters = [];
+    this.lastDt = 0.016;
+
+    this.stats = { kills: 0, gold: 0, dust: 0, damage: 0, evolved: 0, levels: 0, items: 0 };
+    this.banished = new Set();
+    this.upgrades = new Map();
+
+    // Encounter systems (initialized before createPlayer, since recompute reads allies).
+    this.boss = new Boss(this);
+    this.capture = new Capture(this);
+    this.allies = new Allies(this);
+    this.events = new WorldEvents(this);
+    this.timers = [];
+    this.tower = this.mode === "tower" ? new Tower(this) : null;
+    this.stateEventPanel = false;
+    this.profile = opts.profile;
+
+    // Pokédex: species seen (encountered in battle) and caught (recruited).
+    // Persisted in profile.data.progress.pokedex across runs.
+    const saved = this.profile?.data?.pokedex ?? { seen: [], caught: [] };
+    this.pokedex = {
+      seen: new Set(saved.seen ?? []),
+      caught: new Set(saved.caught ?? []),
+    };
+
+    // Achievements & tasks: species seen/caught, shinies, runs, wins, tower floors.
+    this.achievements = new AchievementTracker(this.profile, this);
+    this.achievements.recordSeen(this.pokedex.seen.size);
+
+    // Egg system: eggs hatch after walking enough steps.
+    this.eggs = new EggSystem(this);
+
+    this.player = this.createPlayer(opts.speciesId);
+    this.director = new Director(this, this.rng);
+    if (this.tower) this.tower.enterFloor();
+  }
+
+  createPlayer(speciesId) {
+    const species = this.data.get(speciesId);
+    const roster = this.data.rosterFor(speciesId);
+    const abilityKey = roster?.passive ?? this.data.abilities[species.abilities[0]]?.key ?? "none";
+    const ability = this.rules.abilityKits[abilityKey] ?? { name: abilityKey, desc: "", mods: [] };
+
+    const p = {
+      id: nextId++,
+      speciesId,
+      species,
+      types: species.types.slice(),
+      abilityKey,
+      ability,
+      x: 0,
+      y: 0,
+      z: 0,
+      vx: 0,
+      vz: 0,
+      vy: 0,
+      facingX: 0,
+      facingZ: 1,
+      radius: 0.55,
+      grounded: true,
+      jumpsLeft: 1,
+      dashCd: 0,
+      dashT: 0,
+      iframes: 0,
+      flash: 0,
+      level: 1,
+      xp: 0,
+      xpNext: xpForLevel(1),
+      hp: 100,
+      maxHp: 100,
+      shield: 0,
+      regenAcc: 0,
+      stats: {},
+      moves: [],
+      moveSlots: 3,
+      vitamins: new Map(),
+      items: new Map(),
+      nickname: this.profile?.data?.nickname ?? null,
+      heldItem: this.profile?.data?.heldItem ?? null,
+      statuses: { burn: 0, poison: 0, para: 0, freeze: 0, sleep: 0, confusion: 0, root: 0, charm: 0 },
+      ultCharge: 0,
+      ultCd: 0,
+      animT: 0,
+      attackT: 0,
+      ultPoseT: 0,
+      hurtT: 0,
+      dead: false,
+      lastEvoCheck: 1,
+      moveSpeedNow: 1,
+      shiny: Math.random() < SHINY_RATE,
+      steps: 0,
+      lastX: 0,
+      lastZ: 0,
+    };
+    this.recompute(p);
+    p.hp = p.maxHp;
+    this.learnKitMoves(p);
+    return p;
+  }
+
+  /** Recompute the player's derived stats from base stats + upgrades + ability. */
+  recompute(p) {
+    const base = basePlayerStats(p.species, p.level);
+    const groups = [];
+    for (const up of this.upgrades.values()) if (up.mods) groups.push(up.mods);
+    if (p.ability?.mods) groups.push(p.ability.mods);
+    groups.push(...vitaminGroups(p, this.rules));
+    groups.push(...this.allies.mods());
+    const stats = applyMods(base, groups);
+    clampStats(stats);
+
+    const prevMax = p.maxHp;
+    p.stats = stats;
+    p.maxHp = Math.round(stats.maxHp);
+    if (prevMax > 0 && p.maxHp > prevMax) p.hp += p.maxHp - prevMax;
+    p.hp = Math.min(p.hp, p.maxHp);
+    p.moveSpeedNow = stats.moveSpeed;
+  }
+
+  /** Give the player the moves its kit unlocks at the current level. */
+  learnKitMoves(p) {
+    const roster = this.data.rosterFor(p.speciesId);
+    if (!roster) return;
+    const levels = this.rules.kitLevels ?? [0, 2, 4, 7];
+    roster.kit.forEach((key, i) => {
+      if (p.level < (levels[i] ?? 0)) return;
+      const move = this.data.getMoveByKey(key);
+      if (!move) return;
+      if (p.moves.some((m) => m.def.id === move.id)) return;
+      if (p.moves.length >= p.moveSlots) return;
+      const def = buildMoveDef(move, this.rules);
+      if (!def) return;
+      p.moves.push({ def, level: 1, timer: 0.4, mods: { dmg: 1, cd: 1, count: 0, area: 1, speed: 1, dur: 1, pierce: 0, crit: 0, status: 1, bounce: 0 } });
+    });
+  }
+
+  /* -------------------------------------------------------------- loop */
+
+  update(dt) {
+    this.lastDt = dt;
+    if (this.state !== "running") {
+      this.updateEffects(dt);
+      return;
+    }
+    this.time += dt;
+    this.stageTime += dt;
+
+    this.updatePlayer(dt);
+    this.updateProjectiles(dt);
+    this.updateEnemies(dt);
+    this.updatePickups(dt);
+    this.updateEffects(dt);
+    this.director.update(dt);
+
+    // Encounter systems
+    this.capture.update(dt);
+    this.allies.update(dt);
+    this.boss.update(dt);
+    this.events.update(dt);
+    this.eggs.save();
+    if (this.tower) {
+      this.tower.update(dt);
+      // Tower mode drives its own spawn pacing; suppress director's free-form spawns.
+      if (this.tower.beyond || this.tower.floor >= 1) this.spawnAccum = 0;
+    } else if (this.stageTime >= 300) this.advanceStage();
+
+    // Scheduled one-shot callbacks (boss later())
+    for (let i = this.timers.length - 1; i >= 0; i--) {
+      const tm = this.timers[i];
+      tm.t -= dt;
+      if (tm.t <= 0) {
+        tm.fn();
+        this.timers.splice(i, 1);
+      }
+    }
+  }
+
+  advanceStage() {
+    this.stage = Math.min(4, this.stage + 1);
+    this.stageTime = 0;
+    this.director.onStage(this.stage);
+    this.banner(`Zone ${this.stage} — tougher foes`);
+  }
+
+  /* ------------------------------------------------------------ player */
+
+  updatePlayer(dt) {
+    const p = this.player;
+    if (p.dead) return;
+    const input = this.opts.input;
+    p.animT += dt;
+
+    // Statuses
+    for (const key of Object.keys(p.statuses)) {
+      if (p.statuses[key] > 0) p.statuses[key] = Math.max(0, p.statuses[key] - dt);
+    }
+    if (p.statuses.freeze > 0 || p.statuses.sleep > 0) {
+      p.vx *= 0.85;
+      p.vz *= 0.85;
+    }
+
+    // Movement
+    const speed = 4.6 * p.stats.moveSpeed * (p.statuses.para > 0 ? 0.55 : 1) * (p.statuses.root > 0 ? 0.25 : 1);
+    let mx = 0;
+    let mz = 0;
+    if (input.left) mx -= 1;
+    if (input.right) mx += 1;
+    if (input.up) mz -= 1;
+    if (input.down) mz += 1;
+    const len = Math.hypot(mx, mz);
+    if (len > 0) {
+      mx /= len;
+      mz /= len;
+      p.facingX = mx;
+      p.facingZ = mz;
+    }
+
+    const targetVx = mx * speed;
+    const targetVz = mz * speed;
+    const accel = p.dashT > 0 ? 40 : 18;
+    p.vx = lerp(p.vx, targetVx, Math.min(1, accel * dt));
+    p.vz = lerp(p.vz, targetVz, Math.min(1, accel * dt));
+
+    // Step counting for eggs (1 step ≈ 0.6 world units travelled).
+    const moved = Math.hypot(p.vx, p.vz) * dt;
+    p.steps += moved;
+    while (p.steps >= 0.6) {
+      p.steps -= 0.6;
+      this.eggs.addSteps(1);
+    }
+
+    // Dash
+    if (p.dashT > 0) p.dashT -= dt;
+    if (input.dash && p.dashCd <= 0 && len > 0) {
+      p.dashT = 0.18;
+      p.dashCd = 1.4;
+      p.iframes = Math.max(p.iframes, 0.22);
+      p.vx = mx * speed * 2.6;
+      p.vz = mz * speed * 2.6;
+      this.burst(p.x, p.y + 0.8, p.z, 0xffffff, 10, "soft");
+    }
+    if (p.dashCd > 0) p.dashCd -= dt;
+
+    // World events (chest/shop/altar) take priority over capture when nearby.
+    if (input.capturePressed) {
+      const ev = this.events.findNear(p.x, p.z);
+      if (ev) {
+        this.events.interact();
+        input.capturePressed = false;
+      } else if (this.capture.canThrow()) {
+        const result = this.capture.throw();
+        if (result === "caught") this.stats.items++;
+        input.capturePressed = false;
+      }
+    }
+
+    // Jump
+    if (input.jumpPressed && p.grounded && p.jumpsLeft > 0) {
+      p.grounded = false;
+      p.vy = 5.2 * p.stats.jumpHeight;
+      p.jumpsLeft -= 1;
+    }
+    if (!p.grounded) {
+      p.vy -= 16 * dt;
+      p.y += p.vy * dt;
+      if (p.y <= 0) {
+        p.y = 0;
+        p.vy = 0;
+        p.grounded = true;
+        p.jumpsLeft = 1 + Math.round(p.stats.extraJumps);
+      }
+    }
+
+    p.x += p.vx * dt;
+    p.z += p.vz * dt;
+
+    // World bounds
+    const half = this.biome.size / 2;
+    p.x = clamp(p.x, -half, half);
+    p.z = clamp(p.z, -half, half);
+
+    // Regen
+    if (p.hp < p.maxHp && p.statuses.freeze <= 0) {
+      p.regenAcc += p.stats.regen * dt;
+      // Leftovers: heal ~1/16 of max HP per second.
+      if (p.heldItem === "leftovers") p.regenAcc += (p.maxHp / 16) * dt;
+      if (p.regenAcc >= 1) {
+        const whole = Math.floor(p.regenAcc);
+        p.regenAcc -= whole;
+        p.hp = Math.min(p.maxHp, p.hp + whole);
+      }
+    }
+
+    // Shield decay
+    if (p.shield > 0) p.shield = Math.max(0, p.shield - dt * 0.6);
+
+    if (p.iframes > 0) p.iframes -= dt;
+    if (p.flash > 0) p.flash = Math.max(0, p.flash - dt * 4);
+    if (p.attackT > 0) p.attackT -= dt;
+    if (p.ultPoseT > 0) p.ultPoseT -= dt;
+    if (p.hurtT > 0) p.hurtT -= dt;
+    if (p.ultCd > 0) p.ultCd -= dt;
+
+    // Ultimate charge
+    p.ultCharge = Math.min(1, p.ultCharge + dt * 0.035);
+    if (input.ultPressed && p.ultCharge >= 1 && p.ultCd <= 0) this.castUltimate();
+
+    // Auto attacks
+    for (const mv of p.moves) {
+      mv.timer -= dt;
+      if (mv.timer > 0) continue;
+      const def = mv.def;
+      const cd = Math.max(0.12, def.cd * mv.mods.cd / p.stats.attackSpeed);
+      if (!this.hasTarget(def)) {
+        mv.timer = 0.12;
+        continue;
+      }
+      this.fireMove(mv);
+      mv.timer = cd;
+      p.attackT = 0.22;
+      this.opts.onShoot?.(def);
+    }
+  }
+
+  hasTarget(def) {
+    const p = this.player;
+    if (["aura", "trail", "spin", "nova", "weather", "buff", "vortex"].includes(def.arch)) return true;
+    return this.nearestEnemy(p.x, p.z, 26) >= 0;
+  }
+
+  nearestEnemy(x, z, maxDist, exclude = -1) {
+    let best = -1;
+    let bestD = maxDist * maxDist;
+    for (const e of this.enemies) {
+      if (!e.alive || e.id === exclude) continue;
+      const d = dist2(x, z, e.x, e.z);
+      if (d < bestD) {
+        bestD = d;
+        best = e.id;
+      }
+    }
+    return best;
+  }
+
+  /* ------------------------------------------------------------- moves */
+
+  /**
+   * Direction the next attack should use. Like upstream, the player turns
+   * toward the closest target instead of swinging where it happens to face.
+   */
+  aimDirection(range = 26) {
+    const p = this.player;
+    const target = this.nearestEnemy(p.x, p.z, range);
+    if (target < 0) return { x: p.facingX, z: p.facingZ, target: -1 };
+    const e = this.enemyById(target);
+    const dx = e.x - p.x;
+    const dz = e.z - p.z;
+    const d = Math.hypot(dx, dz) || 1;
+    p.facingX = dx / d;
+    p.facingZ = dz / d;
+    return { x: p.facingX, z: p.facingZ, target };
+  }
+
+  fireMove(mv) {
+    const p = this.player;
+    const def = mv.def;
+    const dmg = this.moveDamage(mv);
+    const area = def.area * mv.mods.area * p.stats.area;
+    const count = Math.max(1, Math.floor(def.count + mv.mods.count + (def.arch === "barrage" ? p.stats.projectiles : 0)));
+    const speed = def.speed * mv.mods.speed * p.stats.projSpeed;
+    const dur = def.dur * mv.mods.dur * p.stats.duration;
+    const color = this.typeRgb(def.type);
+    const aim = this.aimDirection();
+    const aimAngle = Math.atan2(aim.z, aim.x);
+
+    switch (def.arch) {
+      case "strike":
+      case "spin": {
+        const reach = 2.2 + area * 0.9;
+        const arc = def.arch === "spin" ? TAU : 1.6;
+        const targets = this.enemiesInCone(p.x, p.z, aim.x, aim.z, reach, arc);
+        for (const e of targets) this.hitEnemy(e, dmg, def);
+        this.ring(p.x, p.y + 0.2, p.z, reach, color, 0.22);
+        // A short lunge sells the melee swing.
+        p.vx += aim.x * 5;
+        p.vz += aim.z * 5;
+        break;
+      }
+      case "bolt": {
+        const target = aim.target;
+        if (target < 0) break;
+        const e = this.enemyById(target);
+        const dir = Math.atan2(e.z - p.z, e.x - p.x);
+        for (let i = 0; i < count; i++) {
+          this.spawnProjectile({
+            x: p.x,
+            y: p.y + 0.9,
+            z: p.z,
+            angle: dir,
+            speed,
+            life: 1.8,
+            radius: 0.35,
+            dmg,
+            def,
+          });
+        }
+        break;
+      }
+      case "orb":
+      case "lob":
+      case "meteor":
+      case "boomerang":
+      case "drain": {
+        const target = aim.target;
+        const dir = target >= 0 ? Math.atan2(this.enemyById(target).z - p.z, this.enemyById(target).x - p.x) : aimAngle;
+        for (let i = 0; i < count; i++) {
+          const spread = count > 1 ? (i / (count - 1) - 0.5) * 0.9 : 0;
+          this.spawnProjectile({
+            x: p.x,
+            y: p.y + 0.9,
+            z: p.z,
+            angle: dir + spread,
+            speed: def.arch === "lob" ? speed * 0.8 : speed,
+            life: 2.2,
+            radius: def.arch === "lob" ? 0.45 : 0.55,
+            dmg,
+            def,
+            lob: def.arch === "lob",
+            explodeR: def.arch === "lob" ? 2.2 * Math.sqrt(area) : 1.6 * Math.sqrt(area),
+            homing: def.arch === "drain" ? 0.9 : 0,
+            returnHome: def.arch === "boomerang",
+          });
+        }
+        break;
+      }
+      case "barrage": {
+        const target = aim.target;
+        const base = target >= 0 ? Math.atan2(this.enemyById(target).z - p.z, this.enemyById(target).x - p.x) : aimAngle;
+        for (let i = 0; i < count; i++) {
+          const spread = (i / Math.max(1, count) - 0.5) * 1.1;
+          this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: base + spread, speed, life: 1.1, radius: 0.3, dmg, def });
+        }
+        break;
+      }
+      case "homing": {
+        for (let i = 0; i < count; i++) {
+          this.spawnProjectile({
+            x: p.x,
+            y: p.y + 0.9,
+            z: p.z,
+            angle: aimAngle + (i / count) * TAU,
+            speed,
+            life: 3,
+            radius: 0.4,
+            dmg,
+            def,
+            homing: 2.4,
+          });
+        }
+        break;
+      }
+      case "beam": {
+        const target = aim.target;
+        if (target < 0) break;
+        const e = this.enemyById(target);
+        const dir = Math.atan2(e.z - p.z, e.x - p.x);
+        const length = 30;
+        for (const en of this.enemies) {
+          if (!en.alive) continue;
+          const rx = en.x - p.x;
+          const rz = en.z - p.z;
+          const along = rx * Math.cos(dir) + rz * Math.sin(dir);
+          if (along < 0 || along > length) continue;
+          const perp = Math.abs(rx * -Math.sin(dir) + rz * Math.cos(dir));
+          if (perp > 0.8 + area) continue;
+          this.hitEnemy(en, dmg, def);
+        }
+        this.beam(p.x, p.y + 1, p.z, dir, length, color);
+        break;
+      }
+      case "cone": {
+        const dir = aimAngle;
+        const range = 6 + area * 2;
+        for (const en of this.enemies) {
+          if (!en.alive) continue;
+          const rx = en.x - p.x;
+          const rz = en.z - p.z;
+          const along = rx * Math.cos(dir) + rz * Math.sin(dir);
+          if (along < 0 || along > range) continue;
+          const perp = Math.abs(rx * -Math.sin(dir) + rz * Math.cos(dir));
+          if (perp > along * 0.55 + 0.8) continue;
+          this.hitEnemy(en, dmg, def);
+        }
+        this.cone(p.x, p.y + 0.9, p.z, dir, range, color);
+        break;
+      }
+      case "nova": {
+        const radius = 3 + area * 2.2;
+        for (const en of this.enemies) {
+          if (!en.alive) continue;
+          if (dist(en.x, en.z, p.x, p.z) <= radius) this.hitEnemy(en, dmg, def);
+        }
+        this.ring(p.x, p.y + 0.2, p.z, radius, color, 0.4);
+        this.shake(0.18);
+        break;
+      }
+      case "aura": {
+        const radius = 2.2 + area * 1.6;
+        for (const en of this.enemies) {
+          if (!en.alive) continue;
+          if (dist(en.x, en.z, p.x, p.z) <= radius) this.hitEnemy(en, dmg, def);
+        }
+        this.ring(p.x, p.y + 0.2, p.z, radius, color, 0.2);
+        break;
+      }
+      case "orbit": {
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * TAU + this.time;
+          const ox = p.x + Math.cos(a) * (1.6 + area);
+          const oz = p.z + Math.sin(a) * (1.6 + area);
+          for (const en of this.enemies) {
+            if (!en.alive) continue;
+            if (dist(en.x, en.z, ox, oz) < 1.1) this.hitEnemy(en, dmg, def);
+          }
+        }
+        break;
+      }
+      case "chain": {
+        let from = { x: p.x, z: p.z };
+        let hit = new Set();
+        for (let i = 0; i < count; i++) {
+          const t = this.nearestEnemy(from.x, from.z, 16);
+          if (t < 0) break;
+          const e = this.enemyById(t);
+          this.hitEnemy(e, dmg, def);
+          this.beam(from.x, p.y + 1, from.z, Math.atan2(e.z - from.z, e.x - from.x), dist(from.x, from.z, e.x, e.z), color);
+          hit.add(t);
+          from = { x: e.x, z: e.z };
+        }
+        break;
+      }
+      case "smite": {
+        const t = this.nearestEnemy(p.x, p.z, 26);
+        if (t < 0) break;
+        const e = this.enemyById(t);
+        this.hitEnemy(e, dmg * 1.4, def);
+        this.beam(p.x, p.y + 1, p.z, Math.atan2(e.z - p.z, e.x - p.x), dist(p.x, p.z, e.x, e.z), color);
+        break;
+      }
+      case "dash": {
+        const t = this.nearestEnemy(p.x, p.z, 10);
+        const dir = t >= 0 ? Math.atan2(this.enemyById(t).z - p.z, this.enemyById(t).x - p.x) : Math.atan2(p.facingZ, p.facingX);
+        const len = 4 + area * 2;
+        for (const en of this.enemies) {
+          if (!en.alive) continue;
+          const rx = en.x - p.x;
+          const rz = en.z - p.z;
+          const along = rx * Math.cos(dir) + rz * Math.sin(dir);
+          if (along < 0 || along > len) continue;
+          if (Math.abs(rx * -Math.sin(dir) + rz * Math.cos(dir)) > 1.6) continue;
+          this.hitEnemy(en, dmg, def);
+        }
+        this.beam(p.x, p.y + 0.8, p.z, dir, len, color);
+        break;
+      }
+      case "vortex": {
+        const radius = 3 + area * 2;
+        for (const en of this.enemies) {
+          if (!en.alive) continue;
+          const d = dist(en.x, en.z, p.x, p.z);
+          if (d > radius || d < 0.2) continue;
+          const pull = (1 - d / radius) * 9 * dtSafe(this);
+          en.vx -= ((en.x - p.x) / d) * pull;
+          en.vz -= ((en.z - p.z) / d) * pull;
+          this.hitEnemy(en, dmg * 0.35, def, true);
+        }
+        this.ring(p.x, p.y + 0.2, p.z, radius, color, 0.3);
+        break;
+      }
+      case "wave": {
+        const radius = 4 + area * 2.4;
+        for (const en of this.enemies) {
+          if (!en.alive) continue;
+          if (dist(en.x, en.z, p.x, p.z) <= radius) this.hitEnemy(en, dmg, def);
+        }
+        this.ring(p.x, p.y + 0.2, p.z, radius, color, 0.45);
+        break;
+      }
+      case "trail": {
+        this.zones.push({ x: p.x, z: p.z, r: 1.2 + area, life: 3, tick: 0, dmg: dmg * 0.4, type: def.type, status: def.status });
+        break;
+      }
+      case "trap": {
+        this.zones.push({ x: p.x, z: p.z, r: 1.4 + area, life: 6, tick: 0, dmg: dmg * 0.35, type: def.type, status: def.status, snare: true });
+        break;
+      }
+      case "weather": {
+        this.weather = def.weather === "rain" ? "rain" : def.weather === "sun" ? "sun" : "sand";
+        this.weatherT = 12;
+        this.banner(def.name + "!");
+        break;
+      }
+      case "buff": {
+        p.stats.damage *= 1.12;
+        p.stats.attackSpeed *= 1.08;
+        this.banner(def.name + "!");
+        break;
+      }
+      case "random":
+      default: {
+        const target = this.nearestEnemy(p.x, p.z, 26);
+        if (target < 0) break;
+        const e = this.enemyById(target);
+        const dir = Math.atan2(e.z - p.z, e.x - p.x);
+        this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: dir, speed, life: 1.5, radius: 0.4, dmg, def });
+      }
+    }
+  }
+
+  moveDamage(mv) {
+    const p = this.player;
+    const def = mv.def;
+    return def.dmg * 1.3 * mv.mods.dmg * (1 + (mv.level - 1) * 0.04);
+  }
+
+  /* -------------------------------------------------------- projectiles */
+
+  spawnProjectile(o) {
+    if (this.projectiles.length > 600) return;
+    const speed = o.speed || 18;
+    this.projectiles.push({
+      id: nextId++,
+      x: o.x,
+      y: o.y,
+      z: o.z,
+      vx: Math.cos(o.angle) * speed,
+      vy: o.lob ? 6 : 0,
+      vz: Math.sin(o.angle) * speed,
+      speed,
+      life: o.life ?? 2,
+      radius: o.radius ?? 0.4,
+      dmg: o.dmg,
+      def: o.def,
+      pierce: (o.def.pierce ?? 0) + Math.round(o.def.pierce ?? 0),
+      homing: o.homing ?? 0,
+      explodeR: o.explodeR ?? 0,
+      lob: !!o.lob,
+      returnHome: !!o.returnHome,
+      age: 0,
+      hits: new Set(),
+    });
+  }
+
+  updateProjectiles(dt) {
+    const list = this.projectiles;
+    for (let i = list.length - 1; i >= 0; i--) {
+      const pr = list[i];
+      pr.age += dt;
+      pr.life -= dt;
+
+      if (pr.homing > 0) {
+        const t = this.nearestEnemy(pr.x, pr.z, 18);
+        if (t >= 0) {
+          const e = this.enemyById(t);
+          const want = Math.atan2(e.z - pr.z, e.x - pr.x);
+          const cur = Math.atan2(pr.vz, pr.vx);
+          let diff = ((want - cur + Math.PI * 3) % TAU) - Math.PI;
+          const na = cur + clamp(diff, -pr.homing * dt, pr.homing * dt);
+          pr.vx = Math.cos(na) * pr.speed;
+          pr.vz = Math.sin(na) * pr.speed;
+        }
+      }
+
+      if (pr.lob) {
+        pr.vy -= 18 * dt;
+        pr.y += pr.vy * dt;
+        if (pr.y <= 0.1) {
+          this.explode(pr);
+          list.splice(i, 1);
+          continue;
+        }
+      } else {
+        pr.x += pr.vx * dt;
+        pr.z += pr.vz * dt;
+        pr.y += pr.vy * dt;
+        pr.vy -= 9 * dt;
+        if (pr.y < 0) pr.y = 0;
+      }
+
+      if (pr.returnHome && pr.age > 0.6) {
+        const p = this.player;
+        const d = dist(pr.x, pr.z, p.x, p.z);
+        if (d < 1) {
+          list.splice(i, 1);
+          continue;
+        }
+        const want = Math.atan2(p.z - pr.z, p.x - pr.x);
+        pr.vx = lerp(pr.vx, Math.cos(want) * pr.speed, 0.08);
+        pr.vz = lerp(pr.vz, Math.sin(want) * pr.speed, 0.08);
+      }
+
+      // Collision
+      if (pr.hostile) {
+        const p = this.player;
+        const rr = pr.radius + p.radius;
+        if (dist2(pr.x, pr.z, p.x, p.z) <= rr * rr) {
+          this.hitPlayer(pr.dmg, null);
+          list.splice(i, 1);
+          continue;
+        }
+      } else {
+        for (const e of this.enemies) {
+          if (!e.alive || pr.hits.has(e.id)) continue;
+          const rr = pr.radius + e.radius;
+          if (dist2(pr.x, pr.z, e.x, e.z) > rr * rr) continue;
+          pr.hits.add(e.id);
+          this.hitEnemy(e, pr.dmg, pr.def);
+          if (pr.explodeR > 0) {
+            this.explode(pr);
+            break;
+          }
+          if (pr.pierce > 0) pr.pierce--;
+          else {
+            list.splice(i, 1);
+            break;
+          }
+        }
+      }
+      if (list[i] !== pr) continue;
+
+      if (pr.life <= 0) {
+        if (pr.explodeR > 0) this.explode(pr);
+        list.splice(i, 1);
+      }
+    }
+
+    // Ground zones
+    for (let i = this.zones.length - 1; i >= 0; i--) {
+      const z = this.zones[i];
+      z.life -= dt;
+      z.tick -= dt;
+      if (z.tick <= 0) {
+        z.tick = 0.4;
+        for (const e of this.enemies) {
+          if (!e.alive) continue;
+          if (dist2(e.x, e.z, z.x, z.z) > z.r * z.r) continue;
+          this.hitEnemy(e, z.dmg, { type: z.type, cls: "special", status: z.status, statusChance: 0.25, slot: -1 });
+          if (z.snare) e.vx *= 0.5;
+        }
+        if (z.hostile) {
+          const p = this.player;
+          if (dist2(p.x, p.z, z.x, z.z) <= z.r * z.r) this.hitPlayer(z.dmg * dt, null);
+        }
+      }
+      if (z.life <= 0) this.zones.splice(i, 1);
+    }
+  }
+
+  explode(pr) {
+    const r = pr.explodeR;
+    this.ring(pr.x, 0.2, pr.z, r, this.typeRgb(pr.def.type), 0.3);
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      if (dist2(e.x, e.z, pr.x, pr.z) > r * r) continue;
+      this.hitEnemy(e, pr.dmg, pr.def);
+    }
+    this.shake(0.1);
+  }
+
+  /* ------------------------------------------------------------ combat */
+
+  hitEnemy(e, dmg, def, noReact = false) {
+    if (!e.alive || e.dying > 0) return;
+    const p = this.player;
+    const s = p.stats;
+    let amount = dmg;
+    // Guard against projectiles with no def (e.g. ally projectiles).
+    const cls = def ? def.cls : "special";
+    const dtype = def ? def.type : "normal";
+    amount *= s.damage * (cls === "physical" ? s.physical : s.special);
+    // Choice Band: +50% damage.
+    if (p.heldItem === "choice-band") amount *= 1.5;
+
+    if (p.types.includes(dtype)) amount *= 1.25;
+    amount *= s.typeBoost?.[dtype] ?? 1;
+
+    const eff = effectiveness(this.data.types, dtype, e.types);
+    amount *= eff;
+    if (eff > 1.01) amount *= s.superEffective;
+
+    if (this.weather === "rain" && (dtype === "water" || dtype === "electric")) amount *= 1.3;
+    if (this.weather === "sun" && (dtype === "fire" || dtype === "grass")) amount *= 1.3;
+    if (this.weather === "sand" && dtype === "rock") amount *= 1.3;
+
+    if (["elite", "alpha", "totem", "summoner", "boss"].includes(e.tier)) amount *= s.eliteDamage;
+
+    if (!noReact) {
+      const critChance = s.critChance + s.megaCrit + (def?.critBonus ?? 0);
+      if (Math.random() < critChance) {
+        amount *= s.critDamage;
+        this.floater(e.x, e.y + 1.4, e.z, Math.round(amount), "#ffe27a");
+        this.burst(e.x, e.y + 1, e.z, 0xffe27a, 8, "star");
+      }
+    }
+
+    if (e.statuses.sleep > 0) amount *= 1.8;
+    if (e.statuses.freeze > 0) amount *= 1.2;
+    if (e.statuses.curse > 0) amount *= 1.25;
+
+    e.hp -= amount;
+    e.flash = 1;
+    this.stats.damage += amount;
+    this.opts.onHit?.();
+
+    if (def?.drain) this.healPlayer(amount * def.drain * s.healing);
+    if (s.lifesteal > 0 && Math.random() < 0.2) this.healPlayer(amount * s.lifesteal);
+
+    // Status application
+    if (def?.status && def.statusChance > 0 && Math.random() < def.statusChance * s.statusChance) {
+      e.statuses[def.status] = 3.2;
+      if (def.status === "burn") e.burnDps = Math.max(e.burnDps ?? 0, amount * 0.06);
+      if (def.status === "poison") e.poisonDps = Math.max(e.poisonDps ?? 0, amount * 0.05);
+    }
+
+    if (e.hp <= 0) this.killEnemy(e, def);
+    // Weakening: an alpha/boss knocked below the threshold can be captured.
+    if (e.hp > 0 && e.hp <= e.maxHp * this.rules.capture.weakenHpPct && e.tier === "alpha") {
+      this.capture.weaken(e);
+    }
+  }
+
+  hitPlayer(amount, source) {
+    const p = this.player;
+    if (p.dead || p.iframes > 0) return;
+    let dmg = amount;
+    // Enemy type effectiveness against the player's typing.
+    if (source?.types?.length) {
+      const eff = effectiveness(this.data.types, source.types[0], p.types);
+      dmg *= clamp(eff, 0.5, 1.6);
+    }
+    // Upstream armour curve: 1 - armor / (armor + 45).
+    const armor = p.stats.armor;
+    dmg *= 1 - armor / (armor + 45);
+    if (p.statuses.freeze > 0) dmg *= 1.15;
+    if (p.ability?.dmgTaken) dmg *= p.ability.dmgTaken;
+    if (p.stats.evasion > 0 && Math.random() < p.stats.evasion) {
+      this.floater(p.x, p.y + 2, p.z, "miss", "#9ca3ff");
+      return;
+    }
+    if (p.shield > 0) {
+      const absorbed = Math.min(p.shield, dmg);
+      p.shield -= absorbed;
+      dmg -= absorbed;
+    }
+    if (dmg > 0) {
+      p.hp -= dmg;
+      p.flash = 1;
+      p.hurtT = 0.3;
+      p.iframes = 0.45;
+      this.floater(p.x, p.y + 2, p.z, "-" + Math.round(dmg), "#ff6b6b");
+      this.shake(0.12);
+      this.opts.onHurt?.();
+    }
+    if (p.hp <= 0) {
+      p.hp = 0;
+      p.dead = true;
+      this.state = "dead";
+      this.opts.onDeath?.();
+    }
+  }
+
+  healPlayer(amount) {
+    const p = this.player;
+    p.hp = Math.min(p.maxHp, p.hp + amount);
+  }
+
+  /* ----------------------------------------------------------- enemies */
+
+  updateEnemies(dt) {
+    const p = this.player;
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      e.animT += dt;
+      e.flash = Math.max(0, e.flash - dt * 4);
+      if (e.dying > 0) {
+        e.dying -= dt;
+        if (e.dying <= 0) e.alive = false;
+        continue;
+      }
+
+      // Status timers
+      for (const k of Object.keys(e.statuses)) {
+        if (e.statuses[k] > 0) e.statuses[k] = Math.max(0, e.statuses[k] - dt);
+      }
+      if (e.burnDps > 0 && e.statuses.burn > 0) {
+        e.hp -= e.burnDps * dt;
+        if (e.hp <= 0) {
+          this.killEnemy(e, { type: "fire", cls: "special" });
+          continue;
+        }
+      }
+      if (e.poisonDps > 0 && e.statuses.poison > 0) {
+        e.hp -= e.poisonDps * dt;
+        if (e.hp <= 0) {
+          this.killEnemy(e, { type: "poison", cls: "special" });
+          continue;
+        }
+      }
+      if (e.statuses.freeze > 0 || e.statuses.sleep > 0 || e.statuses.root > 0) {
+        e.vx *= 0.8;
+        e.vz *= 0.8;
+      }
+
+      // Chase
+      const dx = p.x - e.x;
+      const dz = p.z - e.z;
+      const d = Math.hypot(dx, dz) || 1;
+      const speed = e.speed * (e.statuses.para > 0 ? 0.5 : 1);
+      e.vx = lerp(e.vx, (dx / d) * speed, Math.min(1, 6 * dt));
+      e.vz = lerp(e.vz, (dz / d) * speed, Math.min(1, 6 * dt));
+      e.x += e.vx * dt;
+      e.z += e.vz * dt;
+
+      const half = this.biome.size / 2;
+      e.x = clamp(e.x, -half, half);
+      e.z = clamp(e.z, -half, half);
+
+      // Contact damage lands as discrete hits, upstream style.
+      const touch = e.radius + p.radius;
+      if (d < touch) {
+        if (e.atkCd <= 0) {
+          e.atkCd = 0.4;
+          this.hitPlayer(e.dmg * this.difficulty.enemyDamage, e);
+        }
+        // push the player away a bit
+        p.x -= (dx / d) * 0.4;
+        p.z -= (dz / d) * 0.4;
+      }
+      if (e.atkCd > 0) e.atkCd -= dt;
+    }
+
+    // Compact dead enemies
+    if (this.enemies.length > ENEMY_CAP * 2) this.enemies = this.enemies.filter((e) => e.alive);
+  }
+
+  killEnemy(e, def) {
+    if (!e.alive || e.dying > 0) return;
+    e.dying = 0.35;
+    e.hp = 0;
+    this.stats.kills++;
+    const shinyMul = e.shiny ? 1 + SHINY_XP_BONUS : 1;
+    this.stats.dust += Math.round(e.xp * 0.2 * shinyMul);
+    if (e.shiny) this.banner(`Brilhou! ${e.species.name} shiny derrotado!`);
+    this.player.ultCharge = Math.min(1, this.player.ultCharge + 0.006);
+    this.opts.onKill?.();
+    if (this.tower) this.tower.countKill();
+
+    const p = this.player;
+    this.burst(e.x, e.y + 0.8, e.z, this.typeRgb(e.types[0]), 10, "star");
+
+    // Loot
+    const roll = Math.random();
+    if (e.tier === "elite" || e.tier === "alpha" || e.tier === "boss") {
+      this.spawnPickup(e.x, e.z, "candy", 1);
+      this.spawnPickup(e.x, e.z, "heal", 1);
+    } else if (roll < 0.055) {
+      this.spawnPickup(e.x, e.z, "heal", 1);
+    } else if (roll < 0.085) {
+      this.spawnPickup(e.x, e.z, "coin", 1);
+    } else if (roll < 0.095) {
+      this.spawnPickup(e.x, e.z, "magnet", 1);
+    }
+    this.spawnPickup(e.x, e.z, "xp", e.xp);
+
+    // Bosses and alphas can drop a rare candy
+    if ((e.tier === "alpha" || e.tier === "boss") && Math.random() < 0.4) {
+      this.spawnPickup(e.x, e.z, "candy", 1);
+    }
+  }
+
+  /* ---------------------------------------------------------- pickups */
+
+  spawnPickup(x, z, kind, value) {
+    if (this.pickups.length > PICKUP_CAP) return;
+    this.pickups.push({ id: nextId++, x, z, y: 0.4, kind, value, t: 0, magnet: false, life: 45 });
+  }
+
+  updatePickups(dt) {
+    const p = this.player;
+    const range = p.stats.pickupRange;
+    for (let i = this.pickups.length - 1; i >= 0; i--) {
+      const pk = this.pickups[i];
+      pk.t += dt;
+      pk.life -= dt;
+      if (pk.life <= 0) {
+        this.pickups.splice(i, 1);
+        continue;
+      }
+      const d = dist(pk.x, pk.z, p.x, p.z);
+      if (pk.magnet || d < range) pk.magnet = true;
+      if (pk.magnet) {
+        const a = Math.atan2(p.z - pk.z, p.x - pk.x);
+        const pull = pk.magnet ? 13 : 0;
+        pk.x += Math.cos(a) * pull * dt;
+        pk.z += Math.sin(a) * pull * dt;
+        if (d < 0.9) {
+          this.collect(pk);
+          this.pickups.splice(i, 1);
+          continue;
+        }
+      }
+    }
+  }
+
+  collect(pk) {
+    const p = this.player;
+    this.opts.onPickup?.(pk);
+    switch (pk.kind) {
+      case "xp":
+        p.xp += pk.value * p.stats.xpGain;
+        while (p.xp >= p.xpNext) {
+          p.xp -= p.xpNext;
+          p.level++;
+          p.xpNext = xpForLevel(p.level);
+          this.recompute(p);
+          this.learnKitMoves(p);
+          this.stats.levels++;
+          this.opts.onLevelUp?.();
+        }
+        break;
+      case "coin":
+        this.stats.gold += p.stats.gold;
+        break;
+      case "heal":
+        this.healPlayer(p.maxHp * 0.25);
+        this.burst(p.x, p.y + 1, p.z, 0x5cd6a0, 10, "heart");
+        break;
+      case "magnet":
+        for (const q of this.pickups) q.magnet = true;
+        break;
+      case "candy":
+        // Rare Candy: grant one full level through the normal level-up flow
+        p.xp = 0;
+        p.level += 1;
+        p.xpNext = xpForLevel(p.level);
+        this.recompute(p);
+        this.learnKitMoves(p);
+        this.stats.levels++;
+        this.opts.onLevelUp?.();
+        break;
+    }
+  }
+
+  /* --------------------------------------------------------- ultimate */
+
+  castUltimate() {
+    const p = this.player;
+    p.ultCharge = 0;
+    p.ultCd = 14;
+    p.ultPoseT = 1;
+    const type = p.types[0];
+    const color = this.typeRgb(type);
+    const radius = 8;
+    this.ring(p.x, 0.3, p.z, radius, color, 0.6);
+    this.shake(0.3);
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      if (dist2(e.x, e.z, p.x, p.z) > radius * radius) continue;
+      this.hitEnemy(e, 220 + p.level * 26, { type, cls: "special", statusChance: 0.3, status: this.rules.statusByType[type] });
+    }
+    this.healPlayer(p.maxHp * 0.15);
+    this.banner(this.ultimateName());
+    this.opts.onUltimate?.();
+  }
+
+  ultimateName() {
+    const names = {
+      normal: "Total Annihilation",
+      fighting: "Shattering Blow",
+      flying: "Sky Sovereign",
+      poison: "Venom Bloom",
+      ground: "Tectonic Wrath",
+      rock: "Quake Herald",
+      bug: "Hive Overlord",
+      ghost: "Phantom Requiem",
+      steel: "Iron Dominion",
+      fire: "Ascending Flare",
+      water: "Tidal Dominion",
+      grass: "Verdant Bloom",
+      electric: "Thunder Sovereign",
+      psychic: "Mind Shatter",
+      ice: "Absolute Zero",
+      dragon: "Dragon's Verdict",
+      dark: "Umbral Eclipse",
+      fairy: "Fairy Triumph",
+    };
+    return names[this.player.types[0]] ?? "Ultimate";
+  }
+
+  /* ------------------------------------------------------ level-up pool */
+
+  /** Build the list of upgrade offers for a level-up. */
+  rollChoices() {
+    const p = this.player;
+    const options = [];
+
+    // New move from the kit
+    const roster = this.data.rosterFor(p.speciesId);
+    const levels = this.rules.kitLevels ?? [0, 2, 4, 7];
+    if (roster && p.moves.length < p.moveSlots) {
+      roster.kit.forEach((key, i) => {
+        if (p.level < (levels[i] ?? 0)) return;
+        const move = this.data.getMoveByKey(key);
+        if (!move) return;
+        if (p.moves.some((m) => m.def.id === move.id)) return;
+        const def = buildMoveDef(move, this.rules);
+        if (!def) return;
+        options.push({
+          kind: "newMove",
+          id: move.id,
+          title: move.name,
+          sub: "New move",
+          lines: [`${move.type} · ${this.rules.archetypes[def.arch].label}`],
+          icon: "move",
+          type: move.type,
+          weight: 2.2,
+        });
+      });
+    }
+
+    // Move upgrade
+    for (const mv of p.moves) {
+      if (mv.level >= 8) continue;
+      const ups = this.rollMoveUps(mv);
+      if (!ups.length) continue;
+      options.push({
+        kind: "upMove",
+        slot: p.moves.indexOf(mv),
+        title: mv.def.name,
+        sub: `Level ${mv.level} → ${mv.level + 1}`,
+        lines: ups.map((u) => u.label),
+        icon: "move",
+        type: mv.def.type,
+        weight: 1.4,
+      });
+    }
+
+    // Move slot
+    if (p.moves.length >= p.moveSlots && p.moveSlots < 6) {
+      options.push({
+        kind: "slot",
+        title: "Move Slot",
+        sub: "Carry one more move",
+        lines: [],
+        icon: "move",
+        rarity: 3,
+        weight: 0.7,
+      });
+    }
+
+    // Item upgrade (only mod-bearing entries: their effects are fully modelled).
+    const pool = this.rules.upgrades.filter(
+      (u) => u.mods?.length && !this.banished.has(u.key) && (this.upgrades.get(u.key)?.count ?? 0) < (u.max ?? 10)
+    );
+    if (pool.length) {
+      const available = [0, 1, 2, 3, 4].map((r) => pool.some((u) => u.rarity === r));
+      const rarity = rollRarity({
+        level: p.level,
+        luck: p.stats.luck,
+        stage: this.stage,
+        minRarity: 0,
+        available,
+      });
+      let bucket = pool.filter((u) => u.rarity === rarity && !this.banished.has(u.key));
+      if (!bucket.length) bucket = pool;
+      const chosen = this.rng.weighted(bucket, (u) => {
+        if (!u.tags) return 1;
+        if (u.tags.some((t) => t.startsWith("type:") && p.types.includes(t.slice(5)))) return 4;
+        return 0.35;
+      });
+      if (chosen) {
+        options.push({
+          kind: "item",
+          key: chosen.key,
+          title: chosen.key.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          sub: describeUpgrade(chosen),
+          lines: [],
+          icon: "item",
+          rarity: chosen.rarity,
+          weight: 3,
+        });
+      }
+    }
+
+    // Fusion (two high-level moves merge).
+    const fusionOpts = fusionChoices(this);
+    for (const fo of fusionOpts) options.push(fo);
+
+    // Vitamins (permanent stat growth).
+    const vitOpts = vitaminChoices(this, 10);
+    for (const vo of vitOpts) options.push(vo);
+
+    if (!options.length) return [];
+    const picked = [];
+    const pool2 = options.slice();
+    for (let i = 0; i < 3 && pool2.length; i++) {
+      const chosen = this.rng.weighted(pool2, (o) => o.weight ?? 1);
+      picked.push(chosen);
+      pool2.splice(pool2.indexOf(chosen), 1);
+    }
+    return picked;
+  }
+
+  rollMoveUps(mv) {
+    const stats = this.rules.archetypes[mv.def.arch].stats.slice();
+    const ups = [];
+    const n = mv.level >= 6 ? 3 : 2;
+    for (let i = 0; i < n && stats.length; i++) {
+      const key = stats.splice(this.rng.int(0, stats.length - 1), 1)[0];
+      const v = mv.level / 5;
+      let value;
+      let label;
+      switch (key) {
+        case "dmg":
+          value = 0.22 * v;
+          label = `+${Math.round(value * 100)}% damage`;
+          break;
+        case "cd":
+          value = Math.min(0.25, 0.08 * v);
+          label = `-${Math.round(value * 100)}% cooldown`;
+          break;
+        case "count":
+          value = mv.level >= 6 ? 2 : 1;
+          label = `+${value} projectile${value > 1 ? "s" : ""}`;
+          break;
+        case "pierce":
+        case "bounce":
+          value = Math.max(1, Math.round(mv.level));
+          label = `+${value} ${key}`;
+          break;
+        case "area":
+          value = 0.15 * v;
+          label = `+${Math.round(value * 100)}% area`;
+          break;
+        case "speed":
+          value = 0.15 * v;
+          label = `+${Math.round(value * 100)}% speed`;
+          break;
+        case "dur":
+          value = 0.2 * v;
+          label = `+${Math.round(value * 100)}% duration`;
+          break;
+        case "crit":
+          value = 0.05 * v;
+          label = `+${Math.round(value * 100)}% crit`;
+          break;
+        default:
+          value = 0.25 * v;
+          label = `+${Math.round(value * 100)}% status chance`;
+      }
+      ups.push({ key, value, label });
+    }
+    return ups;
+  }
+
+  applyChoice(choice) {
+    const p = this.player;
+    if (choice.kind === "newMove") {
+      const move = this.data.getMove(choice.id);
+      const def = buildMoveDef(move, this.rules);
+      if (def && p.moves.length < p.moveSlots) {
+        p.moves.push({ def, level: 1, timer: 0.3, mods: { dmg: 1, cd: 1, count: 0, area: 1, speed: 1, dur: 1, pierce: 0, crit: 0, status: 1, bounce: 0 } });
+      }
+    } else if (choice.kind === "upMove") {
+      const mv = p.moves[choice.slot];
+      if (mv) {
+        mv.level++;
+        mv.mods.dmg += 0.08;
+        for (const u of choice.ups ?? []) {
+          switch (u.key) {
+            case "dmg":
+              mv.mods.dmg += u.value;
+              break;
+            case "cd":
+              mv.mods.cd *= 1 - u.value;
+              break;
+            case "count":
+              mv.mods.count += u.value;
+              break;
+            case "pierce":
+              mv.mods.pierce += u.value;
+              break;
+            case "bounce":
+              mv.mods.bounce += u.value;
+              break;
+            case "area":
+              mv.mods.area += u.value;
+              break;
+            case "speed":
+              mv.mods.speed += u.value;
+              break;
+            case "dur":
+              mv.mods.dur += u.value;
+              break;
+            case "crit":
+              mv.mods.crit += u.value;
+              break;
+            default:
+              mv.mods.status += u.value;
+          }
+        }
+      }
+    } else if (choice.kind === "slot") {
+      p.moveSlots = Math.min(6, p.moveSlots + 1);
+      this.learnKitMoves(p);
+    } else if (choice.kind === "item") {
+      const up = this.rules.upgrades.find((u) => u.key === choice.key);
+      if (up) {
+        const prev = this.upgrades.get(up.key);
+        this.upgrades.set(up.key, { ...up, count: (prev?.count ?? 0) + 1 });
+        this.stats.items++;
+        if (up.mods) this.recompute(p);
+      }
+    } else if (choice.kind === "fusion") {
+      applyFusion(this, choice);
+    } else if (choice.kind === "newVit" || choice.kind === "upVit") {
+      applyVitaminPick(this, choice.vit, choice.rarity);
+    }
+  }
+
+  /* ------------------------------------------------------------ evolve */
+
+  tryEvolve() {
+    const p = this.player;
+    const plan = evolutionPlan(this.data, p.speciesId, this.rng);
+    if (!plan || p.level < plan.level) return false;
+    p.speciesId = plan.to.id;
+    p.species = plan.to;
+    p.types = plan.to.types.slice();
+    p.evoStage = plan.to.evoStage;
+    p.maxHp = 0;
+    this.recompute(p);
+    p.hp = p.maxHp;
+    this.stats.evolved++;
+    this.achievements.incrementTask("evolve_ally", 1);
+    this.banner(`Evolved into ${plan.to.name}!`);
+    this.burst(p.x, p.y + 1, p.z, 0xff9ae0, 26, "star");
+    this.shake(0.2);
+    this.learnKitMoves(p);
+    return true;
+  }
+
+  /* ------------------------------------------------------------- utils */
+
+  enemiesInCone(x, z, fx, fz, reach, arc) {
+    const out = [];
+    for (const e of this.enemies) {
+      if (!e.alive) continue;
+      const dx = e.x - x;
+      const dz = e.z - z;
+      const d = Math.hypot(dx, dz);
+      if (d > reach + e.radius) continue;
+      if (arc < TAU - 0.01 && d > 0.4) {
+        const dot = (dx * fx + dz * fz) / d;
+        if (dot < Math.cos(arc / 2)) continue;
+      }
+      out.push(e);
+    }
+    return out;
+  }
+
+  enemyById(id) {
+    for (const e of this.enemies) if (e.id === id) return e;
+    return this.enemies[0];
+  }
+
+  typeRgb(type) {
+    const c = TYPE_RGB_CACHE[type] ?? [200, 200, 200];
+    return (c[0] << 16) | (c[1] << 8) | c[2];
+  }
+
+  spawnEnemy(speciesId, x, z, tier = "normal") {
+    if (this.enemies.length >= ENEMY_CAP) return null;
+    const species = this.data.get(speciesId);
+    if (!species) return null;
+    this.pokedex.seen.add(species.id);
+    this.markSeen(species.id);
+    const t = ENEMY_TIER[tier] ?? ENEMY_TIER.normal;
+    const hpMult = this.director.hpMult();
+    const dmgMult = this.director.dmgMult();
+    const tough = t.tough ? toughness(this.director.effTime()) : 1;
+
+    const baseHp = (12 + species.bst * 0.055) * hpMult * t.hpScale * tough * t.hpMul;
+    const e = {
+      id: nextId++,
+      species,
+      types: species.types,
+      tier,
+      x,
+      z,
+      y: 0,
+      vx: 0,
+      vz: 0,
+      hp: baseHp,
+      maxHp: baseHp,
+      speed: enemySpeed(species) * t.speedMul * this.difficulty.enemySpeed,
+      dmg: enemyDamage(species, dmgMult) * t.dmgMul,
+      xp: enemyXp(species, tough, tier),
+      radius: 0.55 * t.scale,
+      scale: t.scale,
+      shiny: Math.random() < SHINY_RATE,
+      alive: true,
+      dying: 0,
+      flash: 0,
+      animT: Math.random() * 6,
+      statuses: { burn: 0, poison: 0, para: 0, freeze: 0, sleep: 0, root: 0 },
+      burnDps: 0,
+      poisonDps: 0,
+      atkCd: 0,
+    };
+    this.enemies.push(e);
+    return e;
+  }
+
+  /* ------------------------------------------------------------- pokedex */
+
+  markSeen(id) {
+    this.pokedex.seen.add(id);
+    this._savePokedex();
+    this.achievements.recordSeen(this.pokedex.seen.size);
+  }
+
+  markCaught(id) {
+    this.pokedex.caught.add(id);
+    this._savePokedex();
+  }
+
+  _savePokedex() {
+    const p = this.profile?.data;
+    if (!p) return;
+    p.pokedex = {
+      seen: [...this.pokedex.seen],
+      caught: [...this.pokedex.caught],
+    };
+    this.profile.save();
+  }
+
+  /** Player's average damage per second, used to size boss HP. */
+  playerExpectedDps(secs) {
+    const p = this.player;
+    const atk = p.stats.damage;
+    const cd = p.stats.attackSpeed;
+    const dps = p.moves.reduce((sum, m) => {
+      const cdSecs = Math.max(0.12, m.def.cd * m.mods.cd / p.stats.attackSpeed);
+      return sum + (m.def.dmg * m.mods.dmg * 1.3 * (1 + (m.level - 1) * 0.04)) / cdSecs;
+    }, 0);
+    return dps * cd;
+  }
+
+  /** Fire a hostile projectile from an enemy (boss attacks). */
+  spawnHostileProjectile(source, angle, speed, dmg, life = 2, radius = 0.6) {
+    if (this.projectiles.length > 400) return;
+    const e = source;
+    const vx = Math.cos(angle) * speed;
+    const vz = Math.sin(angle) * speed;
+    this.projectiles.push({
+      id: nextId++,
+      x: e.x,
+      y: e.y + 0.9,
+      z: e.z,
+      vx,
+      vy: 0,
+      vz,
+      speed,
+      life,
+      radius,
+      dmg: dmg ?? e.dmg,
+      def: null,
+      pierce: 0,
+      homing: 0,
+      explodeR: 0,
+      lob: false,
+      returnHome: false,
+      age: 0,
+      hits: new Set(),
+      hostile: true,
+    });
+  }
+
+  /** Fire an allied projectile from an ally. */
+  spawnAllyProjectile(source, angle, speed, dmg, life = 2, radius = 0.6) {
+    if (this.projectiles.length > 400) return;
+    const e = source;
+    const vx = Math.cos(angle) * speed;
+    const vz = Math.sin(angle) * speed;
+    this.projectiles.push({
+      id: nextId++,
+      x: e.x,
+      y: e.y + 0.9,
+      z: e.z,
+      vx,
+      vy: 0,
+      vz,
+      speed,
+      life,
+      radius,
+      dmg: dmg ?? e.dmg ?? 10,
+      def: null,
+      pierce: 0,
+      homing: 0,
+      explodeR: 0,
+      lob: false,
+      returnHome: false,
+      age: 0,
+      hits: new Set(),
+      hostile: false,
+    });
+  }
+
+  /** A hostile ground zone (boss pools). */
+  zonesHostile(source, x, z, r, life, dmg) {
+    this.zones.push({ x, z, r, life, tick: 0, dmg, type: source?.types?.[0] ?? "normal", status: null, hostile: true });
+  }
+
+  /** Schedule a callback after `delay` seconds. */
+  later(delay, fn) {
+    this.timers.push({ t: delay, fn });
+  }
+
+  /* ----------------------------------------------------------- effects */
+
+  updateEffects(dt) {
+    for (let i = this.effects.length - 1; i >= 0; i--) {
+      const e = this.effects[i];
+      e.t += dt;
+      if (e.t >= e.life) this.effects.splice(i, 1);
+    }
+    for (let i = this.floaters.length - 1; i >= 0; i--) {
+      const f = this.floaters[i];
+      f.t += dt;
+      f.y += f.vy * dt;
+      f.vy -= 3 * dt;
+      if (f.t >= f.life) this.floaters.splice(i, 1);
+    }
+    if (this.weatherT > 0) {
+      this.weatherT -= dt;
+      if (this.weatherT <= 0) this.weather = "none";
+    }
+  }
+
+  ring(x, y, z, r, color, life = 0.3) {
+    this.effects.push({ kind: "ring", x, y, z, r, color, t: 0, life });
+  }
+  beam(x, y, z, angle, len, color) {
+    this.effects.push({ kind: "beam", x, y, z, angle, len, color, t: 0, life: 0.18 });
+  }
+  cone(x, y, z, angle, len, color) {
+    this.effects.push({ kind: "cone", x, y, z, angle, len, color, t: 0, life: 0.25 });
+  }
+  burst(x, y, z, color, count = 8, shape = "soft") {
+    for (let i = 0; i < count; i++) {
+      const a = Math.random() * TAU;
+      const s = 1 + Math.random() * 2.5;
+      this.effects.push({
+        kind: "particle",
+        x,
+        y,
+        z,
+        vx: Math.cos(a) * s,
+        vy: 1.5 + Math.random() * 2.5,
+        vz: Math.sin(a) * s,
+        color,
+        shape,
+        size: 0.18 + Math.random() * 0.2,
+        t: 0,
+        life: 0.4 + Math.random() * 0.35,
+      });
+    }
+  }
+  floater(x, y, z, text, color) {
+    this.floaters.push({ x, y, z, text, color, t: 0, life: 0.85, vy: 1.6 });
+  }
+  banner(text) {
+    this.opts.onBanner?.(text);
+  }
+  shake(amount) {
+    this.shakeAmount = Math.min(0.6, (this.shakeAmount ?? 0) + amount);
+  }
+}
+
+const TYPE_RGB_CACHE = {
+  normal: [200, 208, 220],
+  fighting: [224, 160, 32],
+  flying: [106, 200, 255],
+  poison: [181, 96, 224],
+  ground: [216, 176, 112],
+  rock: [176, 160, 96],
+  bug: [138, 192, 32],
+  ghost: [122, 104, 176],
+  steel: [160, 176, 192],
+  fire: [255, 122, 42],
+  water: [58, 160, 255],
+  grass: [90, 210, 74],
+  electric: [255, 208, 48],
+  psychic: [255, 127, 160],
+  ice: [128, 216, 240],
+  dragon: [144, 96, 224],
+  dark: [112, 96, 144],
+  fairy: [240, 144, 192],
+};
+
+const dtSafe = (run) => run.lastDt ?? 0.016;

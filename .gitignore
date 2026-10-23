@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output (regenerate with `npm run build`)
+dist/
+
+# Working copy of the raw extraction tables (not loaded at runtime)
+data/
+
+# Logs, caches, temp files
+*.log
+npm-debug.log*
+.cache/
+.tmp/
+*.tmp
+__pycache__/
+
+# Test / tooling output
+coverage/
+test-results/
+playwright-report/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Secrets (none expected in this project)
+.env
+.env.*
