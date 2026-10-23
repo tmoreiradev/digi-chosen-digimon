@@ -50,7 +50,10 @@ the report lands in `reviews/codex-<timestamp>.md`. `AGENTS.md` holds the rules 
 
 `tests/` covers the regressions listed in `REVISAO_CODEX.md` (first-egg rule, the shared level-up
 path used by XP orbs and Rare Candy, the held-item screen, pause submenus, capture/allies, egg
-persistence, old saves). `scripts/check-bundle.mjs` runs `node --check` on the bundled script and
+persistence, old saves). `tests/playtest.test.mjs` lets a bot (`tests/_bot.mjs`) play whole runs
+through the real input, level-up and event-panel surfaces — an honest 10-minute run, a classic run to
+victory and a tower climb — checking invariants (no NaN, HP/XP bounds, arena bounds, enemy cap) every
+half second of game time. `scripts/check-bundle.mjs` runs `node --check` on the bundled script and
 compares it, the embedded data and the CSS against the sources, so a stale build fails loudly.
 
 Saves live in `localStorage` under the keys `pokebonk-clone.*` — the keys were **kept** on purpose

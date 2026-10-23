@@ -230,6 +230,24 @@ test("tower: every floor reaches its guardian through the waves alone (a 0 wave 
   assert.equal(run.state, "victory");
 });
 
+test("tower: a guardian refused by the enemy cap is retried, not marked pending forever", () => {
+  const { run } = makeRun({ mode: "tower" });
+  const p = run.player;
+  run.player.iframes = 1e9;
+  for (const e of run.enemies) e.alive = false;
+  run.update(1 / 60);
+  while (run.enemies.length < 260) run.spawnEnemy(16, p.x + 30, p.z + 30, "normal"); // arena full
+  run.tower.wave = 3;
+  run.tower.waveCount = 1000;
+  run.tower.update(1 / 60);
+  assert.equal(run.boss.alive, false, "no room for the guardian");
+  assert.equal(run.tower.pendingGuardian, false, "so it is not pending");
+  for (const e of run.enemies) e.alive = false; // the horde fades
+  run.update(1 / 60); // compaction + another tower step
+  assert.ok(run.boss.alive, "the guardian arrives as soon as there is room");
+  assert.equal(run.tower.pendingGuardian, true);
+});
+
 test("the enemy list compacts dead entries so spawning never stalls for the rest of the run", () => {
   const { run } = makeRun();
   const p = run.player;

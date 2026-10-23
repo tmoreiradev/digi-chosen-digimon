@@ -9,7 +9,7 @@ continuar funcionando offline, inclusive `dist/digi-chosen.html` aberto por `fil
 | Comando | O que faz |
 |---|---|
 | `npm start` | servidor estático em `http://localhost:8080/` (confira se já não há um rodando na porta) |
-| `npm test` | `node --test tests/*.test.mjs` — dados reais de `src/data`, DOM mínimo em `tests/_dom.mjs` |
+| `npm test` | `node --test tests/*.test.mjs` — dados reais de `src/data`, DOM mínimo em `tests/_dom.mjs`; inclui o playtest (`tests/_bot.mjs` joga runs inteiras, Clássico e Torre até a vitória) |
 | `npm run build` | gera `dist/digi-chosen.html` e copia `dist/pmd`, `dist/front` (`dist/` não é versionado) |
 | `npm run check:bundle` | confere que o bundle parseia e bate com fontes, dados e CSS |
 | `npm run review:codex -- <range>` | revisão externa pelo Codex CLI num worktree limpo; relatório em `reviews/` |

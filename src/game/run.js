@@ -1104,9 +1104,10 @@ export class Run {
           e.atkCd = 0.4;
           this.hitPlayer(e.dmg * this.difficulty.enemyDamage, e);
         }
-        // push the player away a bit
-        p.x -= (dx / d) * 0.4;
-        p.z -= (dz / d) * 0.4;
+        // push the player away a bit, but never out of the arena (the playtest bot found
+        // itself at x = -180.4 after being shoved against the wall)
+        p.x = clamp(p.x - (dx / d) * 0.4, -half, half);
+        p.z = clamp(p.z - (dz / d) * 0.4, -half, half);
       }
       if (e.atkCd > 0) e.atkCd -= dt;
     }

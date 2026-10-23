@@ -74,9 +74,10 @@ export class Tower {
     if (!this.guardianDown && !this.pendingGuardian) {
       if (target <= 0 || this.waveCount >= target) {
         if (this.wave >= 3 || target <= 0) {
-          // All waves done: wake the guardian.
-          this.pendingGuardian = true;
-          this.awakenGuardian();
+          // All waves done: wake the guardian. The spawn can be refused while the enemy cap
+          // is full (corpses still fading); then keep trying every step instead of marking
+          // it pending forever.
+          this.pendingGuardian = !!this.awakenGuardian();
         } else {
           this.wave++;
           this.waveT = 0;
@@ -138,6 +139,7 @@ export class Tower {
     this.waveCount = 0;
   }
 
+  /** Spawn the floor guardian; returns the enemy, or null when the enemy cap refused it. */
   awakenGuardian() {
     const run = this.run;
     const g = this.def.guardian;
@@ -146,13 +148,14 @@ export class Tower {
     const x = p.x + Math.cos(angle) * 14;
     const z = p.z + Math.sin(angle) * 14;
     const half = run.biome.size / 2;
-    run.boss.spawn(
+    const e = run.boss.spawn(
       g.id,
       clamp(x, -half + 3, half - 3),
       clamp(z, -half + 3, half - 3),
       g.kind === "boss" ? "guardian" : g.kind
     );
-    run.banner(`The floor guardian awakens!`);
+    if (e) run.banner(`The floor guardian awakens!`);
+    return e;
   }
 
   /** Called when the floor guardian is defeated. */

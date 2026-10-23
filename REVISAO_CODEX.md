@@ -20,14 +20,16 @@ Jogo de sobrevivência/roguelite (clone local do PokéBonk) com ~7 800 linhas em
 |---|---|---|
 | Loop/simulação (`run.js`) | jogador (andar, pular, dash, i-frames), 26 arquétipos de golpe, status, clima, ultimate, pickups, XP/nível, evolução, upgrades/vitaminas/fusão/slots | funcional |
 | Inimigos (`director.js`) | pool por bioma/zona, cartas, timeline (alfas, enxames, estouros, ondas de elites), 8 tiers | funcional |
-| Boss (`boss.js`) | fases, telegrafia, 8 ataques, teto de burst e exaustão | só usado pela Torre; teto/exaustão não ligados (backlog) |
-| Torre (`tower.js`) | 7 andares, ondas, guardiões, vitória | funcional desde a §14 (6.ª rodada): o andar 5 travava na onda de meta 0 |
+| Boss (`boss.js`) | fases, telegrafia, 8 ataques, teto de burst e exaustão | Clássico (guardiões, lendário) e Torre; teto/exaustão ligados desde a fase 2 (§11) |
+| Torre (`tower.js`) | 7 andares, ondas, guardiões, vitória | funcional desde a §14 (6.ª/7.ª rodadas): o andar 5 travava na onda de meta 0 e um guardião recusado pelo teto ficava pendente para sempre; subida completa pelo bot (§15) |
 | Captura/aliados (`capture.js`) | enfraquecer alfa, lançar bola, até 3 aliados que atacam | funcional |
 | Eventos de mundo (`events.js`) | baú, loja (4 itens), altar; painel com teclado | funcional |
-| Progressão (`achievements.js`) | 8 conquistas, 5 tarefas por espécie, ovos por passos | funcional; recompensas não concedidas (backlog) |
-| UI (`ui/*`) | título, perfis locais, roster, setup, HUD, cartas de level-up, Pokédex (1025 espécies), pausa com apelido/item/volume, resultados | funcional |
+| Progressão (`achievements.js`) | 8 conquistas, 5 tarefas por espécie, ovos por passos, recompensas em ouro, tela na pausa | funcional desde as fases 3–4 (§12–13) |
+| UI (`ui/*`) | título, perfis locais, roster, setup, HUD (com barra do boss), cartas de level-up, Pokédex (1025 espécies), pausa com conquistas/apelido/item/volume, resultados | funcional |
 | Render/áudio | sheets PMD com 8 direções + fallback procedural; SFX e música sintetizados | funcional |
-| Modo Clássico | zonas a cada 5 min | **incompleto**: sem guardiões de zona, santuário ou vitória (backlog) |
+| Modo Clássico | 3 zonas de 5 min com guardião, santuário com lendário, vitória | funcional desde a fase 2 (§11); vencido de ponta a ponta pelo bot (§15) |
+
+(Linhas desta tabela refletem o estado **atual**; o histórico de cada mudança está nas seções 11–15.)
 
 ---
 
@@ -360,3 +362,40 @@ achados, ambos aceitos:
 |---|---|
 | **A Torre travava no 5.º andar** (P1, pré-existente): `waves: [34, 40, 0]` nos dados; a 3.ª onda com meta 0 nunca satisfazia `target > 0`, o guardião não acordava e não havia avanço nem vitória. A afirmação da §1 ("Torre funcional") estava errada para o andar 5. | Corrigido em `tower.js`: meta 0 significa "sem onda" e vai direto ao guardião. Teste percorre os 7 andares só pelas ondas (sem chamar `awakenGuardian`) até a vitória. |
 | Timer de boss (meteoro) disparado **depois** de `boss.update` no mesmo passo matava o jogador já com a vitória declarada: os dois encerramentos eram agendados e a vitória chegava primeiro, contra o "derrota prevalece" da 5.ª rodada (P2) | Regra fechada: **o primeiro estado terminal do passo é final**. Morte antes do boss cair = derrota (5.ª rodada); boss caído antes do dano = vitória — `hitPlayer` ignora dano quando a run já não está `running`. Teste da ordem inversa. |
+
+**Sétima rodada** (`94acc78..49e9ff8`, `reviews/codex-2026-10-23-23-09-94acc78..HEAD.md`): **Reprovado**, 1 achado,
+aceito:
+
+| Achado | Decisão |
+|---|---|
+| `pendingGuardian` ficava `true` mesmo quando `Boss.spawn()` era recusado pelo teto de 260 inimigos (corpos ainda em animação ocupam vaga): concluir a onda nessa condição travava o andar para sempre (P1) | Corrigido: `awakenGuardian()` devolve o inimigo e `pendingGuardian = !!e` — sem vaga, tenta de novo a cada passo. Teste: arena cheia → recusado e não pendente → horda some → guardião nasce. |
+| §1 tinha linhas desatualizadas (boss só na Torre, teto desligado, conquistas sem recompensa, Clássico incompleto) | Tabela da §1 atualizada para o estado atual, com ponteiros para as seções. |
+
+---
+
+## 15. Playtest automatizado — um bot que joga (23/10/2026)
+
+A pedido do dono: `tests/_bot.mjs` joga runs inteiras pelas mesmas superfícies que `main.js` usa — o objeto
+`input` (WASD, Shift, R, E), `rollChoices`/`applyChoice` nos level-ups, `tryEvolve` a cada nível, e os
+**botões** dos painéis de baú/loja/altar no DOM mínimo. Decide a cada 6 quadros (100 ms) e segura as teclas:
+foge de inimigos próximos, vai a orbes de XP quando está seguro, anda até baú/loja/altar quando vale (altar
+com HP < 60 %, loja com ouro), dasha quando encurralado, usa o ultimate em multidão, lança a bola em alfa
+enfraquecido, fica longe das paredes; compra Rare Candy/poções/vitaminas com critérios simples. Não é bom
+no jogo; é consistente (`Math.random` do jogo é substituído por um RNG com semente durante a partida).
+
+Invariantes conferidos a cada meio segundo de jogo (`checkInvariants`): nenhum NaN em jogador/inimigos/
+estatísticas, `0 ≤ hp ≤ maxHp`, `xp < xpNext` abaixo do teto, `stats.levels = level − 1`, jogador dentro
+da arena, ≤ 260 inimigos e nenhum morto na lista, aliados ≤ cap, boss vivo com inimigo.
+
+`tests/playtest.test.mjs` (parte do `npm test`; uma run de 20 min de jogo leva < 1 s de CPU):
+
+| Cenário | Resultado (semente fixa) |
+|---|---|
+| Bot honesto, Clássico, 600 s | sobrevive: nível 26, 899 kills, **zona 2** (guardião da zona 1 derrotado por conta própria), 2 aliados (captura + ovo), 25 ultimates |
+| Clássico até o fim (god mode: só imunidade a dano) | **vitória em 1210 s**: 3 guardiões, santuário, lendário; nível 50, 1891 kills |
+| Torre até o fim (god mode) | **vitória em 402 s**: 7 andares pelas ondas reais |
+
+O bot achou um bug na primeira execução: o empurrão de contato (`p.x -= dx/d·0.4` em `updateEnemies`)
+acontecia **depois** do clamp da arena, e o jogador encurralado na parede saía do mapa (`x = -180.4`).
+Corrigido com clamp após o empurrão. Limitação: o bot não lê o HUD nem a música; valida regras e
+estabilidade, não aparência.
