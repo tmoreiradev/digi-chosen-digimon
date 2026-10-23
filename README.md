@@ -106,10 +106,16 @@ Eggs and their progress are saved in the profile and survive a new run.
 go up one level and keep the XP already earned inside the level. Refused (and not charged) at
 the cap.
 
-**World events** — Chests, traveling shops and ancient altars spawn in the world. Press `E` near
-one: open the chest for gold or loot, buy items with your gold at the shop (`1`–`3`, `0` leaves),
+**World events** — Chests, traveling shops and ancient altars appear 12–24 units from you. Press `E`
+near one: open the chest for gold or loot, buy items with your gold at the shop (`1`–`3`, `0` leaves),
 or heal at the altar. Opening one pauses the game; buying a Rare Candy opens the level-up cards on
-top of the shop.
+top of the shop. Looking is free: a chest is consumed when opened and an altar when it heals; shops
+stay until they expire.
+
+**Partners** — The roster shows 40 Kanto species; only the three starters begin unlocked. Catching
+(or hatching) any species unlocks the roster partner of its evolution family, and every achievement
+or species task completed unlocks the next locked partner in roster order. The title screen counts
+them (`Partners: X / 40`).
 
 **Profiles** — Local guest/named profiles (no network). Each keeps its Pokédex (seen / caught),
 achievements and species tasks, egg, nickname, held item (Leftovers or Choice Band), best time

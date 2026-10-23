@@ -124,7 +124,9 @@ test("title and results read the single Pokédex list", async () => {
   const { root, screens, run } = setup();
   withRandom(0.99, () => run.capture.caught(spawnAlpha(run, 16)));
   screens.showTitle();
-  assert.equal(root.querySelector(".title-stats").textContent.replace(/Runs.*Caught/, "Caught"), "Caught: 1 / 1025");
+  const stats = root.querySelector(".title-stats").textContent;
+  assert.match(stats, /Caught: 1 \/ 1025/);
+  assert.match(stats, /Partners: \d+ \/ 40/);
 
   screens.showResults(run, false);
   assert.equal(profile.data.caught, undefined);

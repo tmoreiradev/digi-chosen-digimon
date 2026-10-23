@@ -76,6 +76,32 @@ test("captures live only in profile.data.pokedex.caught; hatching counts for the
   assert.ok(profile.data.pokedex.seen.includes(1), "a hatched species counts as seen too");
 });
 
+test("catching a species unlocks the roster partner of its evolution family, and the achievement opens the next one", () => {
+  const { run, profile, calls } = makeRun();
+  assert.deepEqual(profile.data.unlocked, [1, 4, 7]);
+  withRandom(0.99, () => run.capture.caught(spawnAlpha(run, 18))); // Pidgeot: family of Pidgey (roster id 16)
+  assert.ok(profile.data.unlocked.includes(16), "Pidgey unlocked by catching Pidgeot");
+  assert.ok(profile.data.unlocked.includes(10), "first_catch opened the next locked partner in roster order (Caterpie)");
+  assert.ok(calls.banners.includes("Novo parceiro: Pidgey (captura)"));
+  assert.ok(calls.banners.includes("Novo parceiro: Caterpie (conquista)"));
+  assert.equal(profile.data.unlocked.length, 5);
+});
+
+test("hatching unlocks the partner too; already-unlocked partners are not repeated", () => {
+  const { run, profile } = makeRun();
+  run.eggs.giveEgg(129, 1); // Magikarp, roster partner
+  run.eggs.addSteps(1);
+  assert.ok(profile.data.unlocked.includes(129));
+  const n = profile.data.unlocked.length;
+  run.achievements.unlockPartnersFor(run.data.get(130)); // Gyarados: same family, already unlocked
+  assert.equal(profile.data.unlocked.length, n);
+});
+
+test("old saves without `unlocked` get the starters", () => {
+  const p = normalizeProgress({ pokedex: { seen: [], caught: [] } });
+  assert.deepEqual(p.unlocked, [1, 4, 7]);
+});
+
 test("old saves: the second capture list folds into the Pokédex as seen partners", () => {
   const p = { unlocked: [1], caught: [1, 16], pokedex: { seen: [16], caught: [16] }, runs: 2 };
   normalizeProgress(p);

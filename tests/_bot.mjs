@@ -102,6 +102,7 @@ class Bot {
     this.input = input;
     this.rng = rng;
     this.wander = { x: 1, z: 0, until: 0 };
+    this.visited = new Map(); // event id -> gold when last looked at (events are not consumed by looking)
   }
 
   decide(summary) {
@@ -187,9 +188,14 @@ class Bot {
     if (nearestEnemy < 4) return null; // not with enemies on us
     const ev = run.events.findNear(p.x, p.z, 40);
     if (!ev) return null;
-    if (ev.kind === "altar") return p.hp < p.maxHp * 0.6 ? ev : null;
-    if (ev.kind === "shop") return run.stats.gold >= 25 ? ev : null;
-    return ev; // chests are always worth it
+    const seenWith = this.visited.get(ev.id);
+    if (ev.kind === "altar") return p.hp < p.maxHp * 0.6 && seenWith === undefined ? ev : null;
+    if (ev.kind === "shop") {
+      // Worth a (re)visit only with enough gold for something new since the last look.
+      if (run.stats.gold < 25) return null;
+      return seenWith === undefined || run.stats.gold - seenWith >= 75 ? ev : null;
+    }
+    return seenWith === undefined ? ev : null; // a chest is opened on the first visit anyway
   }
 
   /** The panel is open (simulation frozen): act like a human reading it, through its buttons. */
@@ -200,6 +206,8 @@ class Bot {
     const buttons = ui.all().filter((n) => n.tagName === "button");
     const byText = (re) => buttons.find((b) => re.test(b.textContent));
     const title = ui.querySelector("h2")?.textContent ?? "";
+    const ev = run.events.findNear(p.x, p.z);
+    if (ev) this.visited.set(ev.id, run.stats.gold);
     if (/Chest/.test(title)) {
       summary.chests++;
       byText(/^Open/)?.click();
@@ -219,6 +227,7 @@ class Bot {
           (name === "Vitamin" && run.stats.gold >= 200);
         if (want) btn.click();
       }
+      if (ev) this.visited.set(ev.id, run.stats.gold); // after buying, so the next look needs new gold
       byText(/^Leave/)?.click();
     } else {
       run.events.panel?.close();

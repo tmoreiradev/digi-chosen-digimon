@@ -38,6 +38,7 @@ export function normalizeProgress(p) {
   if (!p.pokedex) p.pokedex = { seen: [], caught: [] };
   if (!Array.isArray(p.pokedex.seen)) p.pokedex.seen = [];
   if (!Array.isArray(p.pokedex.caught)) p.pokedex.caught = [];
+  if (!Array.isArray(p.unlocked)) p.unlocked = [1, 4, 7]; // roster partners; the starters always
   if (Array.isArray(p.caught)) {
     for (const id of p.caught) if (!p.pokedex.seen.includes(id)) p.pokedex.seen.push(id);
     delete p.caught;

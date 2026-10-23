@@ -444,11 +444,37 @@ da arena, ≤ 260 inimigos e nenhum morto na lista, aliados ≤ cap, boss vivo c
 
 | Cenário | Resultado (semente fixa) |
 |---|---|
-| Bot honesto, Clássico, 600 s, sementes 11–20 | **5 / 10 sobrevivem** os 600 s (todos esses passam da zona 1: guardião derrotado por conta própria, nível 23–29, 860–960 kills); as 5 mortes acontecem entre 310 e 361 s, na luta contra o guardião da zona 1. Nenhuma morte antes dos 4 min; zero falhas de invariante. O teste exige exatamente isso (≥ 3 sobreviventes, nenhuma morte antes de 240 s) — é a linha de base de balanceamento. |
-| Clássico até o fim (god mode: só imunidade a dano) | **vitória em 1210 s**: 3 guardiões, santuário, lendário; nível 50, 1891 kills |
-| Torre até o fim (god mode) | **vitória em 402 s**: 7 andares pelas ondas reais |
+| Bot honesto, Clássico, 600 s, sementes 11–20 | **5 / 10 sobrevivem** os 600 s (todos esses passam da zona 1: guardião derrotado por conta própria, nível 25–30, 843–945 kills, 1–4 lojas e 1–4 baús usados); as 5 mortes acontecem entre 317 e 334 s, na luta contra o guardião da zona 1. Nenhuma morte antes dos 4 min; zero falhas de invariante. O teste exige exatamente isso (≥ 3 sobreviventes, nenhuma morte antes de 240 s) — é a linha de base de balanceamento (números após a fase 5). |
+| Clássico até o fim (god mode: só imunidade a dano) | **vitória em 1179 s**: 3 guardiões, santuário, lendário; nível 50, 1844 kills |
+| Torre até o fim (god mode) | **vitória em 331 s**: 7 andares pelas ondas reais |
 
 O bot achou um bug na primeira execução: o empurrão de contato (`p.x -= dx/d·0.4` em `updateEnemies`)
 acontecia **depois** do clamp da arena, e o jogador encurralado na parede saía do mapa (`x = -180.4`).
 Corrigido com clamp após o empurrão. Limitação: o bot não lê o HUD nem a música; valida regras e
 estabilidade, não aparência.
+
+---
+
+## 16. Fase 5 — Eventos de mundo ao alcance e desbloqueio de parceiros (23/10/2026)
+
+**Eventos** (`events.js`, BACKLOG 8): nasciam em qualquer ponto de uma arena de 360 u (o bot ficou 10 min sem
+encontrar um); agora aparecem a 12–24 u do jogador (dentro da arena). Olhar é grátis: `interact()` não
+consome mais; o baú é consumido ao **abrir**, o altar ao **curar**, a loja só expira. O loot do baú é
+sorteado uma vez por baú (sair e voltar não re-sorteia). Testes: `tests/events.test.mjs` (posição, baú
+olhar/abrir, loja comprar/sair/expirar, altar cheio/curar).
+
+**Parceiros** (`achievements.js`, `account.js`, `screens.js`): `profile.data.unlocked` nunca crescia e o
+roster prometia "unlocked partners grow as you complete challenges". Regras: capturar (ou chocar) uma
+espécie desbloqueia o parceiro do roster da **mesma família evolutiva** (Pidgeot → Pidgey; cada entrada do
+roster é uma família distinta); cada conquista ou tarefa concluída desbloqueia o **próximo** parceiro
+bloqueado na ordem do roster. Banner "Novo parceiro: X (captura|conquista)". Saves antigos sem `unlocked`
+ganham os iniciais em `normalizeProgress`. Título mostra `Partners: X / 40`. Testes em
+`achievements.test.mjs` e `pause.test.mjs`.
+
+Navegador: baú a 21,5 u; sair mantém o baú com o mesmo loot ("37 gold" duas vezes); abrir consome e paga;
+capturar Pidgeot → "Novo parceiro: Pidgey (captura)", `unlocked [1,4,7,16]`, roster com 4 cartas abertas e
+36 travadas, título `Partners: 4 / 40`. Zero erros de console.
+
+O bot (`_bot.mjs`) ganhou memória de eventos visitados — sem isso ele reabria a mesma loja a cada decisão
+(1543 aberturas em 10 min numa semente) e morreu mais no guardião por andar atrás de lojas que não podia
+pagar.

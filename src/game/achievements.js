@@ -74,7 +74,7 @@ export class AchievementTracker {
     return this.ach.unlocked.includes(key);
   }
 
-  /** Unlock an achievement or a task ("task_<key>"); pays its gold. False when already unlocked. */
+  /** Unlock an achievement or a task ("task_<key>"); pays its gold and opens the next partner. False when already unlocked. */
   unlock(key) {
     if (this.isUnlocked(key)) return false;
     this.ach.unlocked.push(key);
@@ -84,8 +84,46 @@ export class AchievementTracker {
     const gold = def?.gold ?? 0;
     if (gold) this.reward(gold);
     if (def) this.run?.banner?.(`${a ? "Conquista" : "Tarefa concluída"}: ${def.title}${gold ? ` · +${gold}G` : ""}`);
+    if (def) this.unlockNextPartner();
     this.save();
     return true;
+  }
+
+  /* ------------------------------------------------- roster partners */
+
+  /** Roster partners unlocked so far (profile.data.unlocked; the starters are always there). */
+  partnersUnlocked() {
+    const p = this.profile.data;
+    if (!Array.isArray(p.unlocked)) p.unlocked = [1, 4, 7];
+    return p.unlocked;
+  }
+
+  unlockPartner(entry, why) {
+    const list = this.partnersUnlocked();
+    if (list.includes(entry.id)) return false;
+    list.push(entry.id);
+    const species = this.run?.data?.get(entry.id);
+    this.run?.banner?.(`Novo parceiro: ${species?.name ?? entry.id} (${why})`);
+    this.save();
+    return true;
+  }
+
+  /** Catching or hatching a species unlocks the roster partner of the same evolution family. */
+  unlockPartnersFor(species) {
+    const run = this.run;
+    if (!run?.data || !species) return;
+    for (const entry of run.rules.roster ?? []) {
+      const s = run.data.get(entry.id);
+      if (s && s.family === species.family) this.unlockPartner(entry, "captura");
+    }
+  }
+
+  /** Every achievement or task completed also opens the next locked partner, in roster order. */
+  unlockNextPartner() {
+    const roster = this.run?.rules?.roster ?? [];
+    const list = this.partnersUnlocked();
+    const next = roster.find((e) => !e.start && !list.includes(e.id));
+    if (next) this.unlockPartner(next, "conquista");
   }
 
   /** Gold goes to the running run; once the run is over it waits in the profile for the next one. */
@@ -120,6 +158,7 @@ export class AchievementTracker {
   /** Called after Run.markCaught put the species in profile.data.pokedex.caught. */
   recordCatch(species, shiny = false) {
     if (shiny) this.ach.shinyCaught = (this.ach.shinyCaught ?? 0) + 1;
+    this.unlockPartnersFor(species);
     for (const t of species?.types ?? []) {
       if (DEX_TASKS.some((x) => x.key === "catch_" + t)) this.incrementTask("catch_" + t, 1);
     }
@@ -183,6 +222,7 @@ export class EggSystem {
     if (species && run.allies) {
       run.allies.recruit(species, 1);
       run.markCaught?.(species.id);
+      run.achievements?.unlockPartnersFor(species);
       run.achievements?.check();
     }
   }

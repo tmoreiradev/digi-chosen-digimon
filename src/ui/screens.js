@@ -49,7 +49,8 @@ export class Screens {
           el("div", { class: "title-stats" },
             el("span", {}, `Runs: ${profile.data.runs ?? 0}`),
             el("span", {}, `Best: ${fmtTime(profile.data.best ?? 0)}`),
-            el("span", {}, `Caught: ${(profile.data.pokedex?.caught ?? []).length} / ${this.data.pokemon.length}`)
+            el("span", {}, `Caught: ${(profile.data.pokedex?.caught ?? []).length} / ${this.data.pokemon.length}`),
+            el("span", {}, `Partners: ${(profile.data.unlocked ?? []).length} / ${this.data.rules.roster.length}`)
           )
         )
       )

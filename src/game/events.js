@@ -7,7 +7,7 @@
 //   shop    - buy items with gold (heals, vitamins, XP boost)
 //   altar   - free full heal, consumed on use
 
-import { dist } from "../core/math.js";
+import { clamp, dist } from "../core/math.js";
 import { el } from "../ui/dom.js";
 import { applyVitaminPick } from "./vitamins.js";
 import { MAX_LEVEL } from "./rules.js";
@@ -18,6 +18,11 @@ export const SHOP_ITEMS = [
   { key: "vitamin", title: "Vitamin", desc: "Random permanent stat boost.", cost: 120, kind: "vitamin", rarity: 2 },
   { key: "xp-boost", title: "Rare Candy", desc: "Gain 1 level worth of XP.", cost: 100, kind: "xp", rarity: 1 },
 ];
+
+// Events appear 12–24 units from the player: on a 360-unit arena a run used to go ten
+// minutes without one in reach when they were scattered anywhere.
+const SPAWN_MIN = 12;
+const SPAWN_MAX = 24;
 
 const CHEST_LOOT = [
   { kind: "coins", min: 15, max: 45, weight: 60 },
@@ -43,8 +48,13 @@ export class WorldEvents {
     const biome = this.run.biome;
     const half = biome.size / 2 - 6;
     const rng = this.run.rng;
-    if (x == null) x = rng.range(-half, half);
-    if (z == null) z = rng.range(-half, half);
+    if (x == null || z == null) {
+      const p = this.run.player;
+      const a = rng.range(0, Math.PI * 2);
+      const r = rng.range(SPAWN_MIN, SPAWN_MAX);
+      x = clamp(p.x + Math.cos(a) * r, -half, half);
+      z = clamp(p.z + Math.sin(a) * r, -half, half);
+    }
     this.events.push({
       id: this.nextId++,
       kind,
@@ -86,12 +96,12 @@ export class WorldEvents {
     return best;
   }
 
-  // Interact with the nearest event: mark it, open the panel, pause the game.
+  // Interact with the nearest event: open its panel (the game pauses). An event is consumed
+  // when it is USED (chest opened, altar heals), not when it is looked at; shops expire only.
   interact() {
     const p = this.run.player;
     const ev = this.findNear(p.x, p.z);
     if (!ev || this.panel) return null;
-    ev.interacted = true;
     this.openPanel(ev);
     return ev;
   }
@@ -117,13 +127,14 @@ export class WorldEvents {
     const footer = el("div", { class: "event-footer" });
 
     if (ev.kind === "chest") {
-      const loot = this.rollChestLoot();
+      const loot = (ev.loot ??= this.rollChestLoot()); // rolled once: leaving and coming back does not reroll
       body.append(
         el("p", {}, "A dusty chest. What's inside?"),
         el("div", { class: "event-loot-preview" }, this.lootText(loot)),
         el("div", { class: "event-hint" }, "Press 1 to open, 2 to leave.")
       );
       const openBtn = el("button", { class: "btn", onclick: () => {
+        ev.interacted = true; // consumed
         this.giveChestLoot(run, loot);
         this.opts.onBanner?.(`Chest opened: ${this.lootText(loot)}`);
         this.opts.onSfx?.("pickup");
@@ -197,6 +208,7 @@ export class WorldEvents {
       );
       if (missing > 0) {
         const healBtn = el("button", { class: "btn", onclick: () => {
+          ev.interacted = true; // consumed
           p.hp = p.maxHp;
           this.opts.onBanner?.("Altar restored your HP.");
           this.opts.onSfx?.("levelUp");
