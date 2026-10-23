@@ -41,7 +41,12 @@ the sprite sheets are read from `dist/pmd/` and `dist/front/`, so keep the `dist
 ```bash
 npm test                # node --test tests/*.test.mjs  (no dependencies; real game data + a tiny DOM stub)
 npm run check:bundle    # verifies dist/digi-chosen.html parses and matches the current sources
+npm run review:codex -- 94acc78..HEAD   # independent review of a commit range by the Codex CLI → reviews/
 ```
+
+`scripts/codex-review.mjs` checks the range's tip out into a throwaway worktree, runs the tests and the
+bundle check here (the Codex sandbox cannot spawn node) and feeds everything to `codex exec` on stdin;
+the report lands in `reviews/codex-<timestamp>.md`. `AGENTS.md` holds the rules every agent should follow.
 
 `tests/` covers the regressions listed in `REVISAO_CODEX.md` (first-egg rule, the shared level-up
 path used by XP orbs and Rare Candy, the held-item screen, pause submenus, capture/allies, egg

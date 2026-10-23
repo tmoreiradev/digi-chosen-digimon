@@ -265,7 +265,8 @@ Itens 5 e 6 do backlog.
 - Navegador: perfil antigo com `caught: [1,16]` carregou com `Caught: 1 / 1025` e a chave sumiu do
   `localStorage` no save seguinte; captura de Vulpix entrou em `pokedex.caught`; Quit numa run da Torre
   com `floor = 3` → "Subidor da Torre" desbloqueada, `pendingGold = 150`, run seguinte começa com 150 G
-  e o banner "Recompensas pendentes: +150G". Zero erros de console.
+  e o banner "Recompensas pendentes: +150G". Zero erros de console. (Desde a §14 o `endRun` passa os
+  andares **concluídos**, `floor - 1`; o mesmo teste manual exige `floor = 4`.)
 - `npm run build` + `npm run check:bundle`: ✅.
 
 **Limitações:** `unlocked` do roster (parceiros destravados) continua sem nenhum caminho que o aumente
@@ -289,3 +290,29 @@ Itens 5 e 6 do backlog.
   boss oculta sem boss e, com o guardião Golduck a 42 % na fase 2, "Golduck · Guardian" + "Phase 2 ·
   1766 / 4203", largura 42 %, posicionada a 132 px do topo sob a região. Zero erros de console.
 - `npm run build` + `npm run check:bundle`: ✅.
+
+---
+
+## 14. Revisão externa (Codex CLI) e correções (23/10/2026)
+
+A pedido do dono, todo o entregue (`94acc78..d509872`) foi submetido ao Codex CLI
+(`codex exec -s read-only -c windows.sandbox=unelevated`, worktree limpo do HEAD). Relatório bruto em
+`reviews/codex-2026-10-23-1947-94acc78..d509872.md`. Veredito dele: **Reprovado** — com razão no P1.
+
+| Achado do Codex | Decisão |
+|---|---|
+| `.gitignore` `data/` ignorava também `src/data/`: **`game-data.js` e as 9 tabelas JSON nunca entraram no Git** — um clone não roda, não testa nem builda (P1) | **Verdadeiro e grave.** A regra veio do estado recebido e passou despercebida porque os arquivos existem na pasta de trabalho e `git status` fica "limpo" com ignorados. Corrigido em `199ccb5`: regra ancorada `/data/` e `src/data` versionado (10 arquivos). As afirmações de §7/§9 ("build reproduzível a partir do repositório") só valem a partir desse commit. |
+| `endRun` só checava se havia *alguma* run: morrer, sair e começar outra em < 900 ms deixava o timeout antigo encerrar a run nova (P1) | Corrigido: `endRun(victory, expected)` recebe a run que agendou o fim e ignora se `state.run` já é outra. |
+| `tower.floor` é o andar atual, não os concluídos: sair no início do 3.º andar dava "Complete 3 andares" (P2) | Corrigido: `endRun` passa `floor - 1` (ou `floor` com a torre limpa). O exemplo da §12 foi anotado. |
+| `champion` conta vitórias na Torre, mas a descrição dizia "modo clássico" (P2) | Decisão: vitória na Torre também vale; descrição passou a "Vença uma run (Clássico ou Torre)". |
+| Exaustão multiplicava o dano **antes** do teto: com o orçamento consumido, o dano efetivo continuava preso a `capRate` (P2) | **Verdadeiro.** `capDamage` agora escala a taxa por `exhaust()`; teste reforçado (dano efetivo medido). A afirmação da §11 sobre a exaustão só vale a partir daqui. |
+| Burn/poison tiravam HP direto, fora do orçamento do boss (P2) | Corrigido: os ticks passam por `capDamage(dmg × hitMul())`; teste novo. |
+| Eclosão registrava `caught` mas não `seen` (P2) | Corrigido em `Run.markCaught` (marca `seen` também); teste ajustado. |
+| Tarefa "Faça um aliado evoluir" era concluída pela evolução do **jogador** (P2) | Aliados não evoluem; descrição ajustada ("Evolua seu parceiro durante uma run"), chave mantida pelos saves. |
+| Teste de exaustão só consultava `hitMul()` (P3) | Reforçado: compara HP perdido antes/depois da exaustão. |
+| "Resultados de teste não puderam ser reconfirmados: `npm test` bloqueado por `spawn EPERM`" | Limite do sandbox do Codex no Windows (não executa `node`). O script `scripts/codex-review.mjs` roda `npm test` e `check:bundle` **fora** do sandbox e anexa a saída ao prompt. |
+
+**Como o Codex passa a ser chamado:** `npm run review:codex -- <range>` → worktree descartável do commit
+revisado, prompt enviado por stdin (`-` como argumento; sem isso o `codex exec` fica preso em "Reading
+additional input from stdin"), `-c windows.sandbox=unelevated` no Windows, relatório em `reviews/`,
+exit 1 em "Reprovado". `AGENTS.md` dá ao Codex (e a qualquer agente) comandos e regras do repositório.
