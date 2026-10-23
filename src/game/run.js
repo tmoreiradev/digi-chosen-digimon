@@ -843,7 +843,8 @@ export class Run {
         const dir = Math.atan2(e.z - p.z, e.x - p.x);
         for (let i = 0; i < count; i++) {
           const spread = count > 1 ? (i / (count - 1) - 0.5) * 0.6 : 0; // +count = extra projectiles
-          this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: dir + spread, speed, life: 1.5, radius: 0.4, dmg, def });
+          // +area widens the projectile, +dur lets it fly longer
+          this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: dir + spread, speed, life: 1.5 * durScale, radius: 0.4 * mv.mods.area * p.stats.area, dmg, def });
         }
       }
     }
@@ -1491,7 +1492,8 @@ export class Run {
   }
 
   rollMoveUps(mv) {
-    const blocked = NO_EFFECT_UPS[mv.def.arch] ?? [];
+    const blocked = [...(NO_EFFECT_UPS[mv.def.arch] ?? [])];
+    if (!mv.def.status) blocked.push("status"); // a move without a status has no chance to raise
     const stats = this.rules.archetypes[mv.def.arch].stats.filter((s) => !blocked.includes(s));
     const ups = [];
     const n = mv.level >= 6 ? 3 : 2;

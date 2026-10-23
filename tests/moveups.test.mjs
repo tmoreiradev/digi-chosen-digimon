@@ -89,11 +89,13 @@ test("+count on a melee strike means extra swings (the archetype used to ignore 
   assert.ok(Math.abs(two / one - 2) < 1e-6, `two swings deal double (${two / one})`);
 });
 
-function withMove(run, arch) {
-  const move = data.moves.find((m) => buildMoveDef(m, data.rules)?.arch === arch);
+function withMove(run, arch, { withStatus = false } = {}) {
+  // Prefer a real move of that archetype that already carries a status when the test needs one.
+  const candidates = data.moves.filter((m) => buildMoveDef(m, data.rules)?.arch === arch);
+  const move = withStatus ? candidates.find((m) => buildMoveDef(m, data.rules).status) ?? candidates[0] : candidates[0];
   assert.ok(move, `a ${arch} move exists in the tables`);
   const def = buildMoveDef(move, data.rules);
-  if (!def.status) def.status = "burn";
+  if (withStatus && !def.status) def.status = "burn"; // only when no real one exists, and said so here
   const mv = { def, level: 1, timer: 0, mods: { dmg: 1, cd: 1, count: 0, area: 1, speed: 1, dur: 1, pierce: 0, crit: 0, status: 1, bounce: 0 } };
   run.player.moves.push(mv);
   return mv;
@@ -114,7 +116,7 @@ test("+dur stretches the life of trail and trap zones", () => {
 
 test("+status scales the per-tick status chance of a trail zone", () => {
   const { run } = makeRun();
-  const mv = withMove(run, "trail");
+  const mv = withMove(run, "trail", { withStatus: true });
   const status = mv.def.status;
   const e = run.spawnEnemy(16, run.player.x, run.player.z, "normal");
   const tick = (statusMod) => {
@@ -199,6 +201,33 @@ test("stats an archetype cannot honour are never offered on its cards", () => {
       for (const up of run.rollMoveUps(mv)) assert.notEqual(up.key, blocked, `${arch} never offers +${blocked}`);
     }
   }
+});
+
+test("+status is not offered for a real move that has no status to apply", () => {
+  const { run } = makeRun();
+  const move = data.moves.find((m) => {
+    const d = buildMoveDef(m, data.rules);
+    return d && !d.status && data.rules.archetypes[d.arch].stats.includes("status");
+  });
+  assert.ok(move, "the tables have a status-less move of an archetype whose cards list +status");
+  const mv = { def: buildMoveDef(move, data.rules), level: 1, timer: 0, mods: { dmg: 1, cd: 1, count: 0, area: 1, speed: 1, dur: 1, pierce: 0, crit: 0, status: 1, bounce: 0 } };
+  run.player.moves.push(mv);
+  for (let i = 0; i < 40; i++) for (const up of run.rollMoveUps(mv)) assert.notEqual(up.key, "status", `${move.name} never offers +status`);
+});
+
+test("+area and +dur reach the random (Metronome-style) projectile", () => {
+  const { run } = makeRun();
+  const mv = withMove(run, "random");
+  run.spawnEnemy(16, 5, 0, "normal");
+  run.fireMove(mv);
+  const base = run.projectiles.at(-1);
+  run.projectiles.length = 0;
+  mv.mods.area = 2;
+  mv.mods.dur = 2;
+  run.fireMove(mv);
+  const upgraded = run.projectiles.at(-1);
+  assert.ok(Math.abs(upgraded.radius / base.radius - 2) < 1e-9, "twice as wide");
+  assert.ok(Math.abs(upgraded.life / base.life - 2) < 1e-9, "flies twice as long");
 });
 
 test("+status raises the chance that a hit applies the move's status", () => {

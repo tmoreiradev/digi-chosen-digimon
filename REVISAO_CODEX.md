@@ -415,6 +415,15 @@ Testes: `moveups.test.mjs` cobre beam fan, traps/waves extras, alcance do chain,
 filtragem das cartas. Regra registrada: **toda carta de golpe oferecida tem efeito observável; o que o engine
 não consegue honrar não aparece na carta.**
 
+**Décima segunda rodada** (`94acc78..05a7932`, `reviews/codex-2026-10-23-23-46-94acc78..HEAD.md`): **Aprovado
+com ressalvas**, 2 achados, ambos aceitos — e a última rodada desta série: doze rodadas, as três últimas só
+com refinamentos do mesmo subsistema (cartas de golpe). Novas rodadas: `npm run review:codex -- <range>`.
+
+| Achado | Decisão |
+|---|---|
+| `random` (Metronome) recebia `+area`/`+dur` mas disparava com `radius: 0.4` e `life: 1.5` fixos (P2) | Projétil usa `0,4 × mods.area × stats.area` e `1,5 s × dur`; teste com o disparo real. |
+| `+status` era oferecido a golpes sem status (ex.: Dragon Pulse), onde multiplicar a chance não faz nada; o helper de teste injetava `burn` e escondia isso (P2) | `rollMoveUps` não oferece `status` quando `def.status` é nulo; teste com um golpe real sem status; o helper só injeta status quando o teste pede e diz. |
+
 ---
 
 ## 15. Playtest automatizado — um bot que joga (23/10/2026)
