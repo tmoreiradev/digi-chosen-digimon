@@ -259,6 +259,9 @@ export function clampStats(stats) {
 /** XP required to go from `level` to `level + 1`. */
 export const xpForLevel = (level) => Math.round(8 + level * 5.5 + level ** 1.8);
 
+/** Level cap. The shop's Rare Candy and the evolution planner already assumed 50. */
+export const MAX_LEVEL = 50;
+
 /** Player damage multiplier by level (upstream `Ft`). */
 export function playerDamageScale(level) {
   const t = Math.max(0, level - 1.5);

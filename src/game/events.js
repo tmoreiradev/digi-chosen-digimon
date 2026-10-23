@@ -10,9 +10,9 @@
 import { clamp, dist } from "../core/math.js";
 import { el, clear } from "../ui/dom.js";
 import { applyVitaminPick } from "./vitamins.js";
-import { xpForLevel } from "./rules.js";
+import { MAX_LEVEL } from "./rules.js";
 
-const SHOP_ITEMS = [
+export const SHOP_ITEMS = [
   { key: "heal-small", title: "Potion", desc: "Restore 30 HP.", cost: 25, kind: "heal", amount: 30, rarity: 1 },
   { key: "heal-full", title: "Full Restore", desc: "Restore to full HP.", cost: 75, kind: "heal-full", rarity: 2 },
   { key: "vitamin", title: "Vitamin", desc: "Random permanent stat boost.", cost: 120, kind: "vitamin", rarity: 2 },
@@ -149,14 +149,18 @@ export class WorldEvents {
       };
     } else if (ev.kind === "shop") {
       const items = this.shopSelection();
-      body.append(el("p", { class: "shop-gold" }, "Wares for sale. Your gold: " + p.stats.gold + "G"));
+      // The wallet is run.stats.gold (what the HUD shows); player.stats.gold is the coin multiplier.
+      const goldLine = () => "Wares for sale. Your gold: " + Math.floor(run.stats.gold) + "G";
+      const goldText = el("p", { class: "shop-gold" }, goldLine());
+      body.append(goldText);
       const list = el("div", { class: "shop-list" });
       const buyButtons = [];
       items.forEach((it, i) => {
-        const btn = el("button", {
-          class: "btn " + (p.stats.gold < it.cost ? "disabled" : ""),
-          disabled: p.stats.gold < it.cost,
-        }, "Buy ", el("kbd", {}, String(i + 1)));
+        const btn = el("button", { class: "btn" }, "Buy ", el("kbd", {}, String(i + 1)));
+        btn.onclick = (e) => {
+          e.preventDefault();
+          if (this.buy(run, it)) refresh();
+        };
         buyButtons.push(btn);
         const row = el("div", { class: "shop-row" });
         row.append(
@@ -173,28 +177,16 @@ export class WorldEvents {
       body.append(el("div", { class: "event-hint" }, "Press 1-3 to buy, 0 to leave."));
       const leaveBtn = el("button", { class: "btn ghost", onclick: close }, "Leave ", el("kbd", {}, "0"));
       footer.append(leaveBtn);
-      const goldText = body.querySelector(".shop-gold");
       const refresh = () => {
-        goldText.textContent = "Wares for sale. Your gold: " + p.stats.gold + "G";
+        goldText.textContent = goldLine();
         buyButtons.forEach((b, i2) => {
           const it2 = items[i2];
-          b.disabled = p.stats.gold < it2.cost;
-          b.className = "btn" + (p.stats.gold < it2.cost ? " disabled" : "");
+          const ok = run.stats.gold >= it2.cost && this.canApply(run, it2);
+          b.disabled = !ok;
+          b.className = "btn" + (ok ? "" : " disabled");
         });
       };
-      items.forEach((it, i) => {
-        const btn = buyButtons[i];
-        btn.onclick = (e) => {
-          e.preventDefault();
-          if (p.stats.gold < it.cost) return;
-          // Apply effect first; only deduct gold if it succeeds.
-          if (!this.applyShopItem(run, it)) return;
-          p.stats.gold -= it.cost;
-          this.opts.onBanner?.(`Bought ${it.title} for ${it.cost}G.`);
-          this.opts.onSfx?.("pickup");
-          refresh();
-        };
-      });
+      refresh();
 
       this._panelKey = (e) => {
         if (!this.panel) { window.removeEventListener("keydown", this._panelKey); this._panelKey = null; return; }
@@ -304,13 +296,29 @@ export class WorldEvents {
   giveChestLoot(run, loot) {
     const p = run.player;
     if (loot.kind === "coins") {
-      p.stats.gold += loot.amount;
+      run.stats.gold += loot.amount;
     } else if (loot.kind === "heal") {
       p.hp = Math.min(p.maxHp, p.hp + loot.amount);
       this.opts.onSfx?.("pickup");
     } else if (loot.kind === "vitamin") {
       this.applyShopItem(run, { kind: "vitamin" });
     }
+  }
+
+  /** False when the item's effect cannot be applied right now (e.g. Rare Candy at the level cap). */
+  canApply(run, it) {
+    if (it.kind === "xp") return run.player.level < MAX_LEVEL;
+    return true;
+  }
+
+  /** Buy an item: apply the effect first and charge only when it applied. */
+  buy(run, it) {
+    if (run.stats.gold < it.cost || !this.canApply(run, it)) return false;
+    if (!this.applyShopItem(run, it)) return false;
+    run.stats.gold -= it.cost;
+    this.opts.onBanner?.(`Bought ${it.title} for ${it.cost}G.`);
+    this.opts.onSfx?.("pickup");
+    return true;
   }
 
   applyShopItem(run, it) {
@@ -327,23 +335,9 @@ export class WorldEvents {
       applyVitaminPick(run, def.key, 1);
       return true;
     } else if (it.kind === "xp") {
-      // Rare Candy: grant one full level's worth of XP through the normal flow.
-      // Never deduct gold before applying the effect; never leave xpNext stale.
-      const needed = xpForLevel(p.level + 1);
-      p.xp += needed;
-      let leveled = false;
-      while (p.xp >= xpForLevel(p.level + 1) && p.level < 50) {
-        p.xp -= xpForLevel(p.level + 1);
-        p.level += 1;
-        leveled = true;
-      }
-      if (leveled) {
-        run.recompute(p);
-        run.learnKitMoves(p);
-        run.stats.levels += 1;
-        run.opts.onLevelUp?.();
-        run.banner(`Level ${p.level}!`);
-      }
+      // Rare Candy goes through Run's single level-up path, so xpNext, stats,
+      // kit moves and the upgrade choice stay in sync. False at the level cap.
+      if (!run.useRareCandy()) return false;
       this.opts.onSfx?.("pickup");
       return true;
     }

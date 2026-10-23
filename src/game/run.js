@@ -15,6 +15,7 @@ import {
   enemyXp,
   evolutionPlan,
   rollRarity,
+  MAX_LEVEL,
   toughness,
   xpForLevel,
 } from "./rules.js";
@@ -80,6 +81,8 @@ export class Run {
     this.lastDt = 0.016;
 
     this.stats = { kills: 0, gold: 0, dust: 0, damage: 0, evolved: 0, levels: 0, items: 0 };
+    // "First capture" means first capture of THIS run (see Capture.caught).
+    this.capturesThisRun = 0;
     this.banished = new Set();
     this.upgrades = new Map();
 
@@ -1095,16 +1098,7 @@ export class Run {
     this.opts.onPickup?.(pk);
     switch (pk.kind) {
       case "xp":
-        p.xp += pk.value * p.stats.xpGain;
-        while (p.xp >= p.xpNext) {
-          p.xp -= p.xpNext;
-          p.level++;
-          p.xpNext = xpForLevel(p.level);
-          this.recompute(p);
-          this.learnKitMoves(p);
-          this.stats.levels++;
-          this.opts.onLevelUp?.();
-        }
+        this.addXp(pk.value * p.stats.xpGain);
         break;
       case "coin":
         this.stats.gold += p.stats.gold;
@@ -1117,16 +1111,48 @@ export class Run {
         for (const q of this.pickups) q.magnet = true;
         break;
       case "candy":
-        // Rare Candy: grant one full level through the normal level-up flow
-        p.xp = 0;
-        p.level += 1;
-        p.xpNext = xpForLevel(p.level);
-        this.recompute(p);
-        this.learnKitMoves(p);
-        this.stats.levels++;
-        this.opts.onLevelUp?.();
+        this.useRareCandy();
         break;
     }
+  }
+
+  /* --------------------------------------------------------- levelling */
+
+  /**
+   * The single level-up path. Every source of levels (XP orbs, Rare Candy from
+   * the ground or from the shop) goes through here so level, xp, xpNext, stats,
+   * kit moves, run stats and the upgrade-choice callback never drift apart.
+   * Returns the number of levels gained.
+   */
+  addXp(amount) {
+    const p = this.player;
+    let gained = 0;
+    p.xp += amount;
+    while (p.xp >= p.xpNext && p.level < MAX_LEVEL) {
+      p.xp -= p.xpNext;
+      p.level++;
+      p.xpNext = xpForLevel(p.level);
+      this.recompute(p);
+      this.learnKitMoves(p);
+      this.stats.levels++;
+      gained++;
+      this.opts.onLevelUp?.();
+    }
+    // At the cap the bar simply stays full.
+    if (p.level >= MAX_LEVEL) p.xp = Math.min(p.xp, p.xpNext);
+    return gained;
+  }
+
+  /**
+   * Rare Candy rule: grant exactly one level's worth of XP (the current xpNext),
+   * so the player goes up one level and keeps the XP already earned inside the
+   * level. Returns false at the level cap, when nothing can be applied.
+   */
+  useRareCandy() {
+    const p = this.player;
+    if (p.level >= MAX_LEVEL) return false;
+    this.addXp(p.xpNext);
+    return true;
   }
 
   /* --------------------------------------------------------- ultimate */

@@ -77,20 +77,24 @@ export class Capture {
     e.alive = false;
     e.dying = 0.01;
     e.hp = 0;
+    // "First capture" is per run: the first ball that lands in a run always
+    // grants an egg (unless one is already incubating), later ones have a 25%
+    // chance. Read the counter BEFORE recording the catch.
+    const firstOfRun = run.capturesThisRun === 0;
+    run.capturesThisRun++;
     run.allies.recruit(e.species, e.tier === "boss" ? 1.5 : 1, e.shiny);
     run.markCaught(e.species.id);
     // Keep profile.data.caught in sync with run.pokedex.caught so achievement checks work.
     const pdata = run.profile?.data;
-    if (pdata && !pdata.caught.includes(e.species.id)) {
+    if (pdata) {
       pdata.caught = pdata.caught ?? [];
-      pdata.caught.push(e.species.id);
-      run.profile.save();
+      if (!pdata.caught.includes(e.species.id)) {
+        pdata.caught.push(e.species.id);
+        run.profile.save();
+      }
     }
     run.achievements.recordCatch(e.species, e.shiny);
-    // Chance to receive an egg when capturing (walks will hatch it).
-    // First capture of the run always grants an egg; subsequent captures have 25% chance.
-    const alreadyCaught = run.pokedex.caught.size > 0;
-    if (run.eggs && !run.eggs.egg.active && (!alreadyCaught || Math.random() < 0.25)) {
+    if (run.eggs && !run.eggs.egg.active && (firstOfRun || Math.random() < 0.25)) {
       run.eggs.giveEgg(e.species.id, 200);
     }
     const shinyTxt = e.shiny ? "A shiny " : "A ";

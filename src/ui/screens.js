@@ -443,10 +443,11 @@ export class Screens {
     const items = Object.fromEntries(
       keys.map((k) => [k, this.data.items[k]])
     );
-    const current = player?.heldItem ?? null;
     const list = el("div", { class: "helditem-list" });
     const refresh = () => {
       clear(list);
+      // Read the live value on every refresh: the selection changes it.
+      const current = player ? player.heldItem ?? null : profile.data.heldItem ?? null;
       list.append(el("p", { class: "muted" }, "Escolha um item para segurar (ou nenhum):"));
       const none = el("button", {
         class: "btn " + (current === null ? "red" : "ghost"),
