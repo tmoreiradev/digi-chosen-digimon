@@ -990,7 +990,9 @@ export class Run {
 
   hitPlayer(amount, source) {
     const p = this.player;
-    if (p.dead || p.iframes > 0) return;
+    // The first terminal state of a step is final: a meteor timer that fires after the boss fell
+    // in the same step cannot turn the victory into a death.
+    if (p.dead || p.iframes > 0 || this.state !== "running") return;
     let dmg = amount;
     // Enemy type effectiveness against the player's typing.
     if (source?.types?.length) {

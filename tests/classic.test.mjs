@@ -188,6 +188,45 @@ test("dying in the same step the legendary falls is a defeat, not a victory", ()
   assert.equal(victories, 0);
 });
 
+test("the legendary falling before a boss timer kills you in the same step is a victory", () => {
+  let victories = 0;
+  let deaths = 0;
+  const { run } = makeRun({ opts: { onVictory: () => victories++, onDeath: () => deaths++ } });
+  const p = run.player;
+  run.stage = 3;
+  run.enterSanctuary();
+  frames(run, 160);
+  assert.equal(run.boss.kind, "legendary");
+  p.iframes = 0;
+  p.stats.evasion = 0;
+  run.later(0, () => run.hitPlayer(1e9, null)); // a "meteor" that lands after boss.update in this step
+  run.boss.enemy.hp = 0;
+  frames(run, 1);
+  assert.equal(run.state, "victory");
+  assert.equal(victories, 1);
+  assert.equal(deaths, 0);
+  assert.equal(p.dead, false);
+});
+
+test("tower: every floor reaches its guardian through the waves alone (a 0 wave goal is 'no wave')", () => {
+  const { run } = makeRun({ mode: "tower" });
+  run.player.iframes = 1e9;
+  const floors = run.rules.tower.floors;
+  for (let floor = 1; floor <= floors.length; floor++) {
+    run.tower.floor = floor;
+    run.tower.enterFloor();
+    let guard = 0;
+    while (!run.boss.alive && guard++ < 10) {
+      run.tower.waveCount = 1000; // "all of this wave's enemies fell"
+      run.tower.update(1 / 60);
+    }
+    assert.ok(run.boss.alive, `floor ${floor} (${floors[floor - 1].name}, waves ${JSON.stringify(floors[floor - 1].waves)}) awakens its guardian`);
+    run.boss.enemy.hp = 0;
+    run.boss.update(1 / 60); // defeat → next floor (or victory on 7)
+  }
+  assert.equal(run.state, "victory");
+});
+
 test("the enemy list compacts dead entries so spawning never stalls for the rest of the run", () => {
   const { run } = makeRun();
   const p = run.player;

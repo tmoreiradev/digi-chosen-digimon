@@ -21,7 +21,7 @@ Jogo de sobrevivência/roguelite (clone local do PokéBonk) com ~7 800 linhas em
 | Loop/simulação (`run.js`) | jogador (andar, pular, dash, i-frames), 26 arquétipos de golpe, status, clima, ultimate, pickups, XP/nível, evolução, upgrades/vitaminas/fusão/slots | funcional |
 | Inimigos (`director.js`) | pool por bioma/zona, cartas, timeline (alfas, enxames, estouros, ondas de elites), 8 tiers | funcional |
 | Boss (`boss.js`) | fases, telegrafia, 8 ataques, teto de burst e exaustão | só usado pela Torre; teto/exaustão não ligados (backlog) |
-| Torre (`tower.js`) | 7 andares, ondas, guardiões, vitória | funcional |
+| Torre (`tower.js`) | 7 andares, ondas, guardiões, vitória | funcional desde a §14 (6.ª rodada): o andar 5 travava na onda de meta 0 |
 | Captura/aliados (`capture.js`) | enfraquecer alfa, lançar bola, até 3 aliados que atacam | funcional |
 | Eventos de mundo (`events.js`) | baú, loja (4 itens), altar; painel com teclado | funcional |
 | Progressão (`achievements.js`) | 8 conquistas, 5 tarefas por espécie, ovos por passos | funcional; recompensas não concedidas (backlog) |
@@ -351,4 +351,12 @@ ressalvas**, 2 achados, ambos aceitos:
 | Achado | Decisão |
 |---|---|
 | A compactação só rodava em `spawnEnemy` com 260 entradas, mas o teto do director (≤ 240) contava mortos: a arena esvaziava até um evento da timeline forçar spawns (P2); invalida parte da linha da §11 sobre spawns | Corrigido: `updateEnemies` remove os mortos a cada frame; teste pelo `Director.update` após 240 mortes. A linha da §11 foi anotada. |
-| Lendário morto e jogador morto no mesmo passo: `boss.update` sobrescrevia `dead` com `victory` e os dois timeouts corriam (P2) | Corrigido: `onBossDefeated` ignora bosses derrotados quando a run já não está `running` (derrota prevalece); teste de morte simultânea. |
+| Lendário morto e jogador morto no mesmo passo: `boss.update` sobrescrevia `dead` com `victory` e os dois timeouts corriam (P2) | Corrigido: `onBossDefeated` ignora bosses derrotados quando a run já não está `running`; teste de morte simultânea. (A 6.ª rodada fechou a ordem inversa — ver abaixo.) |
+
+**Sexta rodada** (`94acc78..d4a1844`, `reviews/codex-2026-10-23-23-06-94acc78..HEAD.md`): **Reprovado**, 2
+achados, ambos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| **A Torre travava no 5.º andar** (P1, pré-existente): `waves: [34, 40, 0]` nos dados; a 3.ª onda com meta 0 nunca satisfazia `target > 0`, o guardião não acordava e não havia avanço nem vitória. A afirmação da §1 ("Torre funcional") estava errada para o andar 5. | Corrigido em `tower.js`: meta 0 significa "sem onda" e vai direto ao guardião. Teste percorre os 7 andares só pelas ondas (sem chamar `awakenGuardian`) até a vitória. |
+| Timer de boss (meteoro) disparado **depois** de `boss.update` no mesmo passo matava o jogador já com a vitória declarada: os dois encerramentos eram agendados e a vitória chegava primeiro, contra o "derrota prevalece" da 5.ª rodada (P2) | Regra fechada: **o primeiro estado terminal do passo é final**. Morte antes do boss cair = derrota (5.ª rodada); boss caído antes do dano = vitória — `hitPlayer` ignora dano quando a run já não está `running`. Teste da ordem inversa. |

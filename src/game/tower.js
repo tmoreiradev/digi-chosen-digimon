@@ -68,11 +68,12 @@ export class Tower {
     const run = this.run;
     this.waveT += dt;
 
-    // Wave goal: defeat the wave's enemy count, then the next wave starts.
+    // Wave goal: defeat the wave's enemy count, then the next wave starts. A wave whose goal
+    // is 0 (the third entry of floors 5–7 in the data) means "no wave": straight to the guardian.
     const target = this.def.waves[Math.min(this.wave - 1, this.def.waves.length - 1)];
-    if (target > 0 && !this.guardianDown && !this.pendingGuardian) {
-      if (this.waveCount >= target) {
-        if (this.wave >= 3) {
+    if (!this.guardianDown && !this.pendingGuardian) {
+      if (target <= 0 || this.waveCount >= target) {
+        if (this.wave >= 3 || target <= 0) {
           // All waves done: wake the guardian.
           this.pendingGuardian = true;
           this.awakenGuardian();
