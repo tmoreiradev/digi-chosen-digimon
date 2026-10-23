@@ -18,9 +18,13 @@ test("an honest bot survives a classic run without breaking any invariant", () =
   const s = playRun({ run, input, calls, seed: 11, maxSeconds: 600, log });
   log(`result: ${s.state} after ${Math.round(s.time)}s, level ${s.level}, ${s.kills} kills, zone ${s.stage}, ${s.allies} allies, ${s.gold} gold, shops ${s.shops}, chests ${s.chests}, altars ${s.altars}, throws ${s.throws}, ults ${s.ults}, choices ${JSON.stringify(s.choices)}`);
   assert.deepEqual(s.invariantFailures, []);
-  assert.ok(["running", "dead", "victory"].includes(s.state));
-  assert.ok(s.level >= 3, `a few minutes of play should level up (got ${s.level})`);
-  assert.ok(s.kills > 20, `and kill things (got ${s.kills})`);
+  // "Survives" means it: with this seed the bot is still alive after the whole period (or won).
+  // If a balance change makes it die, this is the test that should say so.
+  assert.ok(s.state === "running" || s.state === "victory", `the bot should survive 600 s, but the run is ${s.state} at ${Math.round(s.time)}s`);
+  assert.ok(s.time > 599 || s.state === "victory", `played the whole period (t=${s.time.toFixed(2)})`);
+  assert.ok(s.level >= 10, `ten minutes of play should level up a lot (got ${s.level})`);
+  assert.ok(s.kills > 200, `and kill plenty (got ${s.kills})`);
+  assert.ok(s.stage >= 2, `and get past the first zone guardian (got zone ${s.stage})`);
   assert.equal(profile.data.pokedex.seen.length > 0, true);
   assert.equal(profile.data.runs, 0, "the run itself never touches the results counters");
 });

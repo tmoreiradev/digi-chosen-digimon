@@ -125,11 +125,11 @@ function startRun() {
     onBossDown: () => state.sfx.levelUp(),
     onVictory: () => {
       state.sfx.evolve();
-      setTimeout(() => endRun(true, run), 900);
+      setTimeout(() => endRun(run), 900);
     },
     onDeath: () => {
       state.sfx.death();
-      setTimeout(() => endRun(false, run), 900);
+      setTimeout(() => endRun(run), 900);
     },
     onWorldEventOpen: () => {
       state.paused = true;
@@ -165,10 +165,15 @@ function clearScreen() {
   screenRoot.innerHTML = "";
 }
 
-/** `expected` ties a delayed end (death/victory timeout) to its own run, so it never ends a newer one. */
-function endRun(victory, expected = state.run) {
+/**
+ * End the current run and show the results. `expected` ties a delayed end (death/victory
+ * timeout) to its own run, so it never ends a newer one. The outcome comes from the run's
+ * own terminal state, so a "Quit to menu" cannot turn a won run into a defeat.
+ */
+function endRun(expected = state.run) {
   const run = state.run;
   if (!run || run !== expected) return;
+  const victory = run.state === "victory";
   // Floors cleared, not the floor you are standing on; a cleared tower counts all of them.
   const towerFloors = run.tower ? (run.tower.cleared ? run.tower.floor : run.tower.floor - 1) : 0;
   // A chest/shop/altar panel open at the moment of death must not outlive the run (its key
@@ -271,7 +276,8 @@ function onKeyUp(e) {
 }
 
 function togglePause() {
-  if (!state.run) return;
+  // No pause between a death/victory and its results screen (900 ms): the run is over.
+  if (!state.run || state.run.state !== "running") return;
   state.paused = !state.paused;
   if (state.paused) {
     state.screens.showPause(
@@ -282,7 +288,7 @@ function togglePause() {
       },
       () => {
         state.paused = false;
-        endRun(false);
+        endRun(); // a quit is never a victory: endRun reads run.state
       },
       (v) => {
         state.sfx.setVolume(v);

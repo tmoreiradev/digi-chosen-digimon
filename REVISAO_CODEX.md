@@ -371,6 +371,14 @@ aceito:
 | `pendingGuardian` ficava `true` mesmo quando `Boss.spawn()` era recusado pelo teto de 260 inimigos (corpos ainda em animação ocupam vaga): concluir a onda nessa condição travava o andar para sempre (P1) | Corrigido: `awakenGuardian()` devolve o inimigo e `pendingGuardian = !!e` — sem vaga, tenta de novo a cada passo. Teste: arena cheia → recusado e não pendente → horda some → guardião nasce. |
 | §1 tinha linhas desatualizadas (boss só na Torre, teto desligado, conquistas sem recompensa, Clássico incompleto) | Tabela da §1 atualizada para o estado atual, com ponteiros para as seções. |
 
+**Oitava rodada** (`94acc78..fffce5b`, `reviews/codex-2026-10-23-23-15-94acc78..HEAD.md`): **Aprovado com
+ressalvas**, 2 achados, ambos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| Nos 900 ms entre a vitória/morte e os resultados, P/Esc ainda abria a pausa e "Quit to menu" chamava `endRun(false)`: uma vitória virava derrota sem Campeão (P2) | Corrigido em `main.js`: `endRun` deriva o resultado de `run.state` (`victory`) e `togglePause` não abre a pausa quando a run já terminou. Validado no navegador (P após a vitória não pausa; resultados "Victory!"). |
+| O teste do bot honesto aceitava `dead` (P3) — a §15 anunciava "sobrevive" sem proteger a propriedade | Corrigido: o teste exige run viva (ou vitória) após os 600 s, nível ≥ 10, > 200 kills e zona ≥ 2. Se um rebalanceamento matar o bot, esse teste avisa. |
+
 ---
 
 ## 15. Playtest automatizado — um bot que joga (23/10/2026)
