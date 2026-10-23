@@ -217,7 +217,10 @@ test("tower: every floor reaches its guardian through the waves alone (a 0 wave 
     run.tower.enterFloor();
     let guard = 0;
     while (!run.boss.alive && guard++ < 10) {
-      run.tower.waveCount = 1000; // "all of this wave's enemies fell"
+      // "All of this wave's enemies fell": count them and drop them, or the enemy cap
+      // would refuse the guardian after a few floors of untouched waves.
+      for (const e of run.enemies) e.alive = false;
+      run.tower.waveCount = 1000;
       run.tower.update(1 / 60);
     }
     assert.ok(run.boss.alive, `floor ${floor} (${floors[floor - 1].name}, waves ${JSON.stringify(floors[floor - 1].waves)}) awakens its guardian`);
