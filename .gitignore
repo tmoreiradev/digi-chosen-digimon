@@ -4,8 +4,9 @@ node_modules/
 # Build output (regenerate with `npm run build`)
 dist/
 
-# Working copy of the raw extraction tables (not loaded at runtime)
-data/
+# Working copy of the raw extraction tables at the repo root (not loaded at runtime).
+# Root-anchored on purpose: a bare "data/" also hid src/data/, the game tables.
+/data/
 
 # Logs, caches, temp files
 *.log
