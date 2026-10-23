@@ -79,16 +79,7 @@ export class Capture {
     const firstOfRun = run.capturesThisRun === 0;
     run.capturesThisRun++;
     run.allies.recruit(e.species, e.tier === "boss" ? 1.5 : 1, e.shiny);
-    run.markCaught(e.species.id);
-    // Keep profile.data.caught in sync with run.pokedex.caught so achievement checks work.
-    const pdata = run.profile?.data;
-    if (pdata) {
-      pdata.caught = pdata.caught ?? [];
-      if (!pdata.caught.includes(e.species.id)) {
-        pdata.caught.push(e.species.id);
-        run.profile.save();
-      }
-    }
+    run.markCaught(e.species.id); // the Pokédex list is the only record of captures
     run.achievements.recordCatch(e.species, e.shiny);
     if (run.eggs && !run.eggs.egg.active && (firstOfRun || Math.random() < 0.25)) {
       run.eggs.giveEgg(e.species.id, 200);

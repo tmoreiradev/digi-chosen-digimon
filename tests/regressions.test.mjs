@@ -28,8 +28,8 @@ test("first capture unlocks the achievement and the banner goes through the run"
   const { run, profile, calls } = makeRun();
   withRandom(0.99, () => run.capture.caught(spawnAlpha(run, 16)));
   assert.ok(profile.data.achievements.unlocked.includes("first_catch"));
-  assert.ok(calls.banners.includes("Conquista: Primeiro Passo"));
-  assert.deepEqual(profile.data.caught, [16]);
+  assert.ok(calls.banners.some((b) => b.startsWith("Conquista: Primeiro Passo")));
+  assert.deepEqual(profile.data.pokedex.caught, [16]);
 });
 
 test("nickname and held item persist into a new run", () => {

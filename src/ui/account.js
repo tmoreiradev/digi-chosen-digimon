@@ -28,6 +28,23 @@ function writeStore(store) {
   }
 }
 
+/**
+ * Bring a saved `progress` object up to the current shape. Older saves kept a
+ * second capture list in `caught` (captures + the partner played); captures
+ * were always in pokedex.caught too, so the leftovers are "seen" partners.
+ */
+export function normalizeProgress(p) {
+  if (!p) return p;
+  if (!p.pokedex) p.pokedex = { seen: [], caught: [] };
+  if (!Array.isArray(p.pokedex.seen)) p.pokedex.seen = [];
+  if (!Array.isArray(p.pokedex.caught)) p.pokedex.caught = [];
+  if (Array.isArray(p.caught)) {
+    for (const id of p.caught) if (!p.pokedex.seen.includes(id)) p.pokedex.seen.push(id);
+    delete p.caught;
+  }
+  return p;
+}
+
 function guestKey() {
   let key = localStorage.getItem("pokebonk-clone.guest.v1");
   if (!key) {
@@ -58,6 +75,7 @@ export const accounts = {
       this.current = store.guests[id];
       this.persist(store);
     }
+    normalizeProgress(this.current.progress);
     return this.current;
   },
 
@@ -112,6 +130,7 @@ export const accounts = {
     if (profile.pass && profile.pass !== String(passphrase || "")) {
       return { ok: false, error: "Wrong passphrase." };
     }
+    normalizeProgress(profile.progress);
     this.current = profile;
     this.persist(store);
     return { ok: true, profile };
@@ -122,6 +141,7 @@ export const accounts = {
     const id = guestKey();
     store.guests[id] = store.guests[id] ?? newProfile("Guest");
     this.current = store.guests[id];
+    normalizeProgress(this.current.progress);
     this.persist(store);
     return this.current;
   },
@@ -140,7 +160,6 @@ function newProfile(name, kind = "guest") {
     createdAt: Date.now(),
     progress: {
       unlocked: [1, 4, 7],
-      caught: [],
       pokedex: { seen: [], caught: [] },
       nickname: null,
       heldItem: null,

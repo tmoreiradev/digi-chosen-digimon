@@ -70,6 +70,19 @@ test("nickname survives a new run and a reload of the store", () => {
   assert.equal(profile.data.nickname, "Bulba");
 });
 
+test("title and results read the single Pokédex list", async () => {
+  const { withRandom, spawnAlpha } = await import("./_helpers.mjs");
+  const { root, screens, run } = setup();
+  withRandom(0.99, () => run.capture.caught(spawnAlpha(run, 16)));
+  screens.showTitle();
+  assert.equal(root.querySelector(".title-stats").textContent.replace(/Runs.*Caught/, "Caught"), "Caught: 1 / 1025");
+
+  screens.showResults(run, false);
+  assert.equal(profile.data.caught, undefined);
+  assert.ok(profile.data.pokedex.seen.includes(run.player.speciesId), "the partner played is seen");
+  assert.deepEqual(profile.data.pokedex.caught, [16], "but not counted as caught");
+});
+
 test("a save written before eggs/achievements/nickname existed still loads", () => {
   dom.store.clear();
   localStorage.setItem(

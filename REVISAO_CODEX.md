@@ -229,3 +229,44 @@ condição de vitória. Tudo usa dados que já estavam em `rules.json` (`biome.g
 **Limitações:** balanceamento não jogado por humano — HP dos bosses segue `max(curva, DPS esperado × duração)`
 e `playerExpectedDps` ignora crítico, aliados e bônus de tipo, então lutas podem passar da duração
 prevista até a exaustão entrar. Sem barra de HP do boss no HUD (a barra sobre o sprite existe).
+
+---
+
+## 12. Fase 3 — Recompensas das conquistas e lista única de capturados (23/10/2026)
+
+Itens 5 e 6 do backlog.
+
+**Conquistas** (`achievements.js`)
+- Cada conquista tem `gold` (20–300) e seu `need(snapshot)` passou a decidir o unlock: `check()` monta um
+  snapshot (`caught`/`seen` da Pokédex, `shinyCaught`, `runs`, `wins`, `towerFloors`) e desbloqueia tudo
+  que vale. `recordCatch`/`recordRun`/`recordSeen` só atualizam contadores e chamam `check()`; as
+  checagens hardcoded sumiram. As 5 tarefas de espécie ganharam `gold` (40–60) e agora anunciam
+  "Tarefa concluída: …" (antes desbloqueavam em silêncio).
+- Pagamento: ao run em andamento (`run.stats.gold`); quando a run já acabou (`recordRun` — morte,
+  vitória **ou Quit**, em que `run.state` continua `running`), o ouro vai para `profile.data.pendingGold`
+  e o próximo `new Run` paga com o banner "Recompensas pendentes: +NG". O caso do Quit foi pego no
+  navegador: a primeira versão pagava ao run que acabava de terminar (ouro perdido).
+- Contadores: `runs`/`wins` vivem no perfil (`showResults` conta a run, `recordRun` a vitória); saves que
+  tinham `achievements.runsCompleted/wins` maiores são migrados no construtor. Os inits mortos
+  `profile.data.shinyCaught/runsCompleted/wins/towerFloors` sumiram.
+
+**Lista única de capturados**
+- `profile.data.caught` não existe mais; `profile.data.pokedex.{seen,caught}` é a fonte (captura e ovo
+  eclodido entram em `caught`; o parceiro jogado entra só em `seen` ao fim da run — antes entrava na
+  lista de capturados e teria contado para "Primeiro Passo").
+- `normalizeProgress()` em `account.js` roda em `load`/`login`/`playAsGuest`: funde o antigo `caught` em
+  `pokedex.seen` (as capturas reais já estavam em `pokedex.caught`) e apaga a chave. Título mostra
+  `Caught: X / 1025` (antes dividia por 40, o tamanho do roster). Métodos mortos `Pokedex.markSeen/markCaught`
+  removidos.
+
+**Validação**
+- `npm test`: **44 testes** (7 novos em `tests/achievements.test.mjs` + 1 em `pause.test.mjs`; os
+  existentes ajustados para a lista única).
+- Navegador: perfil antigo com `caught: [1,16]` carregou com `Caught: 1 / 1025` e a chave sumiu do
+  `localStorage` no save seguinte; captura de Vulpix entrou em `pokedex.caught`; Quit numa run da Torre
+  com `floor = 3` → "Subidor da Torre" desbloqueada, `pendingGold = 150`, run seguinte começa com 150 G
+  e o banner "Recompensas pendentes: +150G". Zero erros de console.
+- `npm run build` + `npm run check:bundle`: ✅.
+
+**Limitações:** não há tela de conquistas (só o banner no momento do unlock); `unlocked` do roster
+(parceiros destravados) continua sem nenhum caminho que o aumente (BACKLOG).

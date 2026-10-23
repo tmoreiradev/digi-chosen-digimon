@@ -29,20 +29,6 @@ export class Pokedex {
     return new Set(this.progress().caught ?? []);
   }
 
-  markSeen(id) {
-    const p = this.profile.data;
-    if (!p.pokedex) p.pokedex = { seen: [], caught: [] };
-    if (!p.pokedex.seen.includes(id)) p.pokedex.seen.push(id);
-    this.profile.save();
-  }
-
-  markCaught(id) {
-    const p = this.profile.data;
-    if (!p.pokedex) p.pokedex = { seen: [], caught: [] };
-    if (!p.pokedex.caught.includes(id)) p.pokedex.caught.push(id);
-    this.profile.save();
-  }
-
   /* ------------------------------------------------------------- render */
 
   show() {

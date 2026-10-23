@@ -48,7 +48,7 @@ export class Screens {
           el("div", { class: "title-stats" },
             el("span", {}, `Runs: ${profile.data.runs ?? 0}`),
             el("span", {}, `Best: ${fmtTime(profile.data.best ?? 0)}`),
-            el("span", {}, `Caught: ${(profile.data.caught ?? []).length} / ${this.data.rules.roster.length}`)
+            el("span", {}, `Caught: ${(profile.data.pokedex?.caught ?? []).length} / ${this.data.pokemon.length}`)
           )
         )
       )
@@ -304,9 +304,9 @@ export class Screens {
     const stats = run.stats;
     profile.data.runs = (profile.data.runs ?? 0) + 1;
     profile.data.best = Math.max(profile.data.best ?? 0, run.time);
-    const caught = new Set(profile.data.caught ?? []);
-    caught.add(p.speciesId);
-    profile.data.caught = [...caught];
+    // The partner you played with is at least "seen"; only captures count as caught.
+    const dex = profile.data.pokedex ?? (profile.data.pokedex = { seen: [], caught: [] });
+    if (!dex.seen.includes(p.speciesId)) dex.seen.push(p.speciesId);
     profile.save();
 
     this.root.append(

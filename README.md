@@ -105,7 +105,13 @@ top of the shop.
 
 **Profiles** — Local guest/named profiles (no network). Each keeps its Pokédex (seen / caught),
 achievements and species tasks, egg, nickname, held item (Leftovers or Choice Band), best time
-and volume.
+and volume. The Pokédex list is the only record of captures: the partner you play is marked
+*seen*, captures and hatched eggs are *caught*.
+
+**Achievements & tasks** — 8 achievements (first catch, 10/25 species, 50 seen, 3 shinies, 5 runs,
+a win, 3 tower floors) and 5 species tasks (5 captures of a type, one ally evolution). Each pays
+gold: to the current run when it unlocks mid-run, otherwise banked in the profile and paid out at
+the start of the next run ("Recompensas pendentes").
 
 ## Provenance & fidelity
 

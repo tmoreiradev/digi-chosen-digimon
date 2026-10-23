@@ -32,7 +32,6 @@ export function loadData() {
 export function fakeProfile(progress = {}) {
   const data = {
     unlocked: [1, 4, 7],
-    caught: [],
     pokedex: { seen: [], caught: [] },
     nickname: null,
     heldItem: null,

@@ -117,6 +117,15 @@ export class Run {
 
     this.player = this.createPlayer(opts.speciesId);
     this.director = new Director(this, this.rng);
+
+    // Achievement gold earned after the last run ended waits in the profile; pay it out now.
+    const pending = this.profile?.data?.pendingGold ?? 0;
+    if (pending > 0) {
+      this.stats.gold += pending;
+      this.profile.data.pendingGold = 0;
+      this.profile.save();
+      this.banner(`Recompensas pendentes: +${pending}G`);
+    }
     if (this.tower) this.tower.enterFloor();
   }
 
@@ -1609,7 +1618,7 @@ export class Run {
     if (this.pokedex.seen.has(id)) return; // every spawn calls this; only a new species hits storage
     this.pokedex.seen.add(id);
     this._savePokedex();
-    this.achievements.recordSeen(this.pokedex.seen.size);
+    this.achievements.recordSeen();
   }
 
   markCaught(id) {

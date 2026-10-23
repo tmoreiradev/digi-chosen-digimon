@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import { makeRun, fakeProfile, withRandom, spawnAlpha } from "./_helpers.mjs";
 
 test("first capture of the run grants an egg even when the profile already has catches", () => {
-  const profile = fakeProfile({ pokedex: { seen: [25], caught: [25] }, caught: [25] });
+  const profile = fakeProfile({ pokedex: { seen: [25], caught: [25] } });
   const { run } = makeRun({ profile });
   assert.equal(run.pokedex.caught.size, 1, "profile catches are loaded into the run");
   assert.equal(run.capturesThisRun, 0);
