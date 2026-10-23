@@ -21,6 +21,8 @@ export class Screens {
     this.mode = "classic";
     this.screen = "title";
     this.pokedex = new Pokedex(this.root, this.data, profile);
+    // The Pokédex is only opened from the pause menu; closing it goes back there.
+    this.pokedex.onClose = () => this.returnToPause();
   }
 
   clear() {

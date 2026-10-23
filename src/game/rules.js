@@ -456,19 +456,3 @@ export const DIFFICULTIES = [
   { id: "hard", name: "Hard", enemyHp: 1.7, enemyDamage: 1.35, enemySpeed: 1.05, enemyAmount: 1.25, reward: 1.75, dust: 1.75 },
   { id: "nightmare", name: "Nightmare", enemyHp: 2.6, enemyDamage: 1.8, enemySpeed: 1.1, enemyAmount: 1.5, reward: 2.5, dust: 2.5 },
 ];
-
-/* ------------------------------------------------------- allies */
-
-export const ALLIES = {
-  cap: 3,
-  powerBase: 1,
-  powerLevel: 0.5,
-  powerBst: 100,
-  powerBstDiv: 300,
-  powerStage: 0.1,
-  powerBond: 0.2,
-  shinyMul: 1.5,
-  cooldownPhysical: 2,
-  cooldownSpecial: 3,
-  supportBoost: 0.1,
-};

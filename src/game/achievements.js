@@ -101,8 +101,8 @@ export class AchievementTracker {
   }
 
   recordSeen(count) {
+    // Called for every new species seen; only unlock() writes to storage.
     if (count >= 50 && !this.isUnlocked("dex_50")) this.unlock("dex_50");
-    this.save();
   }
 }
 

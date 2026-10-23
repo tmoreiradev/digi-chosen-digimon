@@ -350,9 +350,12 @@ export class Boss {
 
   onDefeat() {
     const run = this.run;
+    const e = this.enemy;
+    // Forget the id: once the enemy list is compacted a stale id must not resolve to another enemy.
+    this.index = -1;
     run.banner(`${this.name} is defeated!`);
     run.shake(0.4);
-    run.burst(this.enemy.x, this.enemy.y + 1, this.enemy.z, 0xffd166, 30, "star");
+    if (e) run.burst(e.x, e.y + 1, e.z, 0xffd166, 30, "star");
     run.opts.onBossDown?.(this.name, this.kind);
   }
 }

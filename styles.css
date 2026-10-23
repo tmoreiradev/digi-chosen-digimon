@@ -990,7 +990,7 @@ kbd {
 .levelup {
   position: fixed;
   inset: 0;
-  z-index: 40;
+  z-index: 70; /* above the world-event panel (60): a shop Rare Candy opens the cards on top */
   display: none;
   align-items: center;
   justify-content: center;

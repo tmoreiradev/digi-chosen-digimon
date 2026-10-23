@@ -70,7 +70,7 @@ export class Music {
     }
     this.started = true;
     this.tick = 0;
-    const stepMs = (60 / THEMES[this.theme].bpm) / 2; // 8th notes
+    const stepMs = ((60 / THEMES[this.theme].bpm) / 2) * 1000; // 8th notes, in ms (was seconds: ~1000x too fast)
     this.interval = setInterval(() => this.tickStep(), stepMs);
   }
 

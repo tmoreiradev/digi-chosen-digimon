@@ -54,11 +54,7 @@ export class Capture {
     const e = run.enemyById(this.down);
     const gen = e.id;
     const attempts = this.attempts.get(gen) ?? 0;
-    let chance =
-      this.cfg.base +
-      (e.species.captureRate / 255) * this.cfg.captureRateScale * 255 * 0.35 +
-      attempts * this.cfg.attemptBonus;
-    chance = this.cfg.base + (e.species.captureRate / 255) * 0.35 + attempts * this.cfg.attemptBonus;
+    let chance = this.cfg.base + (e.species.captureRate / 255) * 0.35 + attempts * this.cfg.attemptBonus;
     const statused = e.statuses.para > 0 || e.statuses.sleep > 0 || e.statuses.freeze > 0;
     if (statused) chance += this.cfg.statusBonus;
     this.attempts.set(gen, attempts + 1);
@@ -156,8 +152,9 @@ export class Allies {
   /** Recruit a captured species as an ally. */
   recruit(species, bond = 1, shiny = false) {
     if (this.list.length >= this.cap) {
-      // Team full: release the weakest.
+      // Team full: release the oldest recruit and close the formation gap.
       this.list.shift();
+      this.list.forEach((a, i) => { a.slot = i; });
     }
     const physical = species.stats.atk >= species.stats.spa;
     this.list.push({
@@ -280,7 +277,9 @@ export class Allies {
         a.pendingHit = power;
         a.squash = -0.5;
       } else {
-        run.spawnAllyProjectile(a, Math.atan2(dz2, dx2), power);
+        // (source, angle, speed, dmg, life, radius, def) — the old call passed `power` as the speed.
+        const def = { type: a.types[0], cls: "special", status: null, statusChance: 0, slot: -1 };
+        run.spawnAllyProjectile(a, Math.atan2(dz2, dx2), 16, power, 2, 0.45, def);
         a.squash = 0.4;
       }
     }

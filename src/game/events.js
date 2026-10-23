@@ -7,8 +7,8 @@
 //   shop    - buy items with gold (heals, vitamins, XP boost)
 //   altar   - free full heal, consumed on use
 
-import { clamp, dist } from "../core/math.js";
-import { el, clear } from "../ui/dom.js";
+import { dist } from "../core/math.js";
+import { el } from "../ui/dom.js";
 import { applyVitaminPick } from "./vitamins.js";
 import { MAX_LEVEL } from "./rules.js";
 
@@ -94,16 +94,6 @@ export class WorldEvents {
     ev.interacted = true;
     this.openPanel(ev);
     return ev;
-  }
-
-  closePanel() {
-    if (!this.panel) return;
-    window.removeEventListener("keydown", this._panelKey);
-    this._panelKey = null;
-    this.panel.close();
-    this.panel = null;
-    this.run.stateEventPanel = false;
-    if (this.opts.onWorldEventClose) this.opts.onWorldEventClose();
   }
 
   openPanel(ev) {
@@ -235,22 +225,6 @@ export class WorldEvents {
 
     window.addEventListener("keydown", this._panelKey);
     backdrop.addEventListener("mousedown", (e) => { if (e.target === backdrop) close(); });
-  }
-
-  shopRow(it, keyNum, p, run) {
-    const row = el("div", { class: "shop-row" });
-    row.append(
-      el("div", { class: "shop-info" },
-        el("div", { class: "shop-title" }, it.title),
-        el("div", { class: "shop-desc" }, it.desc)
-      ),
-      el("div", { class: "shop-price" }, it.cost + "G"),
-      el("button", {
-        class: "btn " + (p.stats.gold < it.cost ? "disabled" : ""),
-        disabled: p.stats.gold < it.cost,
-      }, "Buy ", el("kbd", {}, String(keyNum)))
-    );
-    return row;
   }
 
   shopSelection() {

@@ -75,6 +75,8 @@ async function boot() {
   state.levelup = new LevelUpPanel(levelRoot, handleLevelUpChoice);
 
   state.screens.onStart = startRun;
+  // Load the saved profile BEFORE reading its settings (the volume used to come from a blank default).
+  accounts.load();
   state.sfx.setVolume(profile.data.settings?.volume ?? 0.5);
   state.music.setVolume(profile.data.settings?.volume ?? 0.5);
 
@@ -86,7 +88,6 @@ async function boot() {
     if (ctx) state.music.ensure(ctx);
   });
 
-  accounts.load();
   state.screens.showTitle();
   // Expose the live state for debugging and automated playtests.
   globalThis.__PB__ = state;
@@ -167,14 +168,15 @@ function clearScreen() {
 
 function endRun(victory) {
   const run = state.run;
-  const towerFloors = run?.tower?.floor ?? 0;
+  if (!run) return; // e.g. the death timeout firing after a manual quit
+  const towerFloors = run.tower?.floor ?? 0;
   state.music.stop();
   state.mode = "menu";
   hudRoot.classList.remove("show");
   canvas.classList.remove("show");
   backdrop?.classList.remove("hidden");
   state.screens.showResults(run, victory);
-  if (run) run.achievements.recordRun(victory, towerFloors);
+  run.achievements.recordRun(victory, towerFloors);
   state.run = null;
 }
 
@@ -201,8 +203,8 @@ function handleLevelUpChoice(choice, action, key) {
     run.applyChoice(choice);
     state.sfx.pickup();
   } else if (action === "reroll") {
+    // LevelUpPanel.reroll() already spent the reroll; don't count it twice.
     const fresh = run.rollChoices();
-    state.levelup.rollsLeft--;
     state.levelup.choices = fresh;
     state.levelup.render();
     return;
@@ -219,6 +221,8 @@ function onKeyDown(e) {
   // Level-up modal captures its own keys.
   if (state.levelup.active && state.levelup.key(e.code)) {
     e.preventDefault();
+    // A shop/chest panel may also listen for digits on window; the card choice wins.
+    e.stopImmediatePropagation();
     return;
   }
 

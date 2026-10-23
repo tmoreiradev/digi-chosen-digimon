@@ -238,7 +238,6 @@ export class Run {
     this.allies.update(dt);
     this.boss.update(dt);
     this.events.update(dt);
-    this.eggs.save();
     if (this.tower) {
       this.tower.update(dt);
       // Tower mode drives its own spawn pacing; suppress director's free-form spawns.
@@ -992,6 +991,14 @@ export class Run {
         e.vz *= 0.8;
       }
 
+      // A weakened (capturable) target stops fighting: no chase, no contact damage.
+      if (e.captureReady) {
+        e.x += e.vx * dt;
+        e.z += e.vz * dt;
+        if (e.atkCd > 0) e.atkCd -= dt;
+        continue;
+      }
+
       // Chase
       const dx = p.x - e.x;
       const dz = p.z - e.z;
@@ -1240,6 +1247,7 @@ export class Run {
       options.push({
         kind: "upMove",
         slot: p.moves.indexOf(mv),
+        ups, // applyChoice applies these; the card only showed them before
         title: mv.def.name,
         sub: `Level ${mv.level} → ${mv.level + 1}`,
         lines: ups.map((u) => u.label),
@@ -1473,9 +1481,10 @@ export class Run {
     return out;
   }
 
+  /** The enemy with this id, or null — never a random other enemy. */
   enemyById(id) {
     for (const e of this.enemies) if (e.id === id) return e;
-    return this.enemies[0];
+    return null;
   }
 
   typeRgb(type) {
@@ -1487,7 +1496,6 @@ export class Run {
     if (this.enemies.length >= ENEMY_CAP) return null;
     const species = this.data.get(speciesId);
     if (!species) return null;
-    this.pokedex.seen.add(species.id);
     this.markSeen(species.id);
     const t = ENEMY_TIER[tier] ?? ENEMY_TIER.normal;
     const hpMult = this.director.hpMult();
@@ -1529,6 +1537,7 @@ export class Run {
   /* ------------------------------------------------------------- pokedex */
 
   markSeen(id) {
+    if (this.pokedex.seen.has(id)) return; // every spawn calls this; only a new species hits storage
     this.pokedex.seen.add(id);
     this._savePokedex();
     this.achievements.recordSeen(this.pokedex.seen.size);
@@ -1592,7 +1601,7 @@ export class Run {
   }
 
   /** Fire an allied projectile from an ally. */
-  spawnAllyProjectile(source, angle, speed, dmg, life = 2, radius = 0.6) {
+  spawnAllyProjectile(source, angle, speed, dmg, life = 2, radius = 0.6, def = null) {
     if (this.projectiles.length > 400) return;
     const e = source;
     const vx = Math.cos(angle) * speed;
@@ -1609,7 +1618,7 @@ export class Run {
       life,
       radius,
       dmg: dmg ?? e.dmg ?? 10,
-      def: null,
+      def,
       pierce: 0,
       homing: 0,
       explodeR: 0,

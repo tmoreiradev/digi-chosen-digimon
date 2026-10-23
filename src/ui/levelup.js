@@ -26,6 +26,7 @@ export class LevelUpPanel {
 
     this.choices.forEach((ch, i) => {
       const rarity = ch.rarity ?? 0;
+      const isVit = ch.kind === "newVit" || ch.kind === "upVit";
       const card = el(
         "div",
         { class: "lu-card", style: { "--rar": RARITY_CSS[rarity] } },
@@ -33,8 +34,8 @@ export class LevelUpPanel {
         el("div", { class: "lu-title" }, ch.title),
         ch.sub && !ch.kind ? el("div", { class: "lu-sub" }, ch.sub) : null,
         ch.type ? el("div", { class: "lu-type" }, el("i", { style: { background: typeCss(ch.type) } }), ch.type) : null,
-        ch.kind ? el("div", { class: ch.kind === "vit" ? "lu-vit" : ch.kind === "fusion" ? "lu-fusion" : "lu-sub" },
-          ch.kind === "vit" ? "VITAMIN" : ch.kind === "fusion" ? "FUSION" : ch.sub) : null,
+        ch.kind ? el("div", { class: isVit ? "lu-vit" : ch.kind === "fusion" ? "lu-fusion" : "lu-sub" },
+          isVit ? "VITAMIN" : ch.kind === "fusion" ? "FUSION" : ch.sub) : null,
         ...(ch.lines ?? []).map((l) => el("div", { class: "lu-line" }, l)),
         el("div", { class: "lu-rarity" }, ["Common", "Uncommon", "Rare", "Epic", "Legendary"][rarity])
       );

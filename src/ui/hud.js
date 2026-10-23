@@ -87,6 +87,7 @@ export class Hud {
     this.portraitCtx = this.portrait.getContext("2d");
     this.mapCtx = this.minimap.getContext("2d");
     this.lastSpecies = -1;
+    this.lastNickname = null;
     this.portraitReady = false;
   }
 
@@ -100,8 +101,9 @@ export class Hud {
   update(run) {
     const p = run.player;
 
-    if (p.speciesId !== this.lastSpecies) {
+    if (p.speciesId !== this.lastSpecies || p.nickname !== this.lastNickname) {
       this.lastSpecies = p.speciesId;
+      this.lastNickname = p.nickname;
       this.name.textContent = p.nickname ?? p.species.name;
       this.name.style.color = p.nickname ? "#ffd700" : "";
       this.shinyBadge.style.display = p.shiny ? "inline" : "none";
