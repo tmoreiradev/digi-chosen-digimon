@@ -63,6 +63,8 @@ export class Boss {
     const stage = run.stage;
     const isLegendary = kind === "legendary";
     const isTower = kind === "totem" || kind === "summoner";
+    // Tower floors 5–7 awaken a "guardian" kind too, so the mode, not the kind, says where we are.
+    const inTower = !!run.tower;
 
     const minutes = isLegendary ? 0 : cfg.guardianCurveMinutes;
     let hpMult = enemyHpCurve(isTower ? 4 : stage, minutes) * (isLegendary ? cfg.legendaryHpMul : 1);
@@ -87,7 +89,7 @@ export class Boss {
     // legendaryHpMul) instead of the zone's live enemy curve, which spawnEnemy used and
     // which balloons by minute 5 of a zone. Tower guardians keep the live curve: their
     // config multipliers were never applied and the floors are tuned for it.
-    if (!isTower) {
+    if (!inTower) {
       const live = run.director.hpMult();
       if (live > 0) e.hp = e.maxHp = (e.maxHp / live) * hpMult * run.difficulty.enemyHp;
     }

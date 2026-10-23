@@ -313,6 +313,17 @@ A pedido do dono, todo o entregue (`94acc78..d509872`) foi submetido ao Codex CL
 | "Resultados de teste não puderam ser reconfirmados: `npm test` bloqueado por `spawn EPERM`" | Limite do sandbox do Codex no Windows (não executa `node`). O script `scripts/codex-review.mjs` roda `npm test` e `check:bundle` **fora** do sandbox e anexa a saída ao prompt. |
 
 **Como o Codex passa a ser chamado:** `npm run review:codex -- <range>` → worktree descartável do commit
-revisado, prompt enviado por stdin (`-` como argumento; sem isso o `codex exec` fica preso em "Reading
-additional input from stdin"), `-c windows.sandbox=unelevated` no Windows, relatório em `reviews/`,
+revisado, `npm test` + build + `check:bundle` executados **nesse worktree** e colados no prompt, prompt
+enviado por stdin sem argumento (com o prompt como argumento o `codex exec` fica preso em "Reading
+additional input from stdin"; o `-` literal é rejeitado), `-c windows.sandbox=unelevated` no Windows,
+relatório em `reviews/` (a mensagem final vem do stdout — o `-o` do codex 0.164 não gravou arquivo),
 exit 1 em "Reprovado". `AGENTS.md` dá ao Codex (e a qualquer agente) comandos e regras do repositório.
+
+**Segunda rodada** (`94acc78..17f341f`, `reviews/codex-2026-10-23-2254-94acc78..17f341f.md`): **Aprovado
+com ressalvas**, 3 achados, todos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| Andares 5–7 da Torre acordam `kind: "boss"`, que `awakenGuardian` converte em `"guardian"`; o redimensionamento pela curva de boss (feito para o Clássico) os apanhava — regressão contra "a Torre mantém a curva viva" (P2) | Corrigido: a decisão passa a ser pelo modo (`run.tower`), não pelo tipo; teste com o andar 7. |
+| O script rodava testes/bundle no checkout, não no worktree do commit revisado (P3) | Corrigido: tudo roda dentro do worktree (inclusive o build, já que `dist/` não é versionado). |
+| Teste de DoT só cobria burn (P3) | Corrigido: casos separados para burn e poison. |

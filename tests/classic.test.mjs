@@ -104,16 +104,32 @@ test("boss damage is capped to the fight budget and ramps after the stall limit"
   assert.ok(hp1 - e.hp <= run.boss.capRate * 3 * 2 + 1e-6, "up to the budget scaled by the exhaust (x2)");
 });
 
-test("burn and poison ticks on a boss go through the same budget", () => {
-  const { run } = makeRun();
-  const p = run.player;
-  const e = run.boss.spawn(123, p.x + 5, p.z, "guardian");
-  e.burnDps = 1e9;
-  e.statuses.burn = 3;
-  const hp0 = e.hp;
-  run.updateEnemies(1 / 60);
-  assert.ok(e.hp > 0, "a tick cannot delete a boss either");
-  assert.ok(hp0 - e.hp <= run.boss.capRate * 3 + 1e-6);
+for (const status of ["burn", "poison"]) {
+  test(`${status} ticks on a boss go through the same budget`, () => {
+    const { run } = makeRun();
+    const p = run.player;
+    const e = run.boss.spawn(123, p.x + 5, p.z, "guardian");
+    e[status + "Dps"] = 1e9;
+    e.statuses[status] = 3;
+    const hp0 = e.hp;
+    run.updateEnemies(1 / 60);
+    assert.ok(e.hp > 0, "a tick cannot delete a boss either");
+    assert.ok(hp0 - e.hp <= run.boss.capRate * 3 + 1e-6, "at most three seconds of budget");
+    assert.ok(hp0 - e.hp > 0, "but the tick does land");
+  });
+}
+
+test("tower guardians of every kind keep the live zone curve (floors 5-7 awaken a 'guardian' kind)", () => {
+  const hpAt = (stageTime) => {
+    const { run } = makeRun({ mode: "tower" });
+    run.player.iframes = 1e9;
+    run.tower.floor = 7; // lord of the tower: rules give kind "boss", awakenGuardian maps it to "guardian"
+    run.stageTime = stageTime;
+    run.tower.awakenGuardian();
+    assert.equal(run.boss.kind, "guardian");
+    return run.boss.enemy.maxHp;
+  };
+  assert.notEqual(hpAt(0), hpAt(299), "the live curve grows with the zone minute; the classic resize would make them equal");
 });
 
 test("classic boss HP follows the boss curve, not the minute the zone happens to be at", () => {
