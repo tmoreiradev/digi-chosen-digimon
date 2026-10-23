@@ -111,7 +111,9 @@ and volume. The Pokédex list is the only record of captures: the partner you pl
 **Achievements & tasks** — 8 achievements (first catch, 10/25 species, 50 seen, 3 shinies, 5 runs,
 a win, 3 tower floors) and 5 species tasks (5 captures of a type, one ally evolution). Each pays
 gold: to the current run when it unlocks mid-run, otherwise banked in the profile and paid out at
-the start of the next run ("Recompensas pendentes").
+the start of the next run ("Recompensas pendentes"). The pause menu's **Conquistas** screen lists
+all of them with progress, reward and pending gold. During a boss fight the HUD shows a boss bar
+(name, kind, phase, HP) under the region block.
 
 ## Provenance & fidelity
 

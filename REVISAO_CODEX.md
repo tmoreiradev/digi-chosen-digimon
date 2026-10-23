@@ -268,5 +268,24 @@ Itens 5 e 6 do backlog.
   e o banner "Recompensas pendentes: +150G". Zero erros de console.
 - `npm run build` + `npm run check:bundle`: ✅.
 
-**Limitações:** não há tela de conquistas (só o banner no momento do unlock); `unlocked` do roster
-(parceiros destravados) continua sem nenhum caminho que o aumente (BACKLOG).
+**Limitações:** `unlocked` do roster (parceiros destravados) continua sem nenhum caminho que o aumente
+(BACKLOG). A tela de conquistas chegou na fase 4 (§13).
+
+---
+
+## 13. Fase 4 — Tela de conquistas e barra de HP do boss (23/10/2026)
+
+- **Conquistas** (`screens.js` `showAchievements`, botão "Conquistas" na pausa): lista as 8 conquistas e as
+  5 tarefas com ✓, descrição, barra e texto de progresso (`atual / meta`) e a recompensa; cabeçalho com
+  `X / 8 conquistas · Y / 5 tarefas · ouro pendente`. Para expor o progresso, `ACHIEVEMENTS[]` trocou o
+  predicado `need` por `stat` + `goal` (unlock = `snapshot[stat] >= goal`) e o snapshot virou a função pura
+  `progressSnapshot(progress)`, usada pelo tracker e pela tela. "Fechar" volta à pausa sem retomar.
+- **Barra do boss** (`hud.js`): `.hud-boss` sob o bloco de região, visível só com `run.boss.alive`:
+  nome + tipo (`· Guardian` / `· Legendary`), `Phase N · hp / max`, preenchimento proporcional.
+- Testes: `tests/hud.test.mjs` (2; o DOM mínimo ganhou `getContext()` no-op, `style.setProperty` e
+  `classList.toggle`) e a tela em `pause.test.mjs` — **47 testes**.
+- Navegador: menu de pausa com "Conquistas"; tela com 13 linhas, 4 desbloqueadas no perfil de teste
+  (Primeiro Passo, Veterano, Campeão, Subidor da Torre), "Dex 50" em 28 / 50; Fechar → "Paused"; barra do
+  boss oculta sem boss e, com o guardião Golduck a 42 % na fase 2, "Golduck · Guardian" + "Phase 2 ·
+  1766 / 4203", largura 42 %, posicionada a 132 px do topo sob a região. Zero erros de console.
+- `npm run build` + `npm run check:bundle`: ✅.

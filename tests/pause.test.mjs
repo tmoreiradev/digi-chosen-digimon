@@ -70,6 +70,33 @@ test("nickname survives a new run and a reload of the store", () => {
   assert.equal(profile.data.nickname, "Bulba");
 });
 
+test("Conquistas lists every achievement and task with progress and returns to pause", async () => {
+  const { withRandom, spawnAlpha } = await import("./_helpers.mjs");
+  const { ACHIEVEMENTS, DEX_TASKS } = await import("../src/game/achievements.js");
+  const { root, screens, run } = setup();
+  let resumed = 0;
+  screens.showPause(() => resumed++, () => {}, () => {});
+  assert.ok(findButtons(root, /^Conquistas/).length, "the pause menu has the button");
+
+  withRandom(0.99, () => run.capture.caught(spawnAlpha(run, 16)));
+  screens.showAchievements();
+  assert.deepEqual(h2(root), ["Conquistas"]);
+  const rows = root.querySelectorAll(".ach-row");
+  assert.equal(rows.length, ACHIEVEMENTS.length + DEX_TASKS.length);
+  const first = rows[0];
+  assert.ok(first.classList.contains("on"), "first catch is unlocked");
+  assert.equal(first.querySelector(".ach-mark").textContent, "✓");
+  assert.equal(first.querySelector(".ach-meta").querySelector("b").textContent, "1 / 1");
+  const grass = rows[ACHIEVEMENTS.length];
+  assert.equal(grass.classList.contains("on"), false);
+  assert.equal(grass.querySelector(".ach-meta").querySelector("b").textContent, "0 / 5");
+  assert.match(root.querySelector(".card").textContent, /1 \/ 8 conquistas · 0 \/ 5 tarefas/);
+
+  findButtons(root, /^Fechar/)[0].click();
+  assert.deepEqual(h2(root), ["Paused"]);
+  assert.equal(resumed, 0);
+});
+
 test("title and results read the single Pokédex list", async () => {
   const { withRandom, spawnAlpha } = await import("./_helpers.mjs");
   const { root, screens, run } = setup();

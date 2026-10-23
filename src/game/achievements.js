@@ -8,15 +8,16 @@
 
 import { clamp } from "../core/math.js";
 
+// An achievement unlocks when snapshot[stat] >= goal; the screen shows stat/goal as progress.
 export const ACHIEVEMENTS = [
-  { key: "first_catch", title: "Primeiro Passo", desc: "Capture seu primeiro Pokémon.", need: (s) => s.caught >= 1, gold: 20 },
-  { key: "collector_10", title: "Colecionador", desc: "Capture 10 espécies diferentes.", need: (s) => s.caught >= 10, gold: 50 },
-  { key: "collector_25", title: "Grande Colecionador", desc: "Capture 25 espécies diferentes.", need: (s) => s.caught >= 25, gold: 150 },
-  { key: "dex_50", title: "Dex 50", desc: "Veja 50 espécies no Pokédex.", need: (s) => s.seen >= 50, gold: 100 },
-  { key: "shiny_hunter", title: "Caçador de Shinies", desc: "Capture 3 Pokémon shiny.", need: (s) => s.shinyCaught >= 3, gold: 200 },
-  { key: "veteran", title: "Veterano", desc: "Complete 5 runs.", need: (s) => s.runs >= 5, gold: 100 },
-  { key: "champion", title: "Campeão", desc: "Vença o jogo (modo clássico).", need: (s) => s.wins >= 1, gold: 300 },
-  { key: "tower_climber", title: "Subidor da Torre", desc: "Complete 3 andares da Torre.", need: (s) => s.towerFloors >= 3, gold: 150 },
+  { key: "first_catch", title: "Primeiro Passo", desc: "Capture seu primeiro Pokémon.", stat: "caught", goal: 1, gold: 20 },
+  { key: "collector_10", title: "Colecionador", desc: "Capture 10 espécies diferentes.", stat: "caught", goal: 10, gold: 50 },
+  { key: "collector_25", title: "Grande Colecionador", desc: "Capture 25 espécies diferentes.", stat: "caught", goal: 25, gold: 150 },
+  { key: "dex_50", title: "Dex 50", desc: "Veja 50 espécies no Pokédex.", stat: "seen", goal: 50, gold: 100 },
+  { key: "shiny_hunter", title: "Caçador de Shinies", desc: "Capture 3 Pokémon shiny.", stat: "shinyCaught", goal: 3, gold: 200 },
+  { key: "veteran", title: "Veterano", desc: "Complete 5 runs.", stat: "runs", goal: 5, gold: 100 },
+  { key: "champion", title: "Campeão", desc: "Vença o jogo (modo clássico).", stat: "wins", goal: 1, gold: 300 },
+  { key: "tower_climber", title: "Subidor da Torre", desc: "Complete 3 andares da Torre.", stat: "towerFloors", goal: 3, gold: 150 },
 ];
 
 export const DEX_TASKS = [
@@ -26,6 +27,19 @@ export const DEX_TASKS = [
   { key: "catch_electric", title: "Tipo Elétrico", desc: "Capture 5 Pokémon do tipo Elétrico.", type: "catch", filter: { type: "electric" }, need: 5, gold: 40 },
   { key: "evolve_ally", title: "Evolução", desc: "Faça um aliado evoluir.", type: "evolve", need: 1, gold: 60 },
 ];
+
+/** The numbers every achievement is judged on (pure: shared by the tracker and the achievements screen). */
+export function progressSnapshot(p) {
+  const ach = p.achievements ?? {};
+  return {
+    caught: p.pokedex?.caught?.length ?? 0,
+    seen: p.pokedex?.seen?.length ?? 0,
+    shinyCaught: ach.shinyCaught ?? 0,
+    runs: p.runs ?? 0,
+    wins: p.wins ?? 0,
+    towerFloors: ach.towerFloors ?? 0,
+  };
+}
 
 export class AchievementTracker {
   constructor(profile, run) {
@@ -45,23 +59,14 @@ export class AchievementTracker {
     this.profile.save();
   }
 
-  /** The numbers every achievement is judged on. */
   snapshot() {
-    const p = this.profile.data;
-    return {
-      caught: p.pokedex?.caught?.length ?? 0,
-      seen: p.pokedex?.seen?.length ?? 0,
-      shinyCaught: this.ach.shinyCaught ?? 0,
-      runs: p.runs ?? 0,
-      wins: p.wins ?? 0,
-      towerFloors: this.ach.towerFloors ?? 0,
-    };
+    return progressSnapshot(this.profile.data);
   }
 
   /** Unlock every achievement whose condition now holds. */
   check() {
     const s = this.snapshot();
-    for (const a of ACHIEVEMENTS) if (!this.isUnlocked(a.key) && a.need(s)) this.unlock(a.key);
+    for (const a of ACHIEVEMENTS) if (!this.isUnlocked(a.key) && (s[a.stat] ?? 0) >= a.goal) this.unlock(a.key);
   }
 
   isUnlocked(key) {

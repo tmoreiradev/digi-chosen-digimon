@@ -12,7 +12,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 | 2 | ~~Teto de burst e exaustão do boss nunca aplicados~~ | `run.js` `hitEnemy` | **Feito na fase 2:** `capDamage(amount * hitMul())` para o boss ativo (vale também para os guardiões da Torre). |
 | 3 | **Só alfas ficam capturáveis** | `run.js` `hitEnemy` (`e.tier === "alpha"`) | `Capture.weaken` e o README aceitam boss também. Decidir se boss é capturável. |
 | 4 | **Torre: director continua spawnando** | `run.js` `update` (`this.spawnAccum = 0`) | A linha zera uma propriedade inexistente do `Run`; a intenção do comentário era `this.director.spawnAccum`. Não corrigido porque muda o balanceamento das ondas — validar o pacing em jogo antes. |
-| 5 | ~~Conquistas sem recompensa~~ | `achievements.js` | **Feito na fase 3 (23/10):** `need` decide os unlocks a partir de um snapshot; `gold` pago ao run ou guardado em `profile.data.pendingGold`; tarefas também pagam e anunciam. Falta uma tela de conquistas (hoje só o banner). |
+| 5 | ~~Conquistas sem recompensa~~ | `achievements.js` | **Feito na fase 3 (23/10):** `need` decide os unlocks a partir de um snapshot; `gold` pago ao run ou guardado em `profile.data.pendingGold`; tarefas também pagam e anunciam. Tela "Conquistas" na pausa desde a fase 4. |
 | 6 | ~~Duas listas de capturados no perfil~~ | `profile.data.pokedex` | **Feito na fase 3:** `profile.data.caught` removido (saves antigos migrados por `normalizeProgress`); parceiro jogado conta como *visto*, capturas e ovos como *capturado*; título mostra `Caught: X / 1025`. |
 | 7 | **Evolução re-sorteada a cada checagem** | `rules.js` `evolutionPlan` com rng | Linhas com várias evoluções (Eevee) mudam o nível-alvo entre verificações. Guardar o plano no player. |
 | 8 | **Eventos de mundo consumidos ao abrir** | `events.js` `interact()` | Sair sem comprar/abrir também consome; spawn em qualquer ponto do mapa (pode ficar longe do jogador). |
@@ -21,7 +21,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 | 11 | **Upgrades só com tags ficam fora do pool** | `run.js` `rollChoices` (`u.mods?.length`) | Por design atual; os 18 itens de tipo entram só pelo `mods` de +3 % dano. |
 | 12 | **Música de batalha nunca ativa** | `music.js` `setTheme(…, battle)` | Nenhum caller passa `battle = true`. |
 | 21 | **Torre: HP dos guardiões ignora a curva de boss** | `boss.js` `spawn` (`isTower`) | Os multiplicadores `totem ×2.2` / `summoner ×1.4` sobre `enemyHpCurve(4, 2.5)` nunca valeram; na fase 2 a curva de boss passou a valer só para o Clássico, de propósito, porque aplicá-la à Torre multiplicaria o HP dos totens por ~20–50×. Rebalancear os andares antes de ligar. |
-| 22 | **Barra de HP do boss no HUD** | `hud.js` | Hoje só a barra sobre o sprite e os banners de fase. |
+| 22 | ~~Barra de HP do boss no HUD~~ | `hud.js` | **Feito na fase 4 (23/10):** `.hud-boss` sob o bloco de região com nome, tipo (Guardian/Legendary), fase e HP. |
 | 23 | **`playerExpectedDps` subestima o jogador** | `run.js` | Ignora crítico, aliados, bônus de tipo e itens; o orçamento de HP do boss sai baixo e a luta fica na curva — validar em jogo. |
 
 ## 2. Qualidade / robustez

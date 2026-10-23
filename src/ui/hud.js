@@ -39,6 +39,11 @@ export class Hud {
     this.threatLabel = el("div", { class: "hud-threat-label" });
     this.threatBar = el("div", { class: "hud-threat" });
     this.runTimer = el("div", { class: "hud-runtime" });
+    // Boss bar: shown under the region block only while a boss is alive.
+    this.bossName = el("div", { class: "hud-boss-name" });
+    this.bossFill = el("i", { class: "fill boss" });
+    this.bossText = el("span", { class: "bar-text" });
+    this.bossWrap = el("div", { class: "hud-boss" }, this.bossName, el("div", { class: "bar boss" }, this.bossFill, this.bossText));
     this.root.append(
       el(
         "div",
@@ -47,7 +52,8 @@ export class Hud {
         this.clock,
         this.threatLabel,
         this.threatBar,
-        this.runTimer
+        this.runTimer,
+        this.bossWrap
       )
     );
 
@@ -131,6 +137,20 @@ export class Hud {
     const labels = ["CALM", "RESTLESS", "ALERT", "DANGER", "SWARMED"];
     this.threatLabel.textContent = labels[Math.min(labels.length - 1, Math.floor(threat * labels.length))];
     this.threatBar.style.setProperty("--v", `${Math.round(threat * 100)}%`);
+
+    // Boss bar
+    const boss = run.boss;
+    const be = boss?.alive ? boss.enemy : null;
+    if (be) {
+      this.bossWrap.classList.add("show");
+      const kind = boss.kind === "legendary" ? " · Legendary" : boss.kind === "guardian" ? " · Guardian" : "";
+      this.bossName.textContent = `${boss.name}${kind}`;
+      const pct = clamp(be.hp / be.maxHp, 0, 1);
+      this.bossFill.style.width = `${pct * 100}%`;
+      this.bossText.textContent = `Phase ${boss.phase} · ${Math.ceil(be.hp)} / ${Math.round(be.maxHp)}`;
+    } else {
+      this.bossWrap.classList.remove("show");
+    }
 
     this.gold.textContent = `◈ ${Math.floor(run.stats.gold)}`;
     this.dust.textContent = `✦ ${run.stats.dust}`;

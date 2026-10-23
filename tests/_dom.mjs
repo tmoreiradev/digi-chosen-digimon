@@ -1,12 +1,24 @@
 // A deliberately tiny DOM stand-in: just what src/ui/dom.js and the screens use.
 // Nodes keep children, className, style, value, listeners and text; click() fires handlers.
+
+// Any property is a function returning itself; numeric use yields 0. Enough for Canvas 2D calls.
+const NOOP_CTX = new Proxy(function noop() {}, {
+  get: (t, k) => (k === Symbol.toPrimitive ? () => 0 : NOOP_CTX),
+  apply: () => NOOP_CTX,
+  set: () => true,
+});
+
 class FakeNode {
   constructor(tagName) {
     this.tagName = tagName;
     this.children = [];
     this.parentNode = null;
     this.attrs = {};
-    this.style = {};
+    this.style = {
+      setProperty(k, v) {
+        this[k] = v;
+      },
+    };
     this.dataset = {};
     this.listeners = {};
     this.className = "";
@@ -63,6 +75,10 @@ class FakeNode {
     return this.attrs[k] ?? null;
   }
   focus() {}
+  /** A 2D context that accepts any call and any property (canvas drawing is not under test). */
+  getContext() {
+    return NOOP_CTX;
+  }
   get textContent() {
     return this.children.map((c) => c.textContent).join("");
   }
@@ -83,6 +99,12 @@ class FakeNode {
         self.className = list().filter((c) => !cs.includes(c)).join(" ");
       },
       contains: (c) => list().includes(c),
+      toggle: (c, force) => {
+        const has = list().includes(c);
+        const want = force ?? !has;
+        self.className = want ? [...new Set([...list(), c])].join(" ") : list().filter((x) => x !== c).join(" ");
+        return want;
+      },
     };
   }
   /** Depth-first descendants. */

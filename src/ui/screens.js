@@ -6,6 +6,7 @@ import { fmtTime } from "../core/math.js";
 import { accounts, profile } from "./account.js";
 import { portraitStyle } from "../render/sprites.js";
 import { Pokedex } from "./pokedex.js";
+import { ACHIEVEMENTS, DEX_TASKS, progressSnapshot } from "../game/achievements.js";
 
 export class Screens {
   constructor(root, data) {
@@ -370,6 +371,7 @@ export class Screens {
             { class: "result-actions" },
             el("button", { class: "btn big red", onclick: onResume }, "Resume"),
             el("button", { class: "btn big ghost", onclick: () => this.showPokedex() }, "Pokédex"),
+            el("button", { class: "btn big ghost", onclick: () => this.showAchievements() }, "Conquistas"),
             el("button", { class: "btn big ghost", onclick: () => this.showNickname() }, "Apelido"),
             el("button", { class: "btn big ghost", onclick: () => this.showHeldItem() }, "Item Seg. "),
             el("button", { class: "btn big ghost", onclick: onQuit }, "Quit to menu")
@@ -388,6 +390,50 @@ export class Screens {
     this.screen = "pokedex";
     this.clear();
     this.pokedex.show();
+  }
+
+  /** Achievements and species tasks with progress and rewards; opened from the pause menu. */
+  showAchievements() {
+    this.screen = "achievements";
+    this.clear();
+    const prog = profile.data;
+    const unlocked = new Set(prog.achievements?.unlocked ?? []);
+    const s = progressSnapshot(prog);
+    const tasks = prog.dexTasks ?? {};
+    const row = (key, title, desc, cur, goal, gold) => {
+      const done = unlocked.has(key);
+      const pct = goal ? Math.min(1, cur / goal) : 0;
+      return el(
+        "div",
+        { class: "ach-row" + (done ? " on" : "") },
+        el("div", { class: "ach-mark" }, done ? "✓" : ""),
+        el("div", { class: "ach-info" },
+          el("div", { class: "ach-title" }, title),
+          el("div", { class: "ach-desc muted" }, desc),
+          el("div", { class: "ach-bar" }, el("i", { style: { width: `${Math.round(pct * 100)}%` } }))
+        ),
+        el("div", { class: "ach-meta" }, el("b", {}, `${Math.min(cur, goal)} / ${goal}`), el("span", { class: "ach-gold" }, `+${gold}G`))
+      );
+    };
+    const list = el("div", { class: "ach-list" });
+    for (const a of ACHIEVEMENTS) list.append(row(a.key, a.title, a.desc, s[a.stat] ?? 0, a.goal, a.gold));
+    for (const t of DEX_TASKS) list.append(row("task_" + t.key, t.title, t.desc, tasks[t.key] ?? 0, t.need, t.gold));
+    const doneAch = ACHIEVEMENTS.filter((a) => unlocked.has(a.key)).length;
+    const doneTasks = DEX_TASKS.filter((t) => unlocked.has("task_" + t.key)).length;
+    this.root.append(
+      el(
+        "div",
+        { class: "screen dim" },
+        el(
+          "div",
+          { class: "card panel" },
+          el("h2", {}, "Conquistas"),
+          el("p", { class: "muted" }, `${doneAch} / ${ACHIEVEMENTS.length} conquistas · ${doneTasks} / ${DEX_TASKS.length} tarefas · ouro pendente: ${prog.pendingGold ?? 0}G`),
+          list,
+          el("button", { class: "btn big ghost", onclick: () => this.returnToPause() }, "Fechar")
+        )
+      )
+    );
   }
 
   showNickname() {
