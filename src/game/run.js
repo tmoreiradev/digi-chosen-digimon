@@ -1033,6 +1033,7 @@ export class Run {
 
   updateEnemies(dt) {
     const p = this.player;
+    const bossId = this.boss.alive ? this.boss.index : -1;
     for (const e of this.enemies) {
       if (!e.alive) continue;
       e.animT += dt;
@@ -1047,15 +1048,17 @@ export class Run {
       for (const k of Object.keys(e.statuses)) {
         if (e.statuses[k] > 0) e.statuses[k] = Math.max(0, e.statuses[k] - dt);
       }
+      // Damage over time also goes through the boss budget (no on-hit effects, so not via hitEnemy).
+      const tick = (dmg) => (e.id === bossId ? this.boss.capDamage(dmg * this.boss.hitMul()) : dmg);
       if (e.burnDps > 0 && e.statuses.burn > 0) {
-        e.hp -= e.burnDps * dt;
+        e.hp -= tick(e.burnDps * dt);
         if (e.hp <= 0) {
           this.killEnemy(e, { type: "fire", cls: "special" });
           continue;
         }
       }
       if (e.poisonDps > 0 && e.statuses.poison > 0) {
-        e.hp -= e.poisonDps * dt;
+        e.hp -= tick(e.poisonDps * dt);
         if (e.hp <= 0) {
           this.killEnemy(e, { type: "poison", cls: "special" });
           continue;
@@ -1622,6 +1625,7 @@ export class Run {
   }
 
   markCaught(id) {
+    this.pokedex.seen.add(id); // a hatched species may never have been seen in battle
     this.pokedex.caught.add(id);
     this._savePokedex();
   }

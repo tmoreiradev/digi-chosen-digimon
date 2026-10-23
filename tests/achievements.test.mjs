@@ -73,6 +73,7 @@ test("captures live only in profile.data.pokedex.caught; hatching counts for the
   assert.deepEqual(profile.data.pokedex.caught, [16]);
   run.eggs.addSteps(1);
   assert.deepEqual(profile.data.pokedex.caught, [16, 1]);
+  assert.ok(profile.data.pokedex.seen.includes(1), "a hatched species counts as seen too");
 });
 
 test("old saves: the second capture list folds into the Pokédex as seen partners", () => {

@@ -129,7 +129,8 @@ export class Boss {
 
   /** Cap a damage packet against the banked allowance. */
   capDamage(amount) {
-    const rate = this.capRate ?? Infinity;
+    // The exhaust ramp widens the budget too; otherwise a capped fight could never end.
+    const rate = (this.capRate ?? Infinity) * this.exhaust();
     const banked = Math.min(rate * 3, this.capBank + Math.max(0, this.run.time - this.capT) * rate);
     const through = Math.min(amount, banked);
     this.capBank = banked - through;

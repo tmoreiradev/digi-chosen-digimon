@@ -125,11 +125,11 @@ function startRun() {
     onBossDown: () => state.sfx.levelUp(),
     onVictory: () => {
       state.sfx.evolve();
-      setTimeout(() => endRun(true), 900);
+      setTimeout(() => endRun(true, run), 900);
     },
     onDeath: () => {
       state.sfx.death();
-      setTimeout(() => endRun(false), 900);
+      setTimeout(() => endRun(false, run), 900);
     },
     onWorldEventOpen: () => {
       state.paused = true;
@@ -164,10 +164,12 @@ function clearScreen() {
   screenRoot.innerHTML = "";
 }
 
-function endRun(victory) {
+/** `expected` ties a delayed end (death/victory timeout) to its own run, so it never ends a newer one. */
+function endRun(victory, expected = state.run) {
   const run = state.run;
-  if (!run) return; // e.g. the death timeout firing after a manual quit
-  const towerFloors = run.tower?.floor ?? 0;
+  if (!run || run !== expected) return;
+  // Floors cleared, not the floor you are standing on; a cleared tower counts all of them.
+  const towerFloors = run.tower ? (run.tower.cleared ? run.tower.floor : run.tower.floor - 1) : 0;
   state.music.stop();
   state.mode = "menu";
   hudRoot.classList.remove("show");

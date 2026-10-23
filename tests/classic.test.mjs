@@ -96,6 +96,24 @@ test("boss damage is capped to the fight budget and ramps after the stall limit"
   assert.equal(run.boss.hitMul(), 1);
   run.boss.fightT = run.boss.fightSecs * 2 + 20;
   assert.equal(run.boss.hitMul(), 2, "2^(20/20) once the fight runs 20 s past twice its length");
+  // The exhaust must widen the budget, not only the multiplier: refill the bank and hit again.
+  run.time += 10;
+  const hp1 = e.hp;
+  run.hitEnemy(e, 1e9, { type: "normal", cls: "physical", status: null, statusChance: 0 });
+  assert.ok(hp1 - e.hp > run.boss.capRate * 3 * 1.5, "an exhausted boss loses more than the base 3 s budget");
+  assert.ok(hp1 - e.hp <= run.boss.capRate * 3 * 2 + 1e-6, "up to the budget scaled by the exhaust (x2)");
+});
+
+test("burn and poison ticks on a boss go through the same budget", () => {
+  const { run } = makeRun();
+  const p = run.player;
+  const e = run.boss.spawn(123, p.x + 5, p.z, "guardian");
+  e.burnDps = 1e9;
+  e.statuses.burn = 3;
+  const hp0 = e.hp;
+  run.updateEnemies(1 / 60);
+  assert.ok(e.hp > 0, "a tick cannot delete a boss either");
+  assert.ok(hp0 - e.hp <= run.boss.capRate * 3 + 1e-6);
 });
 
 test("classic boss HP follows the boss curve, not the minute the zone happens to be at", () => {

@@ -16,7 +16,7 @@ export const ACHIEVEMENTS = [
   { key: "dex_50", title: "Dex 50", desc: "Veja 50 espécies no Pokédex.", stat: "seen", goal: 50, gold: 100 },
   { key: "shiny_hunter", title: "Caçador de Shinies", desc: "Capture 3 Pokémon shiny.", stat: "shinyCaught", goal: 3, gold: 200 },
   { key: "veteran", title: "Veterano", desc: "Complete 5 runs.", stat: "runs", goal: 5, gold: 100 },
-  { key: "champion", title: "Campeão", desc: "Vença o jogo (modo clássico).", stat: "wins", goal: 1, gold: 300 },
+  { key: "champion", title: "Campeão", desc: "Vença uma run (Clássico ou Torre).", stat: "wins", goal: 1, gold: 300 },
   { key: "tower_climber", title: "Subidor da Torre", desc: "Complete 3 andares da Torre.", stat: "towerFloors", goal: 3, gold: 150 },
 ];
 
@@ -25,7 +25,8 @@ export const DEX_TASKS = [
   { key: "catch_fire", title: "Tipo Fogo", desc: "Capture 5 Pokémon do tipo Fogo.", type: "catch", filter: { type: "fire" }, need: 5, gold: 40 },
   { key: "catch_water", title: "Tipo Água", desc: "Capture 5 Pokémon do tipo Água.", type: "catch", filter: { type: "water" }, need: 5, gold: 40 },
   { key: "catch_electric", title: "Tipo Elétrico", desc: "Capture 5 Pokémon do tipo Elétrico.", type: "catch", filter: { type: "electric" }, need: 5, gold: 40 },
-  { key: "evolve_ally", title: "Evolução", desc: "Faça um aliado evoluir.", type: "evolve", need: 1, gold: 60 },
+  // Key kept for saved progress; allies do not evolve, the player does (Run.tryEvolve).
+  { key: "evolve_ally", title: "Evolução", desc: "Evolua seu parceiro durante uma run.", type: "evolve", need: 1, gold: 60 },
 ];
 
 /** The numbers every achievement is judged on (pure: shared by the tracker and the achievements screen). */
