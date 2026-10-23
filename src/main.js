@@ -144,6 +144,7 @@ function startRun() {
   state.mode = "game";
   state.paused = false;
   state.pendingLevelUps = 0;
+  state.levelup.reset(); // rerolls are per run; the panel object lives across runs
 
   // Background music, themed by biome and paused with the game.
   state.music.setTheme(s.biome ?? "forest", false);
@@ -170,6 +171,9 @@ function endRun(victory, expected = state.run) {
   if (!run || run !== expected) return;
   // Floors cleared, not the floor you are standing on; a cleared tower counts all of them.
   const towerFloors = run.tower ? (run.tower.cleared ? run.tower.floor : run.tower.floor - 1) : 0;
+  // A chest/shop/altar panel open at the moment of death must not outlive the run (its key
+  // listener would keep selling). Closing it restarts the music, so stop the music after.
+  run.events.panel?.close();
   state.music.stop();
   // A level-up that landed as the run ended must not sit on the results or block the next run.
   state.levelup.close();

@@ -97,6 +97,28 @@ test("Conquistas lists every achievement and task with progress and returns to p
   assert.equal(resumed, 0);
 });
 
+test("opening a chest freezes the rest of that simulation step (no hit can land under the panel)", async () => {
+  const { makeRun: mk } = await import("./_helpers.mjs");
+  dom.register("ui");
+  const { run } = mk({ profile });
+  const p = run.player;
+  p.stats.evasion = 0;
+  p.iframes = 0;
+  const e = run.spawnEnemy(16, p.x + 0.5, p.z, "normal");
+  e.atkCd = 0;
+  run.events.events.length = 0;
+  run.events.spawn("chest", p.x + 1, p.z);
+  run.opts.input.capturePressed = true; // E
+  const hp = p.hp;
+  run.update(1 / 60);
+  assert.ok(run.stateEventPanel, "the panel opened in this step");
+  assert.equal(p.hp, hp, "the adjacent enemy did not get its contact hit in the same step");
+  run.update(1 / 60);
+  assert.equal(p.hp, hp, "and the world stays frozen while the panel is up");
+  run.events.panel.close();
+  assert.equal(run.stateEventPanel, false);
+});
+
 test("title and results read the single Pokédex list", async () => {
   const { withRandom, spawnAlpha } = await import("./_helpers.mjs");
   const { root, screens, run } = setup();

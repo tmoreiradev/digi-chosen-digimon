@@ -333,5 +333,14 @@ ressalvas**, 2 achados, ambos aceitos:
 
 | Achado | Decisão |
 |---|---|
-| `endRun` não fechava o painel de level-up: subir de nível no instante em que a run acaba deixava as cartas sobre os resultados e, com `levelup.active` preso, a run seguinte ficava congelada (P2) | Corrigido: `LevelUpPanel.close()` (usado também por escolher/pular) e `endRun` fecha o painel e zera `pendingLevelUps`; teste em `tests/levelup.test.mjs`. |
+| `endRun` não fechava o painel de level-up: subir de nível no instante em que a run acaba deixava as cartas sobre os resultados e, com `levelup.active` preso, a run seguinte ficava congelada (P2) | Corrigido: `LevelUpPanel.close()` (usado também por escolher/pular) e `endRun` fecha o painel e zera `pendingLevelUps`. O teste `tests/levelup-panel.test.mjs` cobre só `close()`; `endRun` vive em `main.js` (não importável no Node) e foi validado no navegador: vitória com 32 level-ups pendentes → resultados limpos e run seguinte destravada. |
 | P/Esc com baú/loja/altar aberto alternava `state.paused` e reiniciava a música com o painel ainda aberto (P2); invalida parte da afirmação da §4 sobre música | Corrigido: com painel de evento aberto, Esc fecha o painel e P é ignorado; a §4 passa a valer com essa regra. |
+
+**Quarta rodada** (`94acc78..807db61`, `reviews/codex-2026-10-23-23-00-94acc78..HEAD.md`): **Aprovado com
+ressalvas**, 2 achados, ambos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| Abrir um evento e morrer no restante do mesmo passo deixava o painel (e seu listener de teclado) sobre os resultados, vendendo itens de uma run encerrada (P2) | Corrigido duas vezes: `Run.update` para o passo assim que um painel abre (teste: inimigo colado não acerta no mesmo passo) e `endRun` fecha `run.events.panel` antes de parar a música (o fechamento religa a música; a ordem evita que ela toque nos resultados). |
+| Rerolls gastos ficavam gastos nas runs seguintes (`LevelUpPanel` é um só; `rollsLeft` nunca voltava) (P2) | Corrigido: `LevelUpPanel.reset()` chamado em `startRun`; teste. |
+| "O teste da 3.ª rodada cobre só `close()`" | Verdadeiro; a linha da 3.ª rodada foi corrigida para dizer isso e apontar a validação no navegador. |

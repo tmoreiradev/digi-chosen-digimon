@@ -3,14 +3,21 @@
 import { el, clear, typeCss } from "./dom.js";
 
 const RARITY_CSS = ["#c8d0dc", "#5ad87a", "#4aa8ff", "#c070ff", "#ffc83a"];
+const REROLLS_PER_RUN = 2;
 
 export class LevelUpPanel {
   constructor(root, onPick) {
     this.root = root;
     this.onPick = onPick;
     this.choices = [];
-    this.rollsLeft = 2;
+    this.rollsLeft = REROLLS_PER_RUN;
     this.active = false;
+  }
+
+  /** New run: rerolls come back (the panel object is shared by every run). */
+  reset() {
+    this.rollsLeft = REROLLS_PER_RUN;
+    this.close();
   }
 
   show(choices) {

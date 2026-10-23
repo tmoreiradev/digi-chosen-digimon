@@ -240,6 +240,9 @@ export class Run {
     this.stageTime += dt;
 
     this.updatePlayer(dt);
+    // Interacting with a chest/shop/altar freezes the world at once; the rest of this
+    // step must not land hits (or a death) under a panel that has just opened.
+    if (this.stateEventPanel) return;
     this.updateProjectiles(dt);
     this.updateEnemies(dt);
     this.updatePickups(dt);
