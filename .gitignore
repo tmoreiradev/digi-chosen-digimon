@@ -29,3 +29,6 @@ Thumbs.db
 # Secrets (none expected in this project)
 .env
 .env.*
+
+# Local tooling
+.claude/

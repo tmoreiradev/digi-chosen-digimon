@@ -1,33 +1,55 @@
 # Digi Chosen
 
 **Digi Chosen** (formerly *PokéBonk Local*) is a local, self-contained re-implementation of
-[PokéBonk](https://pokebonk.com/) — a 3D Pokémon *survivor* roguelite — built from the game's public data tables and the
-original **PMD SpriteCollab** sprite sheets (CC BY-NC 4.0), with **no network calls
-and no ripped assets** beyond those credited sheets.
+[PokéBonk](https://pokebonk.com/) — a 3D Pokémon *survivor* roguelite — built from the game's
+public data tables and the original **PMD SpriteCollab** sprite sheets (CC BY-NC 4.0), with
+**no network calls and no ripped assets** beyond those credited sheets.
 
 > **Fan-game, not affiliated with Nintendo, The Pokémon Company, Creatures Inc. or
 > GAME FREAK.** Pokémon names, types and moves are trademarks of their owners.
 > This is a local study project.
 
+Status of the code (what was fixed, what was tested, what is still open) lives in
+[REVISAO_CODEX.md](REVISAO_CODEX.md); pending work and future ideas in [BACKLOG.md](BACKLOG.md).
+
 ---
 
-## Play
+## Run it
 
-**Option A — served (recommended during development):**
+Requirements: **Node.js ≥ 18** (only for the dev server, tests and the build — the game itself
+is plain browser JavaScript with no dependencies).
+
+**Option A — local server (recommended while developing):**
 
 ```bash
-npm start          # or: node server.mjs
+npm start          # or: node server.mjs   (port 8080; `npm run dev` is the same)
 # open http://localhost:8080/
 ```
 
-**Option B — single file (no server):**
-
-`dist/digi-chosen.html` is fully self-contained (data + code inlined). Just
-double-click it, or rebuild after changes with:
+**Option B — single offline file (no server, works from `file://`):**
 
 ```bash
-npm run build
+npm run build      # writes dist/digi-chosen.html and copies the sprite sheets next to it
 ```
+
+Then double-click `dist/digi-chosen.html`. The file embeds the code, the CSS and every data table;
+the sprite sheets are read from `dist/pmd/` and `dist/front/`, so keep the `dist/` folder together.
+`dist/` is not versioned — rebuild it after pulling changes.
+
+## Tests and checks
+
+```bash
+npm test                # node --test tests/*.test.mjs  (no dependencies; real game data + a tiny DOM stub)
+npm run check:bundle    # verifies dist/digi-chosen.html parses and matches the current sources
+```
+
+`tests/` covers the regressions listed in `REVISAO_CODEX.md` (first-egg rule, the shared level-up
+path used by XP orbs and Rare Candy, the held-item screen, pause submenus, capture/allies, egg
+persistence, old saves). `scripts/check-bundle.mjs` runs `node --check` on the bundled script and
+compares it, the embedded data and the CSS against the sources, so a stale build fails loudly.
+
+Saves live in `localStorage` under the keys `pokebonk-clone.*` — the keys were **kept** on purpose
+when the project was renamed, so existing profiles keep loading.
 
 ## Controls
 
@@ -37,45 +59,56 @@ npm run build
 | `Space` | Jump |
 | `Shift` | Dash (brief invulnerability) |
 | `R` | Ultimate (once charged) |
-| `P` / `Esc` | Pause |
-| `1` `2` `3` | Choose a level-up card |
+| `E` | Interact with a nearby chest / shop / altar, or throw a ball at a weakened alpha |
+| `P` / `Esc` | Pause (Pokédex, nickname, held item and volume live here) |
+| `1` `2` `3` | Choose a level-up card (or buy a shop item while the shop is open) |
 | `F` / `X` / `Z` | Reroll / skip / banish a level-up card |
 
-Your Pokémon attacks automatically and turns to face the nearest target. Background music is synthesized on the fly (no audio files) and fades between menu and gameplay; volume is set in the pause menu.
+Your Pokémon attacks automatically and turns to face the nearest target. Background music is
+synthesized on the fly (no audio files) and pauses with the game; volume is set in the pause menu
+and persisted per profile.
 
 ## The game
 
-Pick one of the starters, choose a region (biome) and difficulty, and survive the
-horde. Enemies drop blue **XP orbs**; level up to pick one of three upgrades —
-learn a move from your species' kit, upgrade an equipped move, take an item, a
-**vitamin** (permanent stat growth), a **move slot**, or a **fusion** (merges two
-moves into a dual-type one). Level past the evolution gate to **evolve**, charge
-your **ultimate** by fighting, and keep moving: contact damage lands in discrete
-hits and the horde scales through the stage.
+Pick one of the starters, choose a region (biome) and difficulty, and survive the horde. Enemies
+drop blue **XP orbs**; level up to pick one of three upgrades — learn a move from your species'
+kit, upgrade an equipped move, take an item, a **vitamin** (permanent stat growth), a **move
+slot**, or a **fusion** (merges two moves into a dual-type one). Level past the evolution gate to
+**evolve**, charge your **ultimate** by fighting, and keep moving: contact damage lands in discrete
+hits and the horde scales through the stage. The level cap is 50.
 
 **Game modes**
-- **Classic** — 3 zones, then a final challenge.
+- **Classic** — zones get tougher every 5 minutes (zone guardians and the final challenge are
+  not implemented yet, see the backlog).
 - **Endless** — hordes and milestones that never stop.
-- **Tower** ("The Night of Lavender Tower") — 7 themed floors, each with waves
-  closed by a guardian; floor 7's bell summons the lord of the tower.
+- **Tower** ("The Night of Lavender Tower") — 7 themed floors, each with waves closed by a
+  guardian; floor 7's bell summons the lord of the tower.
 
-**Capture & allies** — Weaken an alpha/boss below 10% HP, then press `E` to throw
-a ball. Caught Pokémon join your team as allies that orbit you, auto-attack, and
-grant a damage boost of their primary type.
+**Capture & allies** — Weaken an alpha below 10% HP; it stops fighting and you can press `E` to
+throw a ball. Caught Pokémon join your team (up to 3, oldest leaves first) as allies that orbit
+you, auto-attack with their own power and type, and grant a damage boost.
 
-**Vitamins** — Permanent stat growth (Protein, Calcium, Carbos, HP Up, …) that you
-can pick on level-up; each pick banks a rarity-scaled bonus. Loaded Dice rolls a
-random bonus vitamin.
+**Eggs** — The first capture of each run always grants an egg (if none is incubating); later
+captures have a 25% chance. Walk to hatch it (200 steps); the hatched species joins the team.
+Eggs and their progress are saved in the profile and survive a new run.
 
-**World events** — Chests, traveling shops and ancient altars spawn randomly in
-the world. When you're near one, press `E` to interact: open a chest for gold and
-loot, buy items with your gold at the shop, or heal at the altar. Events despawn
-after a while and are consumed once used.
+**Rare Candy** — From the ground or the shop (100 G): grants exactly one level's worth of XP, so you
+go up one level and keep the XP already earned inside the level. Refused (and not charged) at
+the cap.
+
+**World events** — Chests, traveling shops and ancient altars spawn in the world. Press `E` near
+one: open the chest for gold or loot, buy items with your gold at the shop (`1`–`3`, `0` leaves),
+or heal at the altar. Opening one pauses the game; buying a Rare Candy opens the level-up cards on
+top of the shop.
+
+**Profiles** — Local guest/named profiles (no network). Each keeps its Pokédex (seen / caught),
+achievements and species tasks, egg, nickname, held item (Leftovers or Choice Band), best time
+and volume.
 
 ## Provenance & fidelity
 
-Everything here is a from-scratch reimplementation built from the game's public
-data tables. The following were recovered **verbatim**:
+Everything here is a from-scratch reimplementation built from the game's public data tables. The
+following were recovered **verbatim**:
 
 - Data tables (`pokemon.json`, `moves.json`, `learnsets.json`, `abilities.json`,
   `types.json`, `items.json`, `i18n/*`) — downloaded from `pokebonk.com/data/`.
@@ -103,40 +136,50 @@ to their shadows even on `file://`. 971 species have animated sheets; the
 remaining 54 fall back to static front sprites. A fully procedural pixel-art
 renderer (`render/creature.js`) is kept as a loading/offline fallback.
 
-**Not ported** (intentionally out of scope): online accounts,
-season/rank, clans, events, leaderboards. Everything else observed upstream is
-recreated locally: tower mode, boss mechanics, capture & allies, vitamins, fusion,
-local accounts and sprite art.
+**Not ported** (intentionally out of scope): online accounts, season/rank, clans, events,
+leaderboards.
 
-Honest gap list vs the live game (what would round out a full version):
-- **World events** — chests, shops and altars now spawn in the world and can be interacted with by pressing `E` when nearby. Shrines, wandering merchants and item-renewal shops are still missing.
-- **Dex & progressão** — Pokédex com rastreamento de espécies vistas e capturadas, filtro por visto/capturado/não visto, busca por nome e tela dedicada acessível pela pausa. Tarefas por espécie, conquistas e chocagem de ovos ainda faltam.
-- **Shinies & cosmetics** — selvagens, jogadores e aliados podem nascer shiny (taxa ~1/256) com dourado translúcido e estrela no HUD. Nomes de jogador, itens segurados e outras cosméticos ainda faltam.
-- **More content** — the live game's full species/move/upgrade rosters beyond the
-  40-species league roster and 126 upgrades extracted here.
+Honest gap list vs the live game (details and more in `BACKLOG.md`):
+- **Classic mode** — zone guardians, the sanctuary/legendary fight and the victory condition are
+  not wired yet (`Boss` is only used by the Tower).
+- **World events** — shrines, wandering merchants and item-renewal shops are still missing.
+- **Dex & progression** — 8 achievements and 5 species tasks exist, but their rewards are not
+  granted yet; permanent player names are missing.
+- **Held items** — only Leftovers and Choice Band have effects.
+- **More content** — the live game's full species/move/upgrade rosters beyond the 40-species league
+  roster and 126 upgrades extracted here.
 
 ## Code layout
 
 ```
+index.html, styles.css   dev entry + theme (the build inlines both)
+server.mjs               zero-dependency static server
+build.mjs                single-file bundler (dist/digi-chosen.html)
+scripts/check-bundle.mjs verifies a built bundle against the sources
+tests/                   node:test regression suite (+ _helpers.mjs, _dom.mjs)
 src/
-  main.js             bootstrap + game loop
+  main.js             bootstrap + game loop + input
   core/math.js, rng.js
-  data/game-data.js   loads tables and builds indexes
+  data/game-data.js   loads tables and builds indexes (buildIndexes is reused by the tests)
   data/sprite-bounds.json per-frame opacity bounds (baked offline, embedded)
-  game/rules.js       recovered formulas
-  game/run.js         the simulation (player, enemies, projectiles, pickups)
+  game/rules.js       recovered formulas, MAX_LEVEL, difficulties
+  game/run.js         the simulation (player, enemies, projectiles, pickups, the level-up path)
   game/director.js    enemy pool + spawn timeline
+  game/boss.js        boss controller (used by the tower)
+  game/capture.js     weaken / throw / allies
   game/events.js      world events: chests, shops, altars
+  game/achievements.js achievements, species tasks, eggs
+  game/tower.js, fusion.js, vitamins.js
   render/creature.js  procedural pixel-art Pokémon (loading fallback)
   render/sprites.js   PMD sheet loader + 8-direction animation renderer
   render/palette.js   colours
   render/renderer.js  canvas world renderer
-  ui/…                HUD, screens, level-up panel, Pokédex
-  audio/sfx.js        generated sound
+  ui/…                HUD, screens, level-up panel, Pokédex, local accounts
+  audio/sfx.js, music.js  generated sound and music
 ```
 
 ## Data
 
 The `src/data/*.json` files are the extracted PokéBonk tables (trimmed to the
-fields the engine uses). The `data/` directory in the repo root is a working copy
+fields the engine uses). The `data/` directory in the repo root (git-ignored) is a working copy
 used by the extraction scripts and is not loaded at runtime.

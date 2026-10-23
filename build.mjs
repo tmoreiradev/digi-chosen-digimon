@@ -1,17 +1,21 @@
-// Bundles the build into a single self-contained HTML file that runs from file://.
+// Bundles the game into a single self-contained HTML file that runs from file://.
 //
 // The ES modules are concatenated in dependency order (all top-level names are
 // unique across the project), import/export statements are stripped, and the
 // data tables are embedded as a global so no fetch is needed.
+//
+// `node build.mjs` writes dist/digi-chosen.html and copies the sprite sheets next
+// to it. scripts/check-bundle.mjs imports MODULE_ORDER / stripModuleSyntax from
+// here to verify a built bundle against the current sources.
 
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.join(ROOT, "dist", "digi-chosen.html");
+export const OUT = path.join(ROOT, "dist", "digi-chosen.html");
 
-const MODULE_ORDER = [
+export const MODULE_ORDER = [
   "src/core/math.js",
   "src/core/rng.js",
   "src/ui/dom.js",
@@ -40,9 +44,9 @@ const MODULE_ORDER = [
   "src/main.js",
 ];
 
-const DATA_FILES = ["pokemon", "moves", "learnsets", "abilities", "types", "items", "rules", "sprites", "sprite-bounds"];
+export const DATA_FILES = ["pokemon", "moves", "learnsets", "abilities", "types", "items", "rules", "sprites", "sprite-bounds"];
 
-function stripModuleSyntax(code) {
+export function stripModuleSyntax(code) {
   // Drop import statements (single or multi line).
   let out = code.replace(/^import\s+[\s\S]*?from\s+["'][^"']+["'];?\s*$/gm, "");
   out = out.replace(/^import\s+["'][^"']+["'];?\s*$/gm, "");
@@ -53,20 +57,29 @@ function stripModuleSyntax(code) {
   return out;
 }
 
-const parts = [];
-for (const rel of MODULE_ORDER) {
-  const code = fs.readFileSync(path.join(ROOT, rel), "utf8");
-  parts.push(`// ---- ${rel} ${"-".repeat(Math.max(0, 60 - rel.length))}\n${stripModuleSyntax(code).trim()}`);
+/** The bundle's module script: every module, stripped, in dependency order. */
+export function bundleScript() {
+  const parts = [];
+  for (const rel of MODULE_ORDER) {
+    const code = fs.readFileSync(path.join(ROOT, rel), "utf8");
+    parts.push(`// ---- ${rel} ${"-".repeat(Math.max(0, 60 - rel.length))}\n${stripModuleSyntax(code).trim()}`);
+  }
+  return parts.join("\n\n");
 }
 
-const data = {};
-for (const name of DATA_FILES) {
-  data[name] = JSON.parse(fs.readFileSync(path.join(ROOT, "src", "data", `${name}.json`), "utf8"));
+/** The data tables as the bundle embeds them. */
+export function bundleData() {
+  const data = {};
+  for (const name of DATA_FILES) {
+    data[name] = JSON.parse(fs.readFileSync(path.join(ROOT, "src", "data", `${name}.json`), "utf8"));
+  }
+  return data;
 }
 
-const css = fs.readFileSync(path.join(ROOT, "styles.css"), "utf8");
+export function build() {
+  const css = fs.readFileSync(path.join(ROOT, "styles.css"), "utf8");
 
-const html = `<!doctype html>
+  const html = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8" />
@@ -84,29 +97,33 @@ ${css}
 <div id="levelup" class="levelup"></div>
 <div id="screens" class="screens"></div>
 <script>
-globalThis.__POKEBONK_DATA__ = ${JSON.stringify(data)};
+globalThis.__POKEBONK_DATA__ = ${JSON.stringify(bundleData())};
 </script>
 <script type="module">
-${parts.join("\n\n")}
+${bundleScript()}
 </script>
 </body>
 </html>
 `;
 
-fs.mkdirSync(path.dirname(OUT), { recursive: true });
-fs.writeFileSync(OUT, html);
+  fs.mkdirSync(path.dirname(OUT), { recursive: true });
+  fs.writeFileSync(OUT, html);
 
-// Ship the sprite sheets next to the bundle so it keeps working from file://.
-for (const dir of ["pmd", "front"]) {
-  const src = path.join(ROOT, "assets", dir);
-  const dest = path.join(ROOT, "dist", dir);
-  if (fs.existsSync(src)) {
-    fs.rmSync(dest, { recursive: true, force: true });
-    fs.cpSync(src, dest, { recursive: true });
+  // Ship the sprite sheets next to the bundle so it keeps working from file://.
+  for (const dir of ["pmd", "front"]) {
+    const src = path.join(ROOT, "assets", dir);
+    const dest = path.join(ROOT, "dist", dir);
+    if (fs.existsSync(src)) {
+      fs.rmSync(dest, { recursive: true, force: true });
+      fs.cpSync(src, dest, { recursive: true });
+    }
   }
+
+  const sheetCount = fs.existsSync(path.join(ROOT, "dist", "pmd"))
+    ? fs.readdirSync(path.join(ROOT, "dist", "pmd")).length
+    : 0;
+  console.log(`Built ${OUT} (${(fs.statSync(OUT).size / 1024 / 1024).toFixed(2)} MB, ${sheetCount} sprites)`);
 }
 
-const sheetCount = fs.existsSync(path.join(ROOT, "dist", "pmd"))
-  ? fs.readdirSync(path.join(ROOT, "dist", "pmd")).length
-  : 0;
-console.log(`Built ${OUT} (${(fs.statSync(OUT).size / 1024 / 1024).toFixed(2)} MB, ${sheetCount} sprites)`);
+// Run the build only when executed directly (`node build.mjs`), not when imported.
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) build();
