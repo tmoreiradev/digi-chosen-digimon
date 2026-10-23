@@ -7,8 +7,6 @@ import { accounts, profile } from "./account.js";
 import { portraitStyle } from "../render/sprites.js";
 import { Pokedex } from "./pokedex.js";
 
-const SAVE_KEY = "pokebonk-clone.save.v1";
-
 export class Screens {
   constructor(root, data) {
     this.root = root;
@@ -39,8 +37,8 @@ export class Screens {
         "div",
         { class: "screen title-screen" },
         el("div", { class: "title-wrap" },
-          el("h1", { class: "game-title" }, "Poké", el("span", {}, "Bonk")),
-          el("p", { class: "tagline" }, "Survivor roguelite · Kanto · local clone"),
+          el("h1", { class: "game-title" }, "Digi", el("span", {}, "Chosen")),
+          el("p", { class: "tagline" }, "Survivor roguelite · Kanto · offline"),
           el("div", { class: "title-actions" },
             el("button", { class: "btn big red", onclick: () => this.showAccountPicker() }, "▶ Play"),
             el("button", { class: "btn big ghost", onclick: () => this.showHelp() }, "? How to play")

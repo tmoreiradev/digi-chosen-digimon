@@ -1,7 +1,7 @@
-# PokéBonk Local
+# Digi Chosen
 
-A local, self-contained re-implementation of [PokéBonk](https://pokebonk.com/) — a
-3D Pokémon *survivor* roguelite — built from the game's public data tables and the
+**Digi Chosen** (formerly *PokéBonk Local*) is a local, self-contained re-implementation of
+[PokéBonk](https://pokebonk.com/) — a 3D Pokémon *survivor* roguelite — built from the game's public data tables and the
 original **PMD SpriteCollab** sprite sheets (CC BY-NC 4.0), with **no network calls
 and no ripped assets** beyond those credited sheets.
 
@@ -22,7 +22,7 @@ npm start          # or: node server.mjs
 
 **Option B — single file (no server):**
 
-`dist/pokebonk-local.html` is fully self-contained (data + code inlined). Just
+`dist/digi-chosen.html` is fully self-contained (data + code inlined). Just
 double-click it, or rebuild after changes with:
 
 ```bash

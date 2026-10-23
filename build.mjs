@@ -9,7 +9,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
-const OUT = path.join(ROOT, "dist", "pokebonk-clone.html");
+const OUT = path.join(ROOT, "dist", "digi-chosen.html");
 
 const MODULE_ORDER = [
   "src/core/math.js",
@@ -72,7 +72,7 @@ const html = `<!doctype html>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta name="theme-color" content="#1a1630" />
-<title>PokéBonk Clone</title>
+<title>Digi Chosen</title>
 <style>
 ${css}
 </style>

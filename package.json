@@ -1,8 +1,8 @@
 {
-  "name": "pokebonk-local",
+  "name": "digi-chosen",
   "version": "1.0.0",
   "private": true,
-  "description": "Local survivor roguelite built on Kanto data tables.",
+  "description": "Digi Chosen — local survivor roguelite built on Kanto data tables; runs offline from a single HTML file.",
   "type": "module",
   "scripts": {
     "start": "node server.mjs",

@@ -47,5 +47,5 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`PokéBonk clone running at http://localhost:${PORT}/`);
+  console.log(`Digi Chosen running at http://localhost:${PORT}/`);
 });
