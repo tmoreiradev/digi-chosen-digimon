@@ -30,6 +30,7 @@ import { applyVitaminPick, vitaminChoices, vitaminGroups } from "./vitamins.js";
 
 const ENEMY_CAP = 260;
 const PICKUP_CAP = 400;
+const STAGE_SECS = 300; // a zone lasts five minutes before its guardian (classic) or the next zone (endless)
 const SHINY_RATE = 1 / 256; // ~0.39% chance de um selvagem nascer shiny
 const SHINY_XP_BONUS = 0.5; // +50% de XP/dust ao derrotar um shiny
 
@@ -94,6 +95,9 @@ export class Run {
     this.timers = [];
     this.tower = this.mode === "tower" ? new Tower(this) : null;
     this.stateEventPanel = false;
+    // Classic mode: zone guardians, then the sanctuary with the biome's legendary (see updateClassic).
+    this.zoneBossSpawned = false;
+    this.sanctuary = false;
     this.profile = opts.profile;
 
     // Pokédex: species seen (encountered in battle) and caught (recruited).
@@ -231,7 +235,7 @@ export class Run {
     this.updateEnemies(dt);
     this.updatePickups(dt);
     this.updateEffects(dt);
-    this.director.update(dt);
+    if (!this.sanctuary) this.director.update(dt);
 
     // Encounter systems
     this.capture.update(dt);
@@ -242,7 +246,9 @@ export class Run {
       this.tower.update(dt);
       // Tower mode drives its own spawn pacing; suppress director's free-form spawns.
       if (this.tower.beyond || this.tower.floor >= 1) this.spawnAccum = 0;
-    } else if (this.stageTime >= 300) this.advanceStage();
+    } else if (this.mode === "classic") {
+      this.updateClassic();
+    } else if (this.stageTime >= STAGE_SECS) this.advanceStage();
 
     // Scheduled one-shot callbacks (boss later())
     for (let i = this.timers.length - 1; i >= 0; i--) {
@@ -258,8 +264,65 @@ export class Run {
   advanceStage() {
     this.stage = Math.min(4, this.stage + 1);
     this.stageTime = 0;
+    this.zoneBossSpawned = false;
     this.director.onStage(this.stage);
     this.banner(`Zone ${this.stage} — tougher foes`);
+  }
+
+  /* ------------------------------------------------------------ classic */
+
+  /**
+   * Classic mode: a zone lasts STAGE_SECS, then its guardian (biome.guardians,
+   * one candidate list per zone) must fall to open the next zone. After zone
+   * 3 the run enters the sanctuary, where the biome's legendary waits;
+   * defeating it wins the run.
+   */
+  updateClassic() {
+    if (this.sanctuary || this.zoneBossSpawned || this.stageTime < STAGE_SECS) return;
+    const candidates = this.biome.guardians?.[this.stage - 1] ?? [];
+    const speciesId = candidates.length ? this.rng.pick(candidates) : this.biome.bosses?.[this.stage - 1];
+    if (!speciesId) {
+      this.advanceStage(); // biome without guardians: keep the timer behaviour
+      return;
+    }
+    const spot = this.director.spawnPoint(14, 22) ?? { x: this.player.x + 14, z: this.player.z };
+    if (this.boss.spawn(speciesId, spot.x, spot.z, "guardian")) this.zoneBossSpawned = true;
+  }
+
+  /** Boss.onDefeat calls this for every boss kind (tower floors included). */
+  onBossDefeated(kind) {
+    if (this.tower) {
+      this.tower.onGuardianDown();
+      return;
+    }
+    if (this.mode !== "classic") return;
+    if (kind === "legendary") {
+      this.state = "victory";
+      this.opts.onVictory?.();
+    } else if (this.stage >= 3) {
+      this.enterSanctuary();
+    } else {
+      this.banner(`Zone ${this.stage} cleared!`);
+      this.advanceStage();
+    }
+  }
+
+  enterSanctuary() {
+    this.sanctuary = true;
+    // A calm arena: the horde fades, spawns stop, and the legendary arrives shortly.
+    for (const e of this.enemies) {
+      if (e.alive && e.dying <= 0) {
+        e.dying = 0.35;
+        e.hp = 0;
+      }
+    }
+    this.banner("The sanctuary — something ancient stirs");
+    const candidates = this.biome.legendaries ?? [];
+    const speciesId = candidates.length ? this.rng.pick(candidates) : 150; // Mewtwo when the biome lists none
+    this.later(2.5, () => {
+      const spot = this.director.spawnPoint(12, 16) ?? { x: this.player.x + 12, z: this.player.z };
+      this.boss.spawn(speciesId, spot.x, spot.z, "legendary");
+    });
   }
 
   /* ------------------------------------------------------------ player */
@@ -887,6 +950,9 @@ export class Run {
     if (e.statuses.freeze > 0) amount *= 1.2;
     if (e.statuses.curse > 0) amount *= 1.25;
 
+    // Boss budget: burst cap, anti-stall exhaust, 15% while a telegraph winds up.
+    if (this.boss.index === e.id && this.boss.alive) amount = this.boss.capDamage(amount * this.boss.hitMul());
+
     e.hp -= amount;
     e.flash = 1;
     this.stats.damage += amount;
@@ -1493,6 +1559,9 @@ export class Run {
   }
 
   spawnEnemy(speciesId, x, z, tier = "normal") {
+    // Dead entries stay in the list until it is compacted; compact before refusing,
+    // otherwise spawning stopped for good after the 260th enemy of the run.
+    if (this.enemies.length >= ENEMY_CAP) this.enemies = this.enemies.filter((e) => e.alive);
     if (this.enemies.length >= ENEMY_CAP) return null;
     const species = this.data.get(speciesId);
     if (!species) return null;

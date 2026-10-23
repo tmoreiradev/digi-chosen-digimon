@@ -176,6 +176,56 @@ enfraquecer um alfa (< 10 % HP), `E` para capturar → andar para chocar o ovo.
 
 ## 10. Pendências
 
-Estão em [`BACKLOG.md`](BACKLOG.md): lacunas de mecânica (modo Clássico sem guardiões/vitória, teto de
-burst do boss não ligado, captura só de alfas, pacing da Torre, recompensas de conquistas, duas listas de
-capturados), itens de qualidade e as funcionalidades futuras. Nenhuma pendência bloqueia a execução do jogo.
+Estão em [`BACKLOG.md`](BACKLOG.md): lacunas de mecânica (captura só de alfas, pacing da Torre,
+recompensas de conquistas, duas listas de capturados), itens de qualidade e as funcionalidades futuras.
+Nenhuma pendência bloqueia a execução do jogo.
+
+---
+
+## 11. Fase 2 — Modo Clássico (23/10/2026)
+
+Implementa o item 1 do backlog (e o 2, que ele exige): guardiões de zona, santuário com lendário e
+condição de vitória. Tudo usa dados que já estavam em `rules.json` (`biome.guardians`, `biome.bosses`,
+`biome.legendaries`, `boss.fightSecs/zoneHp/guardianCurveMinutes/legendaryHpMul`).
+
+**Fluxo** (`run.js`: `updateClassic`, `onBossDefeated`, `enterSanctuary`; `boss.js` chama
+`run.onBossDefeated(kind)` em `onDefeat`, que também passou a ser o caminho da Torre):
+
+1. Cada zona dura `STAGE_SECS` (300 s). No fim, em vez de avançar pelo cronômetro, nasce o **guardião**
+   da zona — sorteado de `biome.guardians[zona]` (fallback `biome.bosses[zona]`; biomas sem nenhum dos
+   dois mantêm o avanço por tempo). O director continua spawnando durante a luta.
+2. Guardião derrotado → "Zone N cleared!" → `advanceStage()` (pool/timeline da zona seguinte).
+3. Guardião da zona 3 derrotado → **santuário**: `run.sanctuary = true`, horda em fade, director
+   suspenso, HUD mostra "Sanctuary"; 2,5 s depois chega o **lendário** (`biome.legendaries`, fallback
+   Mewtwo). Stage fica em 3 (o santuário não é a zona 4).
+4. Lendário derrotado → `run.state = "victory"` → `onVictory` → tela "Victory!" e conquista `champion`.
+   Endless não muda (zonas por tempo, sem guardião).
+
+**Correções que a fase exigiu/encontrou**
+
+| Achado | Correção |
+|---|---|
+| Teto de burst/exaustão do boss nunca aplicados (backlog #2) | `hitEnemy`: `amount = boss.capDamage(amount * boss.hitMul())` para o boss ativo — no máximo 3 s de orçamento por rajada, ×0,15 durante a telegrafia, 2^(excesso/20) após 2× a duração prevista. Vale também para os guardiões da Torre. |
+| `Boss.spawn` calculava `hpMult` da curva de boss e **nunca usava**; o HP vinha da curva viva da zona via `spawnEnemy` (no navegador: Mew com ~155 000 HP no minuto 5 da zona 3) | Guardiões/lendário são redimensionados pela curva de boss (`zoneHp`, `guardianCurveMinutes`, `legendaryHpMul`) × dificuldade; a Torre mantém a curva viva (seus multiplicadores nunca valeram e os andares estão calibrados assim — ver BACKLOG #21). |
+| Spawns **paravam para sempre** depois do 260.º inimigo da run: `spawnEnemy` recusava com `enemies.length ≥ 260` contando os mortos, e a compactação só acontecia acima de 520 (inalcançável) | `spawnEnemy` compacta os mortos antes de recusar. |
+| `main.js` chamava `tower.onGuardianDown()` no callback `onBossDown` | movido para `Run.onBossDefeated`; o callback só toca o jingle. |
+
+**Validação**
+
+- `npm test`: **36 testes** (7 novos em `tests/classic.test.mjs`: guardião nasce e segura a zona;
+  zonas 1→2→3 → santuário → lendário → vitória única; Endless inalterado; Torre avança andar pelo
+  novo caminho; teto de burst e exaustão; HP do boss independe do minuto da zona; lista de inimigos
+  compacta).
+- Navegador (servidor local, simulação acionada por `run.update` porque a aba do painel fica em
+  segundo plano e o `requestAnimationFrame` não roda): Golduck (zona 1) → Pinsir (zona 2) → Nidoking
+  (zona 3) → "Sanctuary" no HUD com a horda zerada → Mew → "Victory!" na tela de resultados,
+  `champion` desbloqueada, zero erros de console. Rajada de 10⁹ contra o guardião tirou exatamente
+  900 HP (3 s × `capRate` 300). Repetido após a correção do HP (jogador nível 1, dificuldade Normal):
+  Golduck 4 203 HP (`capRate` 105/s, 40 s), Poliwrath 18 551, Nidoking 37 326, Mew 32 760
+  (`capRate` 546/s, 60 s) — o lendário sai um pouco abaixo do guardião da zona 3 por desenho da
+  curva (`zoneHp` 0,5 × 1,6 no minuto 0 contra o minuto 2,5 do guardião).
+- `npm run build` + `npm run check:bundle`: ✅.
+
+**Limitações:** balanceamento não jogado por humano — HP dos bosses segue `max(curva, DPS esperado × duração)`
+e `playerExpectedDps` ignora crítico, aliados e bônus de tipo, então lutas podem passar da duração
+prevista até a exaustão entrar. Sem barra de HP do boss no HUD (a barra sobre o sprite existe).

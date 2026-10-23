@@ -8,8 +8,8 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 
 | # | Item | Onde | Observação |
 |---|------|------|------------|
-| 1 | **Modo Clássico sem guardiões, santuário e vitória** | `run.js` (`advanceStage`), `boss.js` | `Boss.spawn` só é chamado pela Torre. No Clássico a zona trava em 4 e a run só termina com a morte — na prática Clássico = Endless. README promete "3 zonas e um desafio final". |
-| 2 | **Teto de burst e exaustão do boss nunca aplicados** | `boss.js` `hitMul()`/`capDamage()`, `run.js` `hitEnemy` | Os métodos existem mas `hitEnemy` não os chama. |
+| 1 | ~~Modo Clássico sem guardiões, santuário e vitória~~ | `run.js` | **Feito na fase 2 (23/10):** `updateClassic`/`onBossDefeated`/`enterSanctuary`. Falta validar o balanceamento em jogo (HP do boss sai da curva de zona, não só do orçamento de DPS). |
+| 2 | ~~Teto de burst e exaustão do boss nunca aplicados~~ | `run.js` `hitEnemy` | **Feito na fase 2:** `capDamage(amount * hitMul())` para o boss ativo (vale também para os guardiões da Torre). |
 | 3 | **Só alfas ficam capturáveis** | `run.js` `hitEnemy` (`e.tier === "alpha"`) | `Capture.weaken` e o README aceitam boss também. Decidir se boss é capturável. |
 | 4 | **Torre: director continua spawnando** | `run.js` `update` (`this.spawnAccum = 0`) | A linha zera uma propriedade inexistente do `Run`; a intenção do comentário era `this.director.spawnAccum`. Não corrigido porque muda o balanceamento das ondas — validar o pacing em jogo antes. |
 | 5 | **Conquistas sem recompensa** | `achievements.js` | `reward` ("20G"…) nunca é concedido; `ACHIEVEMENTS[].need` não é usado (checagens hardcoded); `profile.data.runsCompleted/wins/towerFloors` são inicializados mas os contadores reais vivem em `achievements.*`. |
@@ -20,6 +20,9 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 | 10 | **Stats do upstream sem efeito** | `rules.js` `basePlayerStats` | `shieldMax`, `thorns`, `knockback`, `bounces`, `flinch`, `powerup`, `eliteSpawn`, `slam`, `enemyAmount` existem no bloco mas o engine não os lê. |
 | 11 | **Upgrades só com tags ficam fora do pool** | `run.js` `rollChoices` (`u.mods?.length`) | Por design atual; os 18 itens de tipo entram só pelo `mods` de +3 % dano. |
 | 12 | **Música de batalha nunca ativa** | `music.js` `setTheme(…, battle)` | Nenhum caller passa `battle = true`. |
+| 21 | **Torre: HP dos guardiões ignora a curva de boss** | `boss.js` `spawn` (`isTower`) | Os multiplicadores `totem ×2.2` / `summoner ×1.4` sobre `enemyHpCurve(4, 2.5)` nunca valeram; na fase 2 a curva de boss passou a valer só para o Clássico, de propósito, porque aplicá-la à Torre multiplicaria o HP dos totens por ~20–50×. Rebalancear os andares antes de ligar. |
+| 22 | **Barra de HP do boss no HUD** | `hud.js` | Hoje só a barra sobre o sprite e os banners de fase. |
+| 23 | **`playerExpectedDps` subestima o jogador** | `run.js` | Ignora crítico, aliados, bônus de tipo e itens; o orçamento de HP do boss sai baixo e a luta fica na curva — validar em jogo. |
 
 ## 2. Qualidade / robustez
 

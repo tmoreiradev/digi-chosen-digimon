@@ -78,8 +78,10 @@ slot**, or a **fusion** (merges two moves into a dual-type one). Level past the 
 hits and the horde scales through the stage. The level cap is 50.
 
 **Game modes**
-- **Classic** — zones get tougher every 5 minutes (zone guardians and the final challenge are
-  not implemented yet, see the backlog).
+- **Classic** — three 5-minute zones, each closed by a **zone guardian** picked from the biome's
+  own list; the zone only advances once it falls. After zone 3 the run enters the **sanctuary**:
+  the horde fades and the biome's **legendary** arrives. Defeat it to win. Boss damage is capped to
+  the fight budget and ramps up if a fight stalls.
 - **Endless** — hordes and milestones that never stop.
 - **Tower** ("The Night of Lavender Tower") — 7 themed floors, each with waves closed by a
   guardian; floor 7's bell summons the lord of the tower.
@@ -140,8 +142,6 @@ renderer (`render/creature.js`) is kept as a loading/offline fallback.
 leaderboards.
 
 Honest gap list vs the live game (details and more in `BACKLOG.md`):
-- **Classic mode** — zone guardians, the sanctuary/legendary fight and the victory condition are
-  not wired yet (`Boss` is only used by the Tower).
 - **World events** — shrines, wandering merchants and item-renewal shops are still missing.
 - **Dex & progression** — 8 achievements and 5 species tasks exist, but their rewards are not
   granted yet; permanent player names are missing.

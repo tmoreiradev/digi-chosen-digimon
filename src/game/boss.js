@@ -83,6 +83,15 @@ export class Boss {
     const e = run.spawnEnemy(speciesId, x, z, "boss");
     if (!e) return null;
 
+    // Classic bosses take their HP from the boss curve (zoneHp, guardianCurveMinutes,
+    // legendaryHpMul) instead of the zone's live enemy curve, which spawnEnemy used and
+    // which balloons by minute 5 of a zone. Tower guardians keep the live curve: their
+    // config multipliers were never applied and the floors are tuned for it.
+    if (!isTower) {
+      const live = run.director.hpMult();
+      if (live > 0) e.hp = e.maxHp = (e.maxHp / live) * hpMult * run.difficulty.enemyHp;
+    }
+
     // Resize the boss so the expected fight duration is realistic.
     const budget = run.playerExpectedDps(secs) * secs * (1 + 0.15 * tierIndex);
     const targetHp = Math.min(e.maxHp * 4, Math.max(e.maxHp, budget));
@@ -357,5 +366,6 @@ export class Boss {
     run.shake(0.4);
     if (e) run.burst(e.x, e.y + 1, e.z, 0xffd166, 30, "star");
     run.opts.onBossDown?.(this.name, this.kind);
+    run.onBossDefeated(this.kind);
   }
 }

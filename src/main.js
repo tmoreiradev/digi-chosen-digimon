@@ -121,10 +121,8 @@ function startRun() {
       state.sfx.pickup();
       state.hud.banner(`Caught ${name}!`);
     },
-    onBossDown: (name, kind) => {
-      state.sfx.levelUp();
-      if (s.mode === "tower" && state.run?.tower) state.run.tower.onGuardianDown();
-    },
+    // Zone/floor progression after a boss lives in Run.onBossDefeated; this is just the jingle.
+    onBossDown: () => state.sfx.levelUp(),
     onVictory: () => {
       state.sfx.evolve();
       setTimeout(() => endRun(true), 900);

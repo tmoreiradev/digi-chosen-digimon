@@ -124,7 +124,7 @@ export class Hud {
     this.difficulty.className = "hud-diff " + run.difficulty.id;
 
     this.clock.textContent = fmtClock(8 * 3600 + run.time * 60);
-    this.runTimer.textContent = `${fmtTime(run.time)} · Zone ${run.stage}`;
+    this.runTimer.textContent = `${fmtTime(run.time)} · ${run.sanctuary ? "Sanctuary" : "Zone " + run.stage}`;
 
     // Threat meter reflects enemy pressure over the stage.
     const threat = clamp(run.enemies.length / 70, 0, 1);
