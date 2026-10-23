@@ -153,6 +153,41 @@ test("classic boss HP follows the boss curve, not the minute the zone happens to
   assert.ok(legendary.maxHp < guardianHere * 40, "but it is not the minute-5 live-curve monster");
 });
 
+test("the director keeps spawning after a massacre: corpses are dropped every frame", () => {
+  const { run } = makeRun();
+  const p = run.player;
+  run.player.iframes = 1e9;
+  for (let i = 0; i < 240; i++) run.spawnEnemy(16, p.x + 5 + (i % 10), p.z + Math.floor(i / 10), "normal");
+  for (const e of run.enemies) e.alive = false; // all dead, none compacted yet
+  assert.equal(run.enemies.length, 240);
+  run.update(1 / 60); // updateEnemies drops the corpses
+  assert.equal(run.enemies.filter((e) => !e.alive).length, 0);
+  run.director.spawnAccum = 5; // enough accumulated time for several spawns
+  run.director.update(1 / 60);
+  assert.ok(run.enemies.filter((e) => e.alive).length > 0, "the population cap no longer counts the dead");
+});
+
+test("dying in the same step the legendary falls is a defeat, not a victory", () => {
+  let victories = 0;
+  let deaths = 0;
+  const { run } = makeRun({ opts: { onVictory: () => victories++, onDeath: () => deaths++ } });
+  const p = run.player;
+  run.stage = 3;
+  run.enterSanctuary();
+  frames(run, 160); // the legendary arrives
+  assert.equal(run.boss.kind, "legendary");
+  p.iframes = 0;
+  p.stats.evasion = 0;
+  p.hp = 1;
+  const killer = run.spawnEnemy(16, p.x + 0.3, p.z, "normal");
+  killer.atkCd = 0;
+  run.boss.enemy.hp = 0; // falls in this same step, after the contact hit lands
+  frames(run, 1);
+  assert.equal(run.state, "dead");
+  assert.equal(deaths, 1);
+  assert.equal(victories, 0);
+});
+
 test("the enemy list compacts dead entries so spawning never stalls for the rest of the run", () => {
   const { run } = makeRun();
   const p = run.player;

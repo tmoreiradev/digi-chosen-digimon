@@ -303,6 +303,7 @@ export class Run {
 
   /** Boss.onDefeat calls this for every boss kind (tower floors included). */
   onBossDefeated(kind) {
+    if (this.state !== "running") return; // the player died earlier in this same step: defeat stands
     if (this.tower) {
       this.tower.onGuardianDown();
       return;
@@ -1108,8 +1109,9 @@ export class Run {
       if (e.atkCd > 0) e.atkCd -= dt;
     }
 
-    // Compact dead enemies
-    if (this.enemies.length > ENEMY_CAP * 2) this.enemies = this.enemies.filter((e) => e.alive);
+    // Drop dead entries every frame: the director's population cap and spawnEnemy's cap both
+    // count list entries, so leaving corpses in the list starves the arena of spawns.
+    if (this.enemies.some((e) => !e.alive)) this.enemies = this.enemies.filter((e) => e.alive);
   }
 
   killEnemy(e, def) {

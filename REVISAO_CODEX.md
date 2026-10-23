@@ -207,7 +207,7 @@ condição de vitória. Tudo usa dados que já estavam em `rules.json` (`biome.g
 |---|---|
 | Teto de burst/exaustão do boss nunca aplicados (backlog #2) | `hitEnemy`: `amount = boss.capDamage(amount * boss.hitMul())` para o boss ativo — no máximo 3 s de orçamento por rajada, ×0,15 durante a telegrafia, 2^(excesso/20) após 2× a duração prevista. Vale também para os guardiões da Torre. |
 | `Boss.spawn` calculava `hpMult` da curva de boss e **nunca usava**; o HP vinha da curva viva da zona via `spawnEnemy` (no navegador: Mew com ~155 000 HP no minuto 5 da zona 3) | Guardiões/lendário são redimensionados pela curva de boss (`zoneHp`, `guardianCurveMinutes`, `legendaryHpMul`) × dificuldade; a Torre mantém a curva viva (seus multiplicadores nunca valeram e os andares estão calibrados assim — ver BACKLOG #21). |
-| Spawns **paravam para sempre** depois do 260.º inimigo da run: `spawnEnemy` recusava com `enemies.length ≥ 260` contando os mortos, e a compactação só acontecia acima de 520 (inalcançável) | `spawnEnemy` compacta os mortos antes de recusar. |
+| Spawns **paravam para sempre** depois do 260.º inimigo da run: `spawnEnemy` recusava com `enemies.length ≥ 260` contando os mortos, e a compactação só acontecia acima de 520 (inalcançável) | `spawnEnemy` compacta os mortos antes de recusar. **Incompleto** (5.ª rodada): o teto populacional do director (≤ 240) também contava mortos e parava os spawns normais antes dos 260; desde então os mortos são removidos a cada frame em `updateEnemies`. |
 | `main.js` chamava `tower.onGuardianDown()` no callback `onBossDown` | movido para `Run.onBossDefeated`; o callback só toca o jingle. |
 
 **Validação**
@@ -344,3 +344,11 @@ ressalvas**, 2 achados, ambos aceitos:
 | Abrir um evento e morrer no restante do mesmo passo deixava o painel (e seu listener de teclado) sobre os resultados, vendendo itens de uma run encerrada (P2) | Corrigido duas vezes: `Run.update` para o passo assim que um painel abre (teste: inimigo colado não acerta no mesmo passo) e `endRun` fecha `run.events.panel` antes de parar a música (o fechamento religa a música; a ordem evita que ela toque nos resultados). |
 | Rerolls gastos ficavam gastos nas runs seguintes (`LevelUpPanel` é um só; `rollsLeft` nunca voltava) (P2) | Corrigido: `LevelUpPanel.reset()` chamado em `startRun`; teste. |
 | "O teste da 3.ª rodada cobre só `close()`" | Verdadeiro; a linha da 3.ª rodada foi corrigida para dizer isso e apontar a validação no navegador. |
+
+**Quinta rodada** (`94acc78..8b4b826`, `reviews/codex-2026-10-23-23-03-94acc78..HEAD.md`): **Aprovado com
+ressalvas**, 2 achados, ambos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| A compactação só rodava em `spawnEnemy` com 260 entradas, mas o teto do director (≤ 240) contava mortos: a arena esvaziava até um evento da timeline forçar spawns (P2); invalida parte da linha da §11 sobre spawns | Corrigido: `updateEnemies` remove os mortos a cada frame; teste pelo `Director.update` após 240 mortes. A linha da §11 foi anotada. |
+| Lendário morto e jogador morto no mesmo passo: `boss.update` sobrescrevia `dead` com `victory` e os dois timeouts corriam (P2) | Corrigido: `onBossDefeated` ignora bosses derrotados quando a run já não está `running` (derrota prevalece); teste de morte simultânea. |
