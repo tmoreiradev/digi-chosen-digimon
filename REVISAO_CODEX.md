@@ -397,7 +397,23 @@ ressalvas**, 4 achados no mesmo tema (upgrades sem efeito), todos aceitos:
 | Ticks de zona usavam chance fixa de 25 %, ignorando `+status` (P2) | A zona guarda `statusChance = 0,25 × mods.status` e o tick usa esse valor (zonas hostis de boss mantêm 25 %). |
 | Teste de upgrades só olhava `mv.mods` (P3) | `moveups.test.mjs` ganhou: golpe com `+count` dá o dobro, `+dur` estica as zonas, `+status` muda o resultado do tick. |
 
-Com isso o item 3 da §3 fica integral: todo stat oferecido na carta de golpe tem efeito no combate.
+Com isso o item 3 da §3 fica integral para os stats que o engine consegue honrar; os demais deixaram de ser
+oferecidos (11.ª rodada, abaixo).
+
+**Décima primeira rodada** (`94acc78..1616fba`, `reviews/codex-2026-10-23-23-25-94acc78..HEAD.md`): **Aprovado
+com ressalvas**, 4 achados, todos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| Regressão minha: com `+count`, os dois raios do beam desviavam ±0,175 rad e erravam um alvo a 20 unidades (P2) | O raio mirado fica no centro; os extras abrem em leque ao redor (±0,35, ±0,70…). Teste com alvo a 20 unidades. |
+| `+dur` sem efeito em beam, cone, orbit, vortex e buff (instantâneos) (P2) | Não têm duração possível: `NO_EFFECT_UPS` tira essas opções das cartas (`rollMoveUps`). Clima passou a durar `12 s × dur`. |
+| `+count` ignorado por trap, vortex, wave e random (P2) | trap: armadilhas extras em anel; vortex/wave: puxões/ondas extras; random: projéteis extras em leque. |
+| `+speed` sem efeito em dash/wave/orbit e `+area` em chain/smite (P2) | orbit: rotação mais rápida; chain: alcance do salto = `area × 2` (base 16); smite: respingo de raio `area` em volta de cada queda; dash/wave: `+speed` não é oferecido. |
+| (achado pelo teste novo do chain, pré-existente) o chain **nunca encadeava**: a cada salto procurava o inimigo mais próximo *a partir do alvo atual* sem excluí-lo — acertava o mesmo inimigo `count` vezes | Corrigido: cada salto vai ao inimigo mais próximo ainda não atingido; teste A → C e, com `+area`, B. |
+
+Testes: `moveups.test.mjs` cobre beam fan, traps/waves extras, alcance do chain, respingo do smite e a
+filtragem das cartas. Regra registrada: **toda carta de golpe oferecida tem efeito observável; o que o engine
+não consegue honrar não aparece na carta.**
 
 ---
 
@@ -419,7 +435,7 @@ da arena, ≤ 260 inimigos e nenhum morto na lista, aliados ≤ cap, boss vivo c
 
 | Cenário | Resultado (semente fixa) |
 |---|---|
-| Bot honesto, Clássico, 600 s | sobrevive: nível 26, 899 kills, **zona 2** (guardião da zona 1 derrotado por conta própria), 2 aliados (captura + ovo), 25 ultimates |
+| Bot honesto, Clássico, 600 s, sementes 11–20 | **5 / 10 sobrevivem** os 600 s (todos esses passam da zona 1: guardião derrotado por conta própria, nível 23–29, 860–960 kills); as 5 mortes acontecem entre 310 e 361 s, na luta contra o guardião da zona 1. Nenhuma morte antes dos 4 min; zero falhas de invariante. O teste exige exatamente isso (≥ 3 sobreviventes, nenhuma morte antes de 240 s) — é a linha de base de balanceamento. |
 | Clássico até o fim (god mode: só imunidade a dano) | **vitória em 1210 s**: 3 guardiões, santuário, lendário; nível 50, 1891 kills |
 | Torre até o fim (god mode) | **vitória em 402 s**: 7 andares pelas ondas reais |
 

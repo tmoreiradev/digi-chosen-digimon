@@ -31,6 +31,10 @@ import { applyVitaminPick, vitaminChoices, vitaminGroups } from "./vitamins.js";
 const ENEMY_CAP = 260;
 const PICKUP_CAP = 400;
 const STAGE_SECS = 300; // a zone lasts five minutes before its guardian (classic) or the next zone (endless)
+// Card stats the data lists for an archetype but this engine cannot honour, so they are not
+// offered: beam, cone, orbit and vortex strike instantly (no duration); buff has no duration;
+// dash and wave have no projectile speed.
+const NO_EFFECT_UPS = { beam: ["dur"], cone: ["dur"], orbit: ["dur"], vortex: ["dur"], buff: ["dur"], dash: ["speed"], wave: ["speed"] };
 const SHINY_RATE = 1 / 256; // ~0.39% chance de um selvagem nascer shiny
 const SHINY_XP_BONUS = 0.5; // +50% de XP/dust ao derrotar um shiny
 
@@ -656,7 +660,7 @@ export class Run {
         const baseDir = Math.atan2(e.z - p.z, e.x - p.x);
         const length = 30;
         for (let i = 0; i < count; i++) {
-          const dir = baseDir + (i - (count - 1) / 2) * 0.35; // +count = extra beams in a fan
+          const dir = baseDir + Math.ceil(i / 2) * (i % 2 ? 0.35 : -0.35); // +count = extra beams fanned around the aimed one
           for (const en of this.enemies) {
             if (!en.alive) continue;
             const rx = en.x - p.x;
@@ -708,7 +712,7 @@ export class Run {
       }
       case "orbit": {
         for (let i = 0; i < count; i++) {
-          const a = (i / count) * TAU + this.time;
+          const a = (i / count) * TAU + this.time * mv.mods.speed * p.stats.projSpeed; // +speed = faster orbit
           const ox = p.x + Math.cos(a) * (1.6 + area);
           const oz = p.z + Math.sin(a) * (1.6 + area);
           for (const en of this.enemies) {
@@ -719,15 +723,26 @@ export class Run {
         break;
       }
       case "chain": {
+        // Each jump goes to the nearest enemy not hit yet (the old code re-hit the same
+        // target: from its own position, it was always the nearest). +area = longer jumps.
         let from = { x: p.x, z: p.z };
-        let hit = new Set();
+        const hit = new Set();
+        const range2 = (area * 2) ** 2; // base 8 x 2 = 16 units
         for (let i = 0; i < count; i++) {
-          const t = this.nearestEnemy(from.x, from.z, 16);
-          if (t < 0) break;
-          const e = this.enemyById(t);
+          let e = null;
+          let bestD = range2;
+          for (const en of this.enemies) {
+            if (!en.alive || hit.has(en.id)) continue;
+            const d = dist2(from.x, from.z, en.x, en.z);
+            if (d < bestD) {
+              bestD = d;
+              e = en;
+            }
+          }
+          if (!e) break;
           this.hitEnemy(e, dmg, def);
           this.beam(from.x, p.y + 1, from.z, Math.atan2(e.z - from.z, e.x - from.x), dist(from.x, from.z, e.x, e.z), color);
-          hit.add(t);
+          hit.add(e.id);
           from = { x: e.x, z: e.z };
         }
         break;
@@ -750,6 +765,8 @@ export class Run {
           const e = this.enemyById(t);
           struck.add(t);
           this.hitEnemy(e, dmg * 1.4, def);
+          // +area = splash around each strike
+          for (const en of this.enemies) if (en.alive && en !== e && dist(en.x, en.z, e.x, e.z) <= area) this.hitEnemy(en, dmg * 0.7, def);
           this.beam(p.x, p.y + 1, p.z, Math.atan2(e.z - p.z, e.x - p.x), dist(p.x, p.z, e.x, e.z), color);
         }
         break;
@@ -779,7 +796,7 @@ export class Run {
           const pull = (1 - d / radius) * 9 * dtSafe(this);
           en.vx -= ((en.x - p.x) / d) * pull;
           en.vz -= ((en.z - p.z) / d) * pull;
-          this.hitEnemy(en, dmg * 0.35, def, true);
+          for (let i = 0; i < count; i++) this.hitEnemy(en, dmg * 0.35, def, true); // +count = extra pulls
         }
         this.ring(p.x, p.y + 0.2, p.z, radius, color, 0.3);
         break;
@@ -788,7 +805,7 @@ export class Run {
         const radius = 4 + area * 2.4;
         for (const en of this.enemies) {
           if (!en.alive) continue;
-          if (dist(en.x, en.z, p.x, p.z) <= radius) this.hitEnemy(en, dmg, def);
+          if (dist(en.x, en.z, p.x, p.z) <= radius) for (let i = 0; i < count; i++) this.hitEnemy(en, dmg, def); // +count = extra waves
         }
         this.ring(p.x, p.y + 0.2, p.z, radius, color, 0.45);
         break;
@@ -799,12 +816,16 @@ export class Run {
         break;
       }
       case "trap": {
-        this.zones.push({ x: p.x, z: p.z, r: 1.4 + area, life: 6 * durScale, tick: 0, dmg: dmg * 0.35, type: def.type, status: def.status, statusChance: 0.25 * mv.mods.status, snare: true });
+        for (let i = 0; i < count; i++) {
+          const a = (i / count) * TAU;
+          const off = i === 0 ? 0 : 2.5; // +count = extra traps ringed around the first
+          this.zones.push({ x: p.x + Math.cos(a) * off, z: p.z + Math.sin(a) * off, r: 1.4 + area, life: 6 * durScale, tick: 0, dmg: dmg * 0.35, type: def.type, status: def.status, statusChance: 0.25 * mv.mods.status, snare: true });
+        }
         break;
       }
       case "weather": {
         this.weather = def.weather === "rain" ? "rain" : def.weather === "sun" ? "sun" : "sand";
-        this.weatherT = 12;
+        this.weatherT = 12 * durScale; // +dur = longer weather
         this.banner(def.name + "!");
         break;
       }
@@ -820,7 +841,10 @@ export class Run {
         if (target < 0) break;
         const e = this.enemyById(target);
         const dir = Math.atan2(e.z - p.z, e.x - p.x);
-        this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: dir, speed, life: 1.5, radius: 0.4, dmg, def });
+        for (let i = 0; i < count; i++) {
+          const spread = count > 1 ? (i / (count - 1) - 0.5) * 0.6 : 0; // +count = extra projectiles
+          this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: dir + spread, speed, life: 1.5, radius: 0.4, dmg, def });
+        }
       }
     }
   }
@@ -1467,7 +1491,8 @@ export class Run {
   }
 
   rollMoveUps(mv) {
-    const stats = this.rules.archetypes[mv.def.arch].stats.slice();
+    const blocked = NO_EFFECT_UPS[mv.def.arch] ?? [];
+    const stats = this.rules.archetypes[mv.def.arch].stats.filter((s) => !blocked.includes(s));
     const ups = [];
     const n = mv.level >= 6 ? 3 : 2;
     for (let i = 0; i < n && stats.length; i++) {

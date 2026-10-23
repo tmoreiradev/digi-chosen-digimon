@@ -130,6 +130,77 @@ test("+status scales the per-tick status chance of a trail zone", () => {
   assert.equal(tick(3), true, "x3 -> 75 %: status applied");
 });
 
+test("+count on a beam keeps the aimed ray: a far target is still hit", () => {
+  const { run } = makeRun();
+  const mv = withMove(run, "beam");
+  const far = run.spawnEnemy(16, 20, 0, "normal");
+  mv.mods.count = 1; // two rays
+  withRandom(0.99, () => run.fireMove(mv));
+  assert.ok(damaged(far) > 0, "the central ray still lands on the target 20 units away");
+});
+
+test("+count lays extra traps and extra waves", () => {
+  const { run } = makeRun();
+  const trap = withMove(run, "trap");
+  run.fireMove(trap);
+  const base = run.zones.length;
+  assert.equal(base, Math.max(1, Math.floor(trap.def.count)), "the archetype's own count of traps");
+  run.zones.length = 0;
+  trap.mods.count = 1;
+  run.fireMove(trap);
+  assert.equal(run.zones.length, base + 1, "one more trap with +count");
+  const wave = withMove(run, "wave");
+  const e = run.spawnEnemy(16, run.player.x + 1, run.player.z, "normal");
+  e.hp = e.maxHp = 1e6; // sturdy, so two waves cannot kill it and clamp the measurement
+  const hit = (count) => {
+    wave.mods.count = count;
+    const before = e.hp;
+    withRandom(0.99, () => run.fireMove(wave));
+    return before - e.hp;
+  };
+  const one = hit(0);
+  const two = hit(1);
+  assert.ok(one > 0 && Math.abs(two / one - 2) < 1e-6, `two waves deal double (${two / one})`);
+});
+
+test("+area lengthens chain jumps and widens the smite splash", () => {
+  {
+    const { run } = makeRun();
+    const mv = withMove(run, "chain");
+    const a = run.spawnEnemy(16, 10, 0, "normal");
+    const c = run.spawnEnemy(16, 22, 0, "normal"); // 12 from A: within the base 16-unit jump
+    const b = run.spawnEnemy(16, 40, 0, "normal"); // 18 from C: beyond it
+    run.fireMove(mv);
+    assert.ok(damaged(a) > 0 && damaged(c) > 0, "the chain jumps from A to C (it used to re-hit A)");
+    assert.equal(damaged(b), 0, "base range stops before B");
+    mv.mods.area = 1.5; // 24-unit jumps
+    run.fireMove(mv);
+    assert.ok(damaged(b) > 0, "with +area the chain reaches B through C");
+  }
+  {
+    const { run } = makeRun();
+    const mv = withMove(run, "smite");
+    mv.mods.count = -1; // a single strike
+    const a = run.spawnEnemy(16, 5, 0, "normal");
+    const c = run.spawnEnemy(16, 5, 3, "normal"); // 3 from A: outside the base splash (1.9)
+    run.fireMove(mv);
+    assert.ok(damaged(a) > 0 && damaged(c) === 0);
+    mv.mods.area = 2; // splash 3.8
+    run.fireMove(mv);
+    assert.ok(damaged(c) > 0, "with +area the splash reaches C");
+  }
+});
+
+test("stats an archetype cannot honour are never offered on its cards", () => {
+  const { run } = makeRun();
+  for (const [arch, blocked] of [["beam", "dur"], ["cone", "dur"], ["orbit", "dur"], ["dash", "speed"]]) {
+    const mv = withMove(run, arch);
+    for (let i = 0; i < 40; i++) {
+      for (const up of run.rollMoveUps(mv)) assert.notEqual(up.key, blocked, `${arch} never offers +${blocked}`);
+    }
+  }
+});
+
 test("+status raises the chance that a hit applies the move's status", () => {
   const { run, mv } = shooter();
   const e = run.spawnEnemy(16, 3, 0, "normal");
