@@ -558,6 +558,7 @@ export class Run {
     const count = Math.max(1, Math.floor(def.count + mv.mods.count + (def.arch === "barrage" ? p.stats.projectiles : 0)));
     const speed = def.speed * mv.mods.speed * p.stats.projSpeed;
     const dur = def.dur * mv.mods.dur * p.stats.duration;
+    const durScale = mv.mods.dur * p.stats.duration; // for attacks whose base duration is fixed here
     const color = this.typeRgb(def.type);
     const aim = this.aimDirection();
     const aimAngle = Math.atan2(aim.z, aim.x);
@@ -568,7 +569,7 @@ export class Run {
         const reach = 2.2 + area * 0.9;
         const arc = def.arch === "spin" ? TAU : 1.6;
         const targets = this.enemiesInCone(p.x, p.z, aim.x, aim.z, reach, arc);
-        for (const e of targets) this.hitEnemy(e, dmg, def);
+        for (let i = 0; i < count; i++) for (const e of targets) this.hitEnemy(e, dmg, def); // +count = extra swings
         this.ring(p.x, p.y + 0.2, p.z, reach, color, 0.22);
         // A short lunge sells the melee swing.
         p.vx += aim.x * 5;
@@ -652,19 +653,22 @@ export class Run {
         const target = aim.target;
         if (target < 0) break;
         const e = this.enemyById(target);
-        const dir = Math.atan2(e.z - p.z, e.x - p.x);
+        const baseDir = Math.atan2(e.z - p.z, e.x - p.x);
         const length = 30;
-        for (const en of this.enemies) {
-          if (!en.alive) continue;
-          const rx = en.x - p.x;
-          const rz = en.z - p.z;
-          const along = rx * Math.cos(dir) + rz * Math.sin(dir);
-          if (along < 0 || along > length) continue;
-          const perp = Math.abs(rx * -Math.sin(dir) + rz * Math.cos(dir));
-          if (perp > 0.8 + area) continue;
-          this.hitEnemy(en, dmg, def);
+        for (let i = 0; i < count; i++) {
+          const dir = baseDir + (i - (count - 1) / 2) * 0.35; // +count = extra beams in a fan
+          for (const en of this.enemies) {
+            if (!en.alive) continue;
+            const rx = en.x - p.x;
+            const rz = en.z - p.z;
+            const along = rx * Math.cos(dir) + rz * Math.sin(dir);
+            if (along < 0 || along > length) continue;
+            const perp = Math.abs(rx * -Math.sin(dir) + rz * Math.cos(dir));
+            if (perp > 0.8 + area) continue;
+            this.hitEnemy(en, dmg, def);
+          }
+          this.beam(p.x, p.y + 1, p.z, dir, length, color);
         }
-        this.beam(p.x, p.y + 1, p.z, dir, length, color);
         break;
       }
       case "cone": {
@@ -729,11 +733,25 @@ export class Run {
         break;
       }
       case "smite": {
-        const t = this.nearestEnemy(p.x, p.z, 26);
-        if (t < 0) break;
-        const e = this.enemyById(t);
-        this.hitEnemy(e, dmg * 1.4, def);
-        this.beam(p.x, p.y + 1, p.z, Math.atan2(e.z - p.z, e.x - p.x), dist(p.x, p.z, e.x, e.z), color);
+        // +count = more strikes from the sky, each on the next nearest enemy
+        const struck = new Set();
+        for (let i = 0; i < count; i++) {
+          let t = -1;
+          let bestD = 26 * 26;
+          for (const en of this.enemies) {
+            if (!en.alive || struck.has(en.id)) continue;
+            const d = dist2(p.x, p.z, en.x, en.z);
+            if (d < bestD) {
+              bestD = d;
+              t = en.id;
+            }
+          }
+          if (t < 0) break;
+          const e = this.enemyById(t);
+          struck.add(t);
+          this.hitEnemy(e, dmg * 1.4, def);
+          this.beam(p.x, p.y + 1, p.z, Math.atan2(e.z - p.z, e.x - p.x), dist(p.x, p.z, e.x, e.z), color);
+        }
         break;
       }
       case "dash": {
@@ -747,7 +765,7 @@ export class Run {
           const along = rx * Math.cos(dir) + rz * Math.sin(dir);
           if (along < 0 || along > len) continue;
           if (Math.abs(rx * -Math.sin(dir) + rz * Math.cos(dir)) > 1.6) continue;
-          this.hitEnemy(en, dmg, def);
+          for (let i = 0; i < count; i++) this.hitEnemy(en, dmg, def); // +count = extra charges
         }
         this.beam(p.x, p.y + 0.8, p.z, dir, len, color);
         break;
@@ -776,11 +794,12 @@ export class Run {
         break;
       }
       case "trail": {
-        this.zones.push({ x: p.x, z: p.z, r: 1.2 + area, life: 3, tick: 0, dmg: dmg * 0.4, type: def.type, status: def.status });
+        // +dur stretches the 3 s base; +status scales the zone's 25 % per-tick chance.
+        this.zones.push({ x: p.x, z: p.z, r: 1.2 + area, life: 3 * durScale, tick: 0, dmg: dmg * 0.4, type: def.type, status: def.status, statusChance: 0.25 * mv.mods.status });
         break;
       }
       case "trap": {
-        this.zones.push({ x: p.x, z: p.z, r: 1.4 + area, life: 6, tick: 0, dmg: dmg * 0.35, type: def.type, status: def.status, snare: true });
+        this.zones.push({ x: p.x, z: p.z, r: 1.4 + area, life: 6 * durScale, tick: 0, dmg: dmg * 0.35, type: def.type, status: def.status, statusChance: 0.25 * mv.mods.status, snare: true });
         break;
       }
       case "weather": {
@@ -938,7 +957,7 @@ export class Run {
         for (const e of this.enemies) {
           if (!e.alive) continue;
           if (dist2(e.x, e.z, z.x, z.z) > z.r * z.r) continue;
-          this.hitEnemy(e, z.dmg, { type: z.type, cls: "special", status: z.status, statusChance: 0.25, slot: -1 });
+          this.hitEnemy(e, z.dmg, { type: z.type, cls: "special", status: z.status, statusChance: z.statusChance ?? 0.25, slot: -1 });
           if (z.snare) e.vx *= 0.5;
         }
         if (z.hostile) {

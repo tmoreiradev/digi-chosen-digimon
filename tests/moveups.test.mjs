@@ -69,6 +69,67 @@ test("+crit raises the crit chance of every hit", () => {
   assert.ok(Math.abs(critted / plain - p.stats.critDamage) < 1e-6, `crit multiplies by critDamage (${critted / plain} vs ${p.stats.critDamage})`);
 });
 
+test("+count on a melee strike means extra swings (the archetype used to ignore it)", () => {
+  const { run } = makeRun({ speciesId: 1 }); // Bulbasaur: Vine Whip is a strike
+  const p = run.player;
+  p.x = 0;
+  p.z = 0;
+  const mv = p.moves[0];
+  assert.equal(mv.def.arch, "strike");
+  const swing = (count) => {
+    const e = run.spawnEnemy(16, 1.5, 0, "normal");
+    mv.mods.count = count;
+    withRandom(0.99, () => run.fireMove(mv)); // no crits
+    e.alive = false;
+    return damaged(e);
+  };
+  const one = swing(0);
+  const two = swing(1);
+  assert.ok(one > 0);
+  assert.ok(Math.abs(two / one - 2) < 1e-6, `two swings deal double (${two / one})`);
+});
+
+function withMove(run, arch) {
+  const move = data.moves.find((m) => buildMoveDef(m, data.rules)?.arch === arch);
+  assert.ok(move, `a ${arch} move exists in the tables`);
+  const def = buildMoveDef(move, data.rules);
+  if (!def.status) def.status = "burn";
+  const mv = { def, level: 1, timer: 0, mods: { dmg: 1, cd: 1, count: 0, area: 1, speed: 1, dur: 1, pierce: 0, crit: 0, status: 1, bounce: 0 } };
+  run.player.moves.push(mv);
+  return mv;
+}
+
+test("+dur stretches the life of trail and trap zones", () => {
+  for (const arch of ["trail", "trap"]) {
+    const { run } = makeRun();
+    const mv = withMove(run, arch);
+    const base = arch === "trail" ? 3 : 6;
+    run.fireMove(mv);
+    assert.ok(Math.abs(run.zones.at(-1).life - base) < 1e-9, `${arch}: base life ${base}`);
+    mv.mods.dur = 1.5;
+    run.fireMove(mv);
+    assert.ok(Math.abs(run.zones.at(-1).life - base * 1.5) < 1e-9, `${arch}: +50% duration`);
+  }
+});
+
+test("+status scales the per-tick status chance of a trail zone", () => {
+  const { run } = makeRun();
+  const mv = withMove(run, "trail");
+  const status = mv.def.status;
+  const e = run.spawnEnemy(16, run.player.x, run.player.z, "normal");
+  const tick = (statusMod) => {
+    run.zones.length = 0;
+    mv.mods.status = statusMod;
+    run.fireMove(mv);
+    run.zones[0].tick = 0;
+    e.statuses[status] = 0;
+    withRandom(0.5, () => run.updateProjectiles(1 / 60)); // the zone ticks once; 0.5 beats the 25 % base
+    return (e.statuses[status] ?? 0) > 0;
+  };
+  assert.equal(tick(1), false, "base chance 25 %: no status at roll 0.5");
+  assert.equal(tick(3), true, "x3 -> 75 %: status applied");
+});
+
 test("+status raises the chance that a hit applies the move's status", () => {
   const { run, mv } = shooter();
   const e = run.spawnEnemy(16, 3, 0, "normal");

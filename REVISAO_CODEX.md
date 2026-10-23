@@ -387,6 +387,18 @@ ressalvas**, 2 achados, ambos aceitos:
 | Cartas de upgrade de golpe ofereciam `pierce`, `crit`, `status` e `bounce`, mas o combate só lia `def.pierce`/`def.critBonus`/`def.statusChance` e ricochete não existia — a correção do item 3 da §3 era parcial (P2) | Corrigido: `Run.effectiveDef(mv)` funde os mods no def usado por cada disparo e acerto (`pierce` soma, `critBonus` soma, `statusChance` multiplica, `bounces`); `spawnProjectile` usa `def.pierce` (antes dobrava o valor); ricochete implementado (`bounceProjectile`: redireciona ao inimigo mais próximo ainda não atingido, até `bounces` vezes). |
 | O teste dos upgrades só verificava `mv.mods` (P3) | `tests/moveups.test.mjs` testa efeitos observáveis: 2.º inimigo em linha atingido só com pierce, inimigo fora da linha atingido só com bounce, dano × `critDamage` com +crit, status aplicado com +status. |
 
+**Décima rodada** (`94acc78..a8168ce`, `reviews/codex-2026-10-23-23-21-94acc78..HEAD.md`): **Aprovado com
+ressalvas**, 4 achados no mesmo tema (upgrades sem efeito), todos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| `+dur` sem efeito: `dur` era calculado e não usado; rastro sempre 3 s, armadilha 6 s (P2) | `life = base × mods.dur × stats.duration` nas zonas de trail/trap. |
+| `+count` ignorado por strike, beam, dash e smite (P2) | strike/dash: `count` golpes extras; beam: leque de `count` raios (±0,35 rad); smite: `count` quedas, cada uma no próximo inimigo mais próximo. |
+| Ticks de zona usavam chance fixa de 25 %, ignorando `+status` (P2) | A zona guarda `statusChance = 0,25 × mods.status` e o tick usa esse valor (zonas hostis de boss mantêm 25 %). |
+| Teste de upgrades só olhava `mv.mods` (P3) | `moveups.test.mjs` ganhou: golpe com `+count` dá o dobro, `+dur` estica as zonas, `+status` muda o resultado do tick. |
+
+Com isso o item 3 da §3 fica integral: todo stat oferecido na carta de golpe tem efeito no combate.
+
 ---
 
 ## 15. Playtest automatizado — um bot que joga (23/10/2026)
