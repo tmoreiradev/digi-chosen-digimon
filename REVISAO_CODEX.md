@@ -327,3 +327,11 @@ com ressalvas**, 3 achados, todos aceitos:
 | Andares 5–7 da Torre acordam `kind: "boss"`, que `awakenGuardian` converte em `"guardian"`; o redimensionamento pela curva de boss (feito para o Clássico) os apanhava — regressão contra "a Torre mantém a curva viva" (P2) | Corrigido: a decisão passa a ser pelo modo (`run.tower`), não pelo tipo; teste com o andar 7. |
 | O script rodava testes/bundle no checkout, não no worktree do commit revisado (P3) | Corrigido: tudo roda dentro do worktree (inclusive o build, já que `dist/` não é versionado). |
 | Teste de DoT só cobria burn (P3) | Corrigido: casos separados para burn e poison. |
+
+**Terceira rodada** (`94acc78..23ad823`, `reviews/codex-2026-10-23-22-57-94acc78..HEAD.md`): **Aprovado com
+ressalvas**, 2 achados, ambos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| `endRun` não fechava o painel de level-up: subir de nível no instante em que a run acaba deixava as cartas sobre os resultados e, com `levelup.active` preso, a run seguinte ficava congelada (P2) | Corrigido: `LevelUpPanel.close()` (usado também por escolher/pular) e `endRun` fecha o painel e zera `pendingLevelUps`; teste em `tests/levelup.test.mjs`. |
+| P/Esc com baú/loja/altar aberto alternava `state.paused` e reiniciava a música com o painel ainda aberto (P2); invalida parte da afirmação da §4 sobre música | Corrigido: com painel de evento aberto, Esc fecha o painel e P é ignorado; a §4 passa a valer com essa regra. |

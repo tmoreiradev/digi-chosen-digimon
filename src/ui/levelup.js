@@ -63,13 +63,18 @@ export class LevelUpPanel {
     );
   }
 
+  /** Hide the cards without picking (run ended); pending level-ups are the caller's to drop. */
+  close() {
+    this.active = false;
+    this.root.className = "levelup";
+    clear(this.root);
+  }
+
   choose(index) {
     if (!this.active) return;
     const choice = this.choices[index];
     if (!choice) return;
-    this.active = false;
-    this.root.className = "levelup";
-    clear(this.root);
+    this.close();
     this.onPick(choice);
   }
 
@@ -81,9 +86,7 @@ export class LevelUpPanel {
 
   skip() {
     if (!this.active) return;
-    this.active = false;
-    this.root.className = "levelup";
-    clear(this.root);
+    this.close();
     this.onPick(null, "skip");
   }
 

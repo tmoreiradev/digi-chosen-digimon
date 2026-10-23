@@ -171,6 +171,9 @@ function endRun(victory, expected = state.run) {
   // Floors cleared, not the floor you are standing on; a cleared tower counts all of them.
   const towerFloors = run.tower ? (run.tower.cleared ? run.tower.floor : run.tower.floor - 1) : 0;
   state.music.stop();
+  // A level-up that landed as the run ended must not sit on the results or block the next run.
+  state.levelup.close();
+  state.pendingLevelUps = 0;
   state.mode = "menu";
   hudRoot.classList.remove("show");
   canvas.classList.remove("show");
@@ -227,6 +230,17 @@ function onKeyDown(e) {
   }
 
   if (state.mode === "game") {
+    // A world-event panel (chest/shop/altar) owns the keyboard: Esc closes it, P is ignored;
+    // toggling the pause on top of it used to restart the music while the panel stayed open.
+    if (state.run?.stateEventPanel) {
+      if (e.code === "Escape") {
+        e.preventDefault();
+        state.run.events.panel?.close();
+      } else if (e.code === "KeyP") {
+        e.preventDefault();
+      }
+      return;
+    }
     if (e.code === "KeyP" || e.code === "Escape") {
       e.preventDefault();
       togglePause();
