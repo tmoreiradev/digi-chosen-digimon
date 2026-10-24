@@ -1157,6 +1157,9 @@ export class Run {
     if (e.statuses.freeze > 0) amount *= 1.2;
     if (e.statuses.curse > 0) amount *= 1.25;
 
+    // Base for burn/poison DPS: without the Silph Scope mark (the tick applies it) and before the boss cap
+    // (the ticks go through the cap themselves).
+    const dotBase = e.marked ? amount / 1.4 : amount;
     // Boss budget: burst cap, anti-stall exhaust, 15% while a telegraph winds up.
     if (this.boss.index === e.id && this.boss.alive) amount = this.boss.capDamage(amount * this.boss.hitMul());
 
@@ -1172,7 +1175,6 @@ export class Run {
     // Status application
     if (def?.status && def.statusChance > 0 && Math.random() < def.statusChance * s.statusChance) {
       e.statuses[def.status] = 3.2;
-      const dotBase = e.marked ? amount / 1.4 : amount; // the Silph Scope mark is applied on each tick, not baked in
       if (def.status === "burn") e.burnDps = Math.max(e.burnDps ?? 0, dotBase * 0.06);
       if (def.status === "poison") e.poisonDps = Math.max(e.poisonDps ?? 0, dotBase * 0.05);
     }

@@ -276,3 +276,27 @@ test("Poké Flute: the ultimate charges 25 % faster and recharges every move on 
   assert.ok(r2.player.moves.every((mv) => mv.timer === 0));
   assert.equal(r2.player.fluteT, 6);
 });
+
+test("a capped hit on a marked boss still stores the full, unmarked burn", () => {
+  const { run } = setup();
+  run.player.iframes = 1e9;
+  give(run, "silph-scope");
+  run.player.scopeT = 1e9;
+  run.stageTime = 299.99;
+  frames(run, 2);
+  const boss = run.boss;
+  const g = boss.enemy;
+  g.hp = g.maxHp = 1e9;
+  const burn = { type: "fire", cls: "special", status: "burn", statusChance: 1 };
+  const stored = (marked) => {
+    g.marked = marked;
+    g.burnDps = 0;
+    boss.capBank = 1; // the cap lets almost nothing through
+    boss.capT = run.time;
+    withRandom(0, () => run.hitEnemy(g, 1000, burn, true));
+    return g.burnDps;
+  };
+  const plain = stored(false);
+  assert.ok(plain > 1, "the burn comes from the uncapped hit: " + plain);
+  assert.ok(Math.abs(stored(true) - plain) < 1e-9, "marked or not, the same base burn");
+});

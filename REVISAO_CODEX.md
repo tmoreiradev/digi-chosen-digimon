@@ -954,3 +954,10 @@ Suíte **165 / 165**; build + `check-bundle` OK.
 multiplicava de novo (×1,96); agora o DPS é guardado sem a marca e ela entra só no tique. (P3) o teste prometia espinhos
 sem exercitá-los; o teste novo aplica a queimadura por `hitEnemy` real em alvo marcado e desmarcado (mesmo DPS guardado,
 tique ×1,4 uma vez) e compara o dano dos espinhos (×1,4 no marcado). Suíte **166 / 166**; build + `check-bundle` OK.
+
+**Trigésima rodada** (`fb579e9..500de72`, `reviews/codex-2026-10-24-07-13-fb579e9..HEAD.md`): **Aprovado com ressalvas**, 1 P2, aceito:
+a base da queimadura/veneno era tirada **depois** do teto do boss — um golpe limitado guardava um DPS minúsculo (e
+diferente com e sem marca). Agora a base (sem a marca) é tirada antes do teto; os tiques passam pelo teto por conta
+própria, então o orçamento do boss segue respeitado. Efeito colateral intencional: queimadura em boss deixa de ser
+derivada do golpe já cortado. Teste: golpe de 1000 com o teto quase vazio guarda o mesmo DPS de base com e sem marca
+(no código anterior: 0,06). Suíte **167 / 167**; build + `check-bundle` OK.
