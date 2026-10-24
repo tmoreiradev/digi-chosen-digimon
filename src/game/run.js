@@ -425,8 +425,7 @@ export class Run {
         this.events.interact();
         input.capturePressed = false;
       } else if (this.capture.canThrow()) {
-        const result = this.capture.throw();
-        if (result === "caught") this.stats.items++;
+        this.capture.throw(); // a capture is not an upgrade: stats.items counts level-up items only
         input.capturePressed = false;
       }
     }

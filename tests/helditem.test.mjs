@@ -18,7 +18,7 @@ function setup() {
   const root = document.createElement("div");
   const screens = new Screens(root, data);
   const { run } = makeRun({ profile });
-  globalThis.__PB__ = { run };
+  screens.getRun = () => run;
   return { root, screens, run };
 }
 
@@ -63,7 +63,7 @@ test("the selection is restored by a new run and shown on reopen", () => {
 
   const { run: next } = makeRun({ profile });
   assert.equal(next.player.heldItem, "choice-band", "createPlayer restores the held item");
-  globalThis.__PB__ = { run: next };
+  screens.getRun = () => next;
   screens.showHeldItem();
   assert.deepEqual(checked(root), ["Choice Band"]);
 });

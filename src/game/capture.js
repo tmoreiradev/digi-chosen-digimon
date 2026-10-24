@@ -87,6 +87,7 @@ export class Capture {
     // "First capture" is per run: the first ball that lands in a run always
     // grants an egg (unless one is already incubating), later ones have a 25%
     // chance. Read the counter BEFORE recording the catch.
+    this.attempts.delete(e.id); // the bonus belongs to this enemy only; forget it once caught
     const firstOfRun = run.capturesThisRun === 0;
     run.capturesThisRun++;
     run.allies.recruit(e.species, isBossTier(e.tier) ? 1.5 : 1, e.shiny);
@@ -121,7 +122,8 @@ export class Capture {
     if (this.state === "down") {
       this.downT -= dt;
       const e = this.run.enemyById(this.down);
-      if (!e || !e.alive) {
+      if (!e || !e.alive || e.dying > 0) {
+        this.attempts.delete(this.down); // killed while down: its attempt bonus goes with it
         this.reset();
         return;
       }

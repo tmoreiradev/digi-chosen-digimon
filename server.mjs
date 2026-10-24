@@ -22,13 +22,21 @@ const MIME = {
   ".woff2": "font/woff2",
 };
 
-const server = http.createServer((req, res) => {
-  const url = new URL(req.url, `http://${req.headers.host}`);
-  let rel = decodeURIComponent(url.pathname);
+export function handle(req, res) {
+  const url = new URL(req.url, "http://localhost");
+  let rel;
+  try {
+    rel = decodeURIComponent(url.pathname);
+  } catch {
+    res.writeHead(400, { "Content-Type": "text/plain" }).end("Bad request"); // malformed %-escape used to crash the server
+    return;
+  }
   if (rel === "/") rel = "/index.html";
 
   const filePath = path.join(ROOT, rel);
-  if (!filePath.startsWith(ROOT)) {
+  // A bare startsWith(ROOT) also let a sibling folder such as "<ROOT>2" through.
+  const inside = path.relative(ROOT, filePath);
+  if (inside.startsWith("..") || path.isAbsolute(inside)) {
     res.writeHead(403).end("Forbidden");
     return;
   }
@@ -44,8 +52,10 @@ const server = http.createServer((req, res) => {
     });
     res.end(data);
   });
-});
+}
 
-server.listen(PORT, () => {
-  console.log(`Digi Chosen running at http://localhost:${PORT}/`);
-});
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  http.createServer(handle).listen(PORT, () => {
+    console.log(`Digi Chosen running at http://localhost:${PORT}/`);
+  });
+}

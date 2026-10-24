@@ -30,12 +30,12 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 |---|------|------|
 | 13 | ~~HUD reconstrói slots e ult a cada frame (DOM churn)~~ | `hud.js` `update` | **Feito na fase 13 (24/10):** slots reconstruídos só quando golpes/vagas mudam, ult só quando o nome muda; por frame só classe `ready` e largura das barras. |
 | 14 | ~~UI mista inglês/português, `lang="en"`, sem i18n~~ | **Feito na fase 8 (23/10):** `src/core/i18n.js` + literais traduzidos em todos os módulos de UI/jogo; `lang="pt-BR"`. Nomes próprios dos dados seguem em inglês. |
-| 15 | Passphrase das contas em texto puro no `localStorage` (local, mas vale aviso) | `account.js` |
-| 16 | `screens.js` acessa `globalThis.__PB__.run` para apelido/item (acoplamento com `main.js`) | `screens.js` |
-| 17 | `decodeURIComponent` de URL malformada derruba o servidor de desenvolvimento | `server.mjs` |
-| 18 | `Capture.attempts` nunca é limpo; capturar incrementa `stats.items` ("upgrades" nos resultados) | `capture.js`, `run.js` |
-| 19 | `showResults` adiciona a espécie jogada a `profile.data.caught` ("Caught: X / 40" mistura jogados e capturados) | `screens.js` |
-| 20 | Loop principal continua até 4 passos no mesmo frame depois de um level-up | `main.js` `loop` |
+| 15 | ~~Passphrase das contas em texto puro no `localStorage`~~ | `account.js` — **Feito na fase 14 (24/10):** `passHash` (FNV-1a salgado pelo nome, 2000 iterações; só tira o texto puro de vista, não é proteção real); saves antigos migram no login; campo de senha mascarado. |
+| 16 | ~~`screens.js` acessa `globalThis.__PB__.run`~~ | `screens.js` — **Feito na fase 14:** `Screens.getRun` injetado por `main.js` (o global `__PB__` fica só para depuração). |
+| 17 | ~~URL malformada derruba o servidor de desenvolvimento~~ | `server.mjs` — **Feito na fase 14:** `%`-escape inválido responde 400; a checagem de raiz usa `path.relative` (o `startsWith` deixava passar uma pasta irmã `<raiz>2`); `handle` exportado e testado. |
+| 18 | ~~`Capture.attempts` nunca é limpo; capturar incrementa `stats.items`~~ | `capture.js`, `run.js` — **Feito na fase 14:** bônus de tentativa apagado ao capturar ou quando o alvo morre enfraquecido; captura não conta mais como upgrade. |
+| 19 | ~~`showResults` adiciona a espécie jogada a `caught`~~ | `screens.js` — **Já resolvido na fase 3:** o parceiro jogado conta como *visto*. |
+| 20 | ~~Loop continua até 4 passos depois de um level-up~~ | `main.js` `loop` — **Feito na fase 14:** o laço de recuperação para (e zera o acumulador) quando abre carta, painel de evento ou a run termina. |
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 

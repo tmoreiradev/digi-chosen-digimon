@@ -767,3 +767,21 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   frames, barra de recarga 100 % e ult 50 %, classe `ready` liga, e uma vaga nova reconstrói (3 → 4 slots).
   Navegador: 30 frames reais com o mesmo elemento de slot e de ult, ult avançando (1,75 %). Suíte 128 / 128;
   build + `check-bundle` OK.
+
+## 25. Fase 14 — Qualidade: itens 15–20 do BACKLOG (24/10/2026)
+
+- **15 senha:** `passHash(nome, senha)` em `account.js` (FNV-1a de `rng.js`, salgado pelo nome, 2000 iterações) no
+  lugar de `profile.pass`; login de save antigo confere o texto puro uma vez e migra; `<input type="password">`. É
+  ofuscação, não segurança (comentário `shortcut:` no código). `tests/account.test.mjs` (4).
+- **16 acoplamento:** `Screens.getRun()` injetado por `main.js` substitui `globalThis.__PB__.run` em apelido e item
+  segurado; testes de pausa/item usam o callback.
+- **17 servidor:** `handle(req, res)` exportado, `listen` só quando executado direto; `decodeURIComponent` em
+  `try` → 400; checagem de raiz por `path.relative`. `tests/maintenance.test.mjs` sobe o handler numa porta livre:
+  `/%E0%A4%A` → 400 e o servidor segue respondendo; pasta irmã e `../../windows/win.ini` não servem.
+- **18 captura:** `Capture.attempts` perde a entrada ao capturar e quando o alvo enfraquecido morre (inclusive
+  durante o `dying`); o lançamento pela tecla E não soma `stats.items`. Testes no mesmo arquivo.
+- **19:** já resolvido na fase 3.
+- **20 loop:** depois de cada passo, se abriu carta, painel ou a run acabou, o laço sai e zera o acumulador. Sem
+  teste automatizado (`main.js` não é importado); revisado por leitura.
+- **Navegador:** campos da conta `text,password`; pausa → Item segurado lista e grava `leftovers` na run viva pelo
+  `getRun`; nenhuma conta com `pass` em texto puro. Suíte **136 / 136**; build + `check-bundle` OK.

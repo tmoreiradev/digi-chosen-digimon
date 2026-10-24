@@ -18,7 +18,7 @@ function setup() {
   const root = document.createElement("div");
   const screens = new Screens(root, loadData());
   const { run } = makeRun({ profile });
-  globalThis.__PB__ = { run };
+  screens.getRun = () => run;
   return { root, screens, run };
 }
 

@@ -72,6 +72,7 @@ async function boot() {
   state.renderer = new Renderer(canvas);
   state.hud = new Hud(hudRoot);
   state.screens = new Screens(screenRoot, state.data);
+  state.screens.getRun = () => state.run;
   state.levelup = new LevelUpPanel(levelRoot, handleLevelUpChoice);
 
   state.screens.onStart = startRun;
@@ -326,10 +327,17 @@ function loop(now) {
       if (run.player.level > run.player.lastEvoCheck) {
         run.player.lastEvoCheck = run.player.level;
         if (run.tryEvolve()) state.sfx.evolve();
-      }      input.jumpPressed = false;
+      }
+      input.jumpPressed = false;
       input.ultPressed = false;
       input.capturePressed = false;
       steps++;
+      // A level-up, an event panel or the end of the run stops the catch-up loop: the remaining
+      // steps of this frame must not simulate behind the cards.
+      if (state.levelup.active || run.stateEventPanel || run.state !== "running") {
+        state.accumulator = 0;
+        break;
+      }
     }
     state.hud.update(run);
     state.music.setTheme(state.music.theme, run.boss.alive); // battle theme while a guardian/legendary fights

@@ -16,6 +16,7 @@ export class Screens {
     this.onStart = () => {};
     this.onResume = () => {};
     this.onQuit = () => {};
+    this.getRun = () => null; // the live run, for the pause submenus (set by main.js)
     this.onVolume = () => {};
     this.selected = 1;
     this.biome = data.rules.biomes[0].id;
@@ -129,7 +130,7 @@ export class Screens {
     this.screen = "account-manage";
     this.clear();
     const nameIn = el("input", { type: "text", placeholder: "Nome", class: "inp", value: "" });
-    const passIn = el("input", { type: "text", placeholder: "Senha (opcional)", class: "inp", value: "" });
+    const passIn = el("input", { type: "password", placeholder: "Senha (opcional)", class: "inp", value: "" });
     const msg = el("div", { class: "muted" });
     this.root.append(
       el(
@@ -441,7 +442,7 @@ export class Screens {
   showNickname() {
     this.screen = "nickname";
     this.clear();
-    const run = globalThis.__PB__?.run;
+    const run = this.getRun();
     const player = run?.player;
     const current = player?.nickname ?? "";
     const input = el("input", {
@@ -485,7 +486,7 @@ export class Screens {
   showHeldItem() {
     this.screen = "helditem";
     this.clear();
-    const run = globalThis.__PB__?.run;
+    const run = this.getRun();
     const player = run?.player;
     // Only offer items with implemented held-item effects.
     const ITEMS_WITH_HELD_EFFECT = ["leftovers", "choice-band"];
