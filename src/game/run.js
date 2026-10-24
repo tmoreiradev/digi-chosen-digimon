@@ -643,7 +643,7 @@ export class Run {
             z: p.z,
             angle: dir + spread,
             // A bomb is thrown to land on the target: about 0.72 s in the air (vy 6, gravity 18, from 0.9 up).
-            speed: def.arch === "lob" ? clamp((target >= 0 ? dist(p.x, p.z, this.enemyById(target).x, this.enemyById(target).z) : 6) / 0.72, 2, 20) : speed,
+            speed: def.arch === "lob" ? clamp((target >= 0 ? dist(p.x, p.z, this.enemyById(target).x, this.enemyById(target).z) : 6) / 0.72, 2, 40) : speed, // 40 u/s reaches the 26 u aim range
             life: 2.2,
             radius: def.arch === "lob" ? 0.45 : 0.55,
             dmg,

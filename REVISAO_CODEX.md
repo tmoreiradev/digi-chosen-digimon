@@ -848,3 +848,8 @@ a acertar tudo no caminho, ~3 acertos por bomba); explode só ao cair. `lob` sai
 explosão de raio 2,2 × √área cobre o desvio). Medido a 3 u: 0,94–1,00× com +0 a +5 bombas. Teste novo: a bomba cai
 a < 2,5 u do alvo a 8 u, o inimigo sob o arco não é atingido, e +3/+5 ficam em ±25 %. ⚠ Mudança de jogo: Rock
 Throw deixa de ser uma área em volta do jogador. Suíte **143 / 143**; build + `check-bundle` OK.
+
+**Vigésima segunda rodada** (`7a340ee..e96a946`, `reviews/codex-2026-10-24-06-43-7a340ee..HEAD.md`): **Aprovado com ressalvas**,
+1 achado (P2), aceito: o teto de 20 u/s só levava a bomba a ~14,7 u, mas a mira escolhe alvos até 26 u. Teto 40 u/s
+(26 ÷ 0,72 ≈ 36). Teste com alvos a 14, 20 e 25 u (a 20 u o código anterior caía em x = 15,3). Suíte **144 / 144**; build +
+`check-bundle` OK.

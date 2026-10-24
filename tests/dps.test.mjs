@@ -91,6 +91,24 @@ test("orb and boomerang: +count raises the estimate as much as the measured dama
   }
 });
 
+test("a bomb reaches a target at the edge of the aim range", () => {
+  for (const d of [14, 20, 25]) {
+    const run = levelled(74);
+    const p = run.player;
+    run.player.moves = run.player.moves.filter((m) => m.def.arch === "lob");
+    const e = run.spawnEnemy(16, p.x + d, p.z, "normal");
+    e.hp = e.maxHp = 1e9;
+    e.speed = 0;
+    run.player.moves[0].timer = 0;
+    run.update(1 / 60);
+    const bomb = run.projectiles.find((pr) => pr.lob);
+    assert.ok(bomb, "thrown at " + d + " u");
+    for (let i = 0; i < 90 && run.projectiles.includes(bomb); i++) run.update(1 / 60);
+    assert.ok(Math.abs(bomb.x - e.x) < 2.5, `${d} u: landed at x ${bomb.x.toFixed(1)}`);
+    assert.ok(e.hp < e.maxHp, d + " u: the target took the blast");
+  }
+});
+
 test("lob bombs fly to the target, explode on landing only, and +count is counted", () => {
   const run = levelled(74); // Geodude: Rock Throw is a lob
   const p = run.player;
