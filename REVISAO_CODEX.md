@@ -938,6 +938,13 @@ como guarda. Suíte **151 / 151**; build + `check-bundle` OK.
 - **Fora da estimativa de DPS:** os bônus temporários (Adrenaline, Metal Powder, Cell Battery, Flute) e os ataques de
   item (Electirizer, Old Rod, Soda Pop, Griseous) não entram em `playerExpectedDps` — são condicionais; o orçamento de boss
   fica um pouco baixo para quem os pega.
-- **Testes:** `tests/items2.test.mjs` (12) cobre cada item; `items.test.mjs` e `review14.test.mjs` passam a exigir só
+- **Testes:** `tests/items2.test.mjs` (12; Max Ether só passou a ser exercitado na 28.ª rodada) cobre os itens; `items.test.mjs` e `review14.test.mjs` passam a exigir só
   Secret Key e Dowsing Machine fora do pool. Navegador: pool 124 itens, carta "Old Rod — A cada 9 s um Magikarp salta
   sobre um inimigo…", Electirizer acerta. Suíte **163 / 163**; build + `check-bundle` OK.
+
+**Vigésima oitava rodada** (fase 17, `0f237b7..825bae5`, `reviews/codex-2026-10-24-07-09-0f237b7..HEAD.md`): **Aprovado com ressalvas**,
+2 achados P2 + 1 P3, aceitos: (1) a marca do Silph Scope (+40 % "de tudo") só valia em `hitEnemy`; agora vale também no
+dano de área dos itens (`hitAround`), nos tiques de queimadura/veneno e nos espinhos. (2) A 2.ª cópia não fazia nada;
+agora cada cópia marca mais um dos inimigos mais fortes em 14 u (descrição atualizada). (3) O teste de TM Case/Max Ether
+não exercitava o Max Ether nem os tetos finais: viraram dois testes, golpe 8 → 9 → teto 10 e vitamina 10 → 11 → teto 12.
+Suíte **165 / 165**; build + `check-bundle` OK.

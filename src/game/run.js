@@ -1219,7 +1219,8 @@ export class Run {
     }
     // Thorns (Rocky Helmet, Protector, Sticky Barb): flat damage back to the attacker, through the boss budget.
     if (p.stats.thorns > 0 && source?.alive && source.hp > 0 && !(source.dying > 0)) {
-      const back = source.id === this.boss.index ? this.boss.capDamage(p.stats.thorns * this.boss.hitMul()) : p.stats.thorns;
+      const thorns = p.stats.thorns * (source.marked ? 1.4 : 1); // Silph Scope
+      const back = source.id === this.boss.index ? this.boss.capDamage(thorns * this.boss.hitMul()) : thorns;
       source.hp -= back;
       if (source.hp <= 0) this.killEnemy(source, { type: "normal", cls: "physical" });
       else this.maybeWeaken(source);
@@ -1256,7 +1257,8 @@ export class Run {
     const r2 = radius * radius;
     for (const e of this.enemies) {
       if (!e.alive || e.dying > 0 || e.id === exceptId || dist2(e.x, e.z, x, z) > r2) continue;
-      const through = this.boss.index === e.id && this.boss.alive ? this.boss.capDamage(dmg * this.boss.hitMul()) : dmg;
+      const d = dmg * (e.marked ? 1.4 : 1); // Silph Scope
+      const through = this.boss.index === e.id && this.boss.alive ? this.boss.capDamage(d * this.boss.hitMul()) : d;
       e.hp -= through;
       e.flash = 1;
       this.stats.damage += through;
@@ -1285,7 +1287,10 @@ export class Run {
         if (e.statuses[k] > 0) e.statuses[k] = Math.max(0, e.statuses[k] - dt);
       }
       // Damage over time also goes through the boss budget (no on-hit effects, so not via hitEnemy).
-      const tick = (dmg) => (e.id === bossId ? this.boss.capDamage(dmg * this.boss.hitMul()) : dmg);
+      const tick = (dmg) => {
+        const d = dmg * (e.marked ? 1.4 : 1); // Silph Scope: the mark takes more damage from everything
+        return e.id === bossId ? this.boss.capDamage(d * this.boss.hitMul()) : d;
+      };
       if (e.burnDps > 0 && e.statuses.burn > 0) {
         e.hp -= tick(e.burnDps * dt);
         if (e.hp <= 0) {

@@ -63,17 +63,17 @@ export function itemTick(run, dt) {
   }
   const scope = itemCount(run, "silph-scope");
   if (scope) {
-    const marked = run.enemies.find((e) => e.marked && e.alive && !(e.dying > 0));
-    if (!marked) p.scopeT = 0; // the mark fell: mark another at once
+    // One mark per copy, on the toughest enemies within 14 u.
+    const live = run.enemies.filter((e) => e.marked && e.alive && !(e.dying > 0)).length;
+    if (live < scope) p.scopeT = 0; // a mark fell: mark again at once
     if ((p.scopeT -= dt) <= 0) {
       p.scopeT = 6;
       for (const e of run.enemies) e.marked = false;
-      let best = null;
-      for (const e of run.enemies) {
-        if (!e.alive || e.dying > 0 || Math.hypot(e.x - p.x, e.z - p.z) > 14) continue;
-        if (!best || e.maxHp > best.maxHp) best = e;
-      }
-      if (best) best.marked = true;
+      const near = run.enemies
+        .filter((e) => e.alive && !(e.dying > 0) && Math.hypot(e.x - p.x, e.z - p.z) <= 14)
+        .sort((a, b) => b.maxHp - a.maxHp)
+        .slice(0, scope);
+      for (const e of near) e.marked = true;
     }
   }
   const rod = itemCount(run, "old-rod");

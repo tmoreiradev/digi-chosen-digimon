@@ -175,18 +175,60 @@ test("Old Rod: a Magikarp hits an enemy every 9 s; sometimes a Gyarados", () => 
   assert.ok(Math.abs((e.maxHp - e.hp) / one - 5 / 1.5) < 0.05, "Gyarados hits 5/1.5 as hard");
 });
 
-test("TM Case and Max Ether lift the move and vitamin level caps by 2", () => {
+test("TM Case lifts the move cap from 8 to 10", () => {
   const { run } = setup({ speciesId: 4 });
   const p = run.player;
   run.learnKitMoves(p);
   const mv = p.moves[0];
+  const offered = () => {
+    for (let i = 0; i < 200; i++) if (run.rollChoices().some((c) => c.kind === "upMove" && c.title === mv.def.name)) return true;
+    return false;
+  };
   mv.level = 8;
-  const offered = () => run.rollChoices().some((c) => c.kind === "upMove" && c.title === mv.def.name);
-  for (let i = 0; i < 60; i++) assert.ok(!offered(), "capped at 8");
+  assert.equal(offered(), false, "capped at 8");
   give(run, "tm-case");
-  let seen = false;
-  for (let i = 0; i < 200 && !seen; i++) seen = offered();
-  assert.ok(seen, "level 8 → 9 offered with the TM Case");
+  assert.equal(offered(), true, "8 → 9 with the TM Case");
+  mv.level = 10;
+  assert.equal(offered(), false, "capped at 10 with it");
+});
+
+test("Max Ether lifts the vitamin cap from 10 to 12", async () => {
+  const { vitaminChoices } = await import("../src/game/vitamins.js");
+  const { run } = setup();
+  const def = run.rules.vitamins[0];
+  run.player.vitamins.set(def.key, { level: 10, acc: 1 });
+  const offered = () => {
+    for (let i = 0; i < 200; i++) if (run.rollChoices().some((c) => c.kind === "upVit" && c.vit === def.key)) return true;
+    return false;
+  };
+  assert.equal(offered(), false, "capped at 10");
+  give(run, "max-ether");
+  assert.equal(offered(), true, "10 → 11 with Max Ether");
+  run.player.vitamins.get(def.key).level = 12;
+  assert.equal(offered(), false, "capped at 12 with it");
+  void vitaminChoices;
+});
+
+test("Silph Scope: the mark also counts for item area damage, status ticks and thorns; a second copy marks a second enemy", () => {
+  const { run } = setup();
+  run.player.iframes = 1e9;
+  give(run, "silph-scope");
+  const a = sturdy(run, 3, 0, "elite");
+  const b = sturdy(run, 4, 3);
+  a.marked = true;
+  const before = [a.hp, b.hp];
+  run.hitAround(3.5, 1.5, 10, 100, NORMAL);
+  assert.ok(Math.abs((before[0] - a.hp) / (before[1] - b.hp) - 1.4) < 1e-9, "area damage x1.4 on the mark");
+  a.statuses.burn = 5;
+  b.statuses.burn = 5;
+  a.burnDps = b.burnDps = 60;
+  const h = [a.hp, b.hp];
+  frames(run, 1);
+  assert.ok(Math.abs((h[0] - a.hp) / (h[1] - b.hp) - 1.4) < 1e-6, "burn ticks x1.4");
+  give(run, "silph-scope");
+  run.player.scopeT = 0;
+  frames(run, 1);
+  assert.equal(run.enemies.filter((e) => e.marked).length, 2, "two copies, two marks");
 });
 
 test("Poké Flute: the ultimate charges 25 % faster and recharges every move on cast", () => {

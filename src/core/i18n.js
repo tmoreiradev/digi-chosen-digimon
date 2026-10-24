@@ -156,7 +156,7 @@ export const ITEM_DESC_PT = {
   "cell-battery": "+1,5% de velocidade de ataque a cada 10 abates sem levar golpe (até +25%).",
   "griseous-orb": "Cada abate tem 12% de chance de soltar uma sombra que explode e amaldiçoa os vizinhos.",
   electirizer: "A cada 2,5 s um raio cai em 3 inimigos próximos e pode paralisá-los (+1 raio por cópia).",
-  "silph-scope": "A cada 6 s marca o inimigo mais forte por perto: ele leva 40% mais dano. Se cair, marca outro.",
+  "silph-scope": "A cada 6 s marca o inimigo mais forte por perto (+1 por cópia): ele leva 40% mais dano de tudo. Se cair, marca outro.",
   "max-ether": "Suas vitaminas podem subir mais 2 níveis (até o 12).",
   "tm-case": "Seus golpes podem subir mais 2 níveis (até o 10).",
   "poke-flute": "O ultimate carrega 25% mais rápido; ao usá-lo, todos os golpes recarregam e a velocidade de ataque sobe 30% por 6 s.",
