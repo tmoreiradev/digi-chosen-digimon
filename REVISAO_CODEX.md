@@ -744,3 +744,14 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   o banner "Revive! De volta com 35% do HP".
 - ⚠ Balanceamento: Fire Stone em cadeia e Razor Fang com rajadas podem acelerar demais o abate de hordas;
   Metronome dá +40 % desde o 1.º segundo (nunca levou golpe). Números do upstream, para o playtest.
+
+## 23. Fase 12 — Música de batalha (BACKLOG 12) (24/10/2026)
+
+- **O que era:** `Music.setTheme(tema, battle)` e o sequenciador já tinham o modo batalha (caixa extra, oitava
+  acima, arpejo), mas o único caller (`startRun`) passava `false`.
+- **Mudança:** uma linha no `loop` de `main.js`, depois do HUD: `state.music.setTheme(state.music.theme,
+  run.boss.alive)`. `setTheme` retorna cedo quando nada mudou, então chamar a cada frame é barato; `startRun`
+  continua zerando para `false`.
+- **Verificação:** sem teste automatizado (o `loop` de `main.js` não é importado pelos testes). Navegador
+  (`localhost:8080`): zona 1 com o timer no fim → guardião vivo, `music.battle === true`; guardião derrotado →
+  `false`, zona 2. Suíte 127 / 127; build + `check-bundle` OK. O som em si não foi ouvido.

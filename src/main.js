@@ -332,6 +332,7 @@ function loop(now) {
       steps++;
     }
     state.hud.update(run);
+    state.music.setTheme(state.music.theme, run.boss.alive); // battle theme while a guardian/legendary fights
     state.renderer.render(run);
   } else if (run && state.mode === "game") {
     // Keep the last frame visible while paused or choosing an upgrade.
