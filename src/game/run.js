@@ -1095,10 +1095,12 @@ export class Run {
     }
 
     if (e.hp <= 0) this.killEnemy(e, def);
-    // Weakening: an alpha/boss knocked below the threshold can be captured.
-    if (e.hp > 0 && e.hp <= e.maxHp * this.rules.capture.weakenHpPct && CAPTURABLE_TIERS.has(e.tier)) {
-      this.capture.weaken(e);
-    }
+    this.maybeWeaken(e);
+  }
+
+  /** Capture hook shared by every damage path (hits, items' area damage, burn/poison, thorns): an alpha or boss left under the threshold becomes capturable. */
+  maybeWeaken(e) {
+    if (e.hp > 0 && e.hp <= e.maxHp * this.rules.capture.weakenHpPct && CAPTURABLE_TIERS.has(e.tier)) this.capture.weaken(e);
   }
 
   hitPlayer(amount, source) {
@@ -1133,6 +1135,7 @@ export class Run {
       const back = source.id === this.boss.index ? this.boss.capDamage(p.stats.thorns * this.boss.hitMul()) : p.stats.thorns;
       source.hp -= back;
       if (source.hp <= 0) this.killEnemy(source, { type: "normal", cls: "physical" });
+      else this.maybeWeaken(source);
     }
     if (dmg > 0) {
       p.hp -= dmg;
@@ -1167,6 +1170,7 @@ export class Run {
       e.flash = 1;
       this.stats.damage += through;
       if (e.hp <= 0) this.killEnemy(e, def);
+      else this.maybeWeaken(e);
     }
   }
 
@@ -1205,13 +1209,12 @@ export class Run {
           continue;
         }
       }
-      if (e.statuses.freeze > 0 || e.statuses.sleep > 0 || e.statuses.root > 0) {
-        e.vx *= 0.8;
-        e.vz *= 0.8;
-      }
+      if ((e.burnDps > 0 && e.statuses.burn > 0) || (e.poisonDps > 0 && e.statuses.poison > 0)) this.maybeWeaken(e);
 
-      // Flinched: stopped in place, no chase and no contact damage until the timer runs out.
-      if (e.statuses.flinch > 0) {
+      // Frozen, asleep, rooted or flinching: stopped in place, no chase and no contact damage until
+      // the timer runs out. (Damping the velocity and then chasing again, as before, left frozen and
+      // sleeping enemies walking at about a third of their speed.)
+      if (e.statuses.freeze > 0 || e.statuses.sleep > 0 || e.statuses.root > 0 || e.statuses.flinch > 0) {
         e.vx *= 0.8;
         e.vz *= 0.8;
         if (e.atkCd > 0) e.atkCd -= dt;
@@ -1671,7 +1674,7 @@ export class Run {
         const prev = this.upgrades.get(up.key);
         this.upgrades.set(up.key, { ...up, count: (prev?.count ?? 0) + 1 });
         this.stats.items++;
-        if (up.mods?.length || up.tags?.length) this.recompute(p);
+        this.recompute(p); // scripted items change stats too (Poké Doll scales the allies' passive)
       }
     } else if (choice.kind === "fusion") {
       applyFusion(this, choice);
@@ -1845,6 +1848,7 @@ export class Run {
       age: 0,
       hits: new Set(),
       hostile: true,
+      owner: e.id,
     });
   }
 
@@ -1880,7 +1884,7 @@ export class Run {
 
   /** A hostile ground zone (boss pools). */
   zonesHostile(source, x, z, r, life, dmg) {
-    this.zones.push({ x, z, r, life, tick: 0, dmg, type: source?.types?.[0] ?? "normal", status: null, hostile: true });
+    this.zones.push({ x, z, r, life, tick: 0, dmg, type: source?.types?.[0] ?? "normal", status: null, hostile: true, owner: source?.id ?? -1 });
   }
 
   /** Schedule a callback after `delay` seconds. */

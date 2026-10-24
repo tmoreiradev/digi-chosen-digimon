@@ -433,6 +433,21 @@ com refinamentos do mesmo subsistema (cartas de golpe). Cada fase nova ganha a s
 | Pausa → Item segurado mostrava as descrições de Leftovers e Choice Band em inglês, direto do `items.json` (P3) | Corrigido: `HELD_ITEM_DESC_PT` em `src/core/i18n.js` descreve **o efeito que este engine implementa** ("Recupera cerca de 1/16 do HP máximo por segundo.", "+50% de dano em todos os golpes."), não o texto dos jogos (que falava em "só permite um golpe", algo que não existe aqui). `heldItemDesc(key, def)` cai no `desc` dos dados para um item sem tabela. Teste em `tests/helditem.test.mjs` (falha no código antigo). Verificado no navegador. |
 | "§19 diz que *todos* os textos foram traduzidos; as descrições dos itens segurados não foram" | Verdadeiro; fechado pela correção acima. Os únicos textos em inglês que restam na tela são nomes próprios dos dados (espécies, golpes, itens, habilidades, papéis do roster, ultimates), por decisão. |
 
+**Décima quarta rodada** (fases 9–11, `4b7f46e..e7907de`, `reviews/codex-2026-10-24-02-18-4b7f46e..HEAD.md`):
+**Reprovado**, 5 achados, todos aceitos; três afirmações da §20/§22 contestadas com razão (corrigidas no lugar):
+
+| Achado | Decisão |
+|---|---|
+| Poké Doll tem `mods: []` e nenhuma tag: escolhê-lo não recalculava os stats, a passiva ×1,5 só valia no próximo recálculo (P2) | `applyChoice` recomputa em **todo** item (é barato). Teste: aliado recrutado, pegar o Poké Doll muda `player.stats.damage` de `1 + 0,04` para `1 + 0,06` na hora. |
+| Grip Claw e Awakening aplicam root/sleep, mas `updateEnemies` só amortecia a velocidade e voltava a perseguir: dormindo/congelado/enraizado andava a ~36 % e mordia (P2) | Pré-existente e verdadeiro para freeze/sleep/root de qualquer golpe. Os quatro estados (com `flinch`) agora param o inimigo: sem perseguição e sem dano de contato até o timer acabar. Teste com inimigo encostado: 30 frames sem mover nem morder, volta a morder depois. |
+| Fire Stone/Leaf Stone (`hitAround`) podiam deixar alfa/boss abaixo de 10 % sem `capture.weaken` — e o mesmo valia para burn/poison e espinhos (P2) | `Run.maybeWeaken(e)` é o único ponto da checagem; chamado por `hitEnemy`, `hitAround`, os ticks de DoT e os espinhos. Teste cobre os três caminhos novos. |
+| Enfraquecer o boss zerava `windup`/`active`, mas os meteoros já agendados (`run.later`) continuavam chamando `hitPlayer`, inclusive depois de capturar o guardião e avançar a zona (P2) | `Boss.cancelAttacks()`: incrementa `attackGen` (cada meteoro agendado guarda a geração e não cai se ela mudou), remove as poças e os projéteis hostis com `owner` igual ao boss (campo novo em `zonesHostile`/`spawnHostileProjectile`), zera telegraph e padrão. Chamado ao enfraquecer (uma vez por janela), em `onCaptured` e em `onDefeat`. Testes: controle (meteoros caem no boss ativo), enfraquecido (nenhum cai, poças somem), capturado (zona 2 começa limpa). |
+| O teste do Poké Doll só olhava `Allies.mods()` (P3) | Substituído pelo teste de `player.stats.damage` acima. |
+
+Afirmações corrigidas: §20 "boss down não luta" agora inclui os ataques em voo; §22 Poké Doll vale na hora; o teste
+dos 16 itens fora do pool cobre os 16 (`tests/review14.test.mjs`), não quatro. Suíte **122 / 122**; build +
+`check-bundle` OK.
+
 ---
 
 ## 15. Playtest automatizado — um bot que joga (23/10/2026)
@@ -602,6 +617,9 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
 - **Boss "down" não luta:** `Boss.update` zera `windup`/`active` e não avança `fightT`/`moveT` enquanto
   `e.captureReady`; o inimigo já não perseguia nem dava dano de contato (`updateEnemies`). Se a bola falha
   (`breakFree`, HP volta a 30 %) ou a janela de 8 s fecha (`recovered`, 25 %), a IA retoma de onde parou.
+  **14.ª rodada:** `cancelAttacks()` derruba também o que já estava no ar — meteoros agendados (contador
+  `attackGen`), poças e projéteis do boss — ao enfraquecer, capturar ou morrer; antes os meteoros caíam até depois
+  da zona avançar.
 - **Captura = derrota para a progressão:** `Capture.caught` marca `e.captured` e chama `Boss.onCaptured()` na hora
   (não espera `Boss.update` ver `!alive`, que depende de a compactação dos mortos rodar antes ou depois): `dead`,
   `index = -1`, `opts.onBossDown` (sfx) e `run.onBossDefeated(kind)` — zona limpa / santuário / vitória / próximo
@@ -672,7 +690,8 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   Stone 10 % → redemoinho 30 % em 3 u + cura 1 %), `itemBlockHit` (Guard Spec. bloqueia um golpe a cada 14 s,
   flutuante "bloqueado") e `itemSurvive` (Focus Sash 1×/zona; Focus Band 15 %/cópia a cada 20 s; Max Revive 60 %
   e Revive 35 %, uma vez por cópia, 1,5 s de invulnerabilidade). Em `capture.js`: S.S. Ticket +1 vaga (antes era
-  o Poké Doll ÷ 3), Lemonade aliados ×1,25 dano e ÷1,15 recarga, Poké Doll passiva ×1,5. Em `events.js`: Gold
+  o Poké Doll ÷ 3), Lemonade aliados ×1,25 dano e ÷1,15 recarga, Poké Doll passiva ×1,5. (14.ª rodada: `applyChoice`
+  recomputa os stats em todo item, então a passiva vale na hora — com `mods: []` ela só valia no próximo recálculo.) Em `events.js`: Gold
   Teeth −8 %/cópia (teto −24 %) em `price()`, usado no rótulo, na checagem e na cobrança. Área fixa dos itens:
   `Run.hitAround` (sem multiplicadores do jogador, passa pelo orçamento do boss, mata por `killEnemy`).
 - **Pool e cartas:** `Run.itemPool()` = `mods.length || SCRIPTED.has(key)`, não banido, abaixo do `max` (o dado
@@ -683,7 +702,7 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   silph-scope, max-ether, tm-case, poke-flute — cada um pede um subsistema próprio (altares Unown, pesca, marca,
   tetos de nível) ou um estado dinâmico de velocidade/armadura que o engine não tem.
 - **Testes** (`tests/items.test.mjs`, 13; o arquivo nem carrega no código antigo): pool inclui todos os
-  `SCRIPTED` e Charcoal, exclui os 16, respeita `max`; cada chave tem descrição pt-BR; tag de tipo ×1,3 (×1,6 com
+  `SCRIPTED` e Charcoal, exclui 4 dos 16 (os 16 inteiros em `tests/review14.test.mjs`, 14.ª rodada), respeita `max`; cada chave tem descrição pt-BR; tag de tipo ×1,3 (×1,6 com
   duas) só no tipo; Metronome 1,4 → 1,0 → 1,2; Binding Band/Full Heal; Reaper/Thick Club (e especial ignora o
   Club); Stick ×8 + "Bonk!"; Shell Bell/Grip Claw/Awakening; Razor Fang (comum sim, alfa não, 12 % com duas);
   Berry Juice/Fire Stone (só queimado, só em 3 u)/Leaf Stone; Guard Spec.; Sash/Band/Revive/Max Revive;

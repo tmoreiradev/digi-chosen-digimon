@@ -34,6 +34,8 @@ export class Boss {
     this.active = null;
     this.exhaustSaid = false;
     this.dead = false;
+    this.attackGen = 0; // bumped by cancelAttacks(): scheduled meteors check it before landing
+    this.downCancelled = false;
   }
 
   get cfg() {
@@ -124,6 +126,8 @@ export class Boss {
     this.active = null;
     this.dead = false;
     this.exhaustSaid = false;
+    this.attackGen++;
+    this.downCancelled = false;
     this.kind = kind;
     run.banner(`${this.name}, ${kind === "legendary" ? "o lendário" : "guardião da " + biomeName(run.biome)}!`);
     run.shake(0.4);
@@ -170,12 +174,16 @@ export class Boss {
       return;
     }
     const e = this.enemy;
-    // Weakened for capture: the boss stops fighting until the ball lands or it recovers.
+    // Weakened for capture: the boss stops fighting until the ball lands or it recovers, and the
+    // attacks already in flight (meteor timers, pools, projectiles) die with the telegraph.
     if (e.captureReady) {
-      this.windup = 0;
-      this.active = null;
+      if (!this.downCancelled) {
+        this.downCancelled = true;
+        this.cancelAttacks();
+      }
       return;
     }
+    this.downCancelled = false;
     this.fightT += dt;
 
     // Phases advance on HP thresholds.
@@ -278,12 +286,14 @@ export class Boss {
       }
       case "meteor": {
         const count = 5 + tier * 2;
+        const gen = this.attackGen;
         for (let i = 0; i < count; i++) {
           const a = run.rng.range(0, TAU);
           const r = run.rng.range(2, 10);
           const mx = p.x + Math.cos(a) * r;
           const mz = p.z + Math.sin(a) * r;
           run.later(0.8 + i * 0.15, () => {
+            if (gen !== this.attackGen) return; // cancelled: the boss was weakened, caught or beaten meanwhile
             run.ring(mx, 0.2, mz, 2.6, 0xc8a070, 0.3);
             run.shake(0.12);
             if (dist(p.x, p.z, mx, mz) < 2.6) run.hitPlayer(dmg, e);
@@ -379,6 +389,7 @@ export class Boss {
   onDefeat() {
     const run = this.run;
     const e = this.enemy;
+    this.cancelAttacks();
     // Forget the id: once the enemy list is compacted a stale id must not resolve to another enemy.
     this.index = -1;
     run.banner(`${this.name} foi derrotado!`);
@@ -391,9 +402,21 @@ export class Boss {
   /** The player caught the boss: same progression as a defeat, without the kill fanfare (Capture.caught announced it). */
   onCaptured() {
     if (this.index < 0 || this.dead) return;
+    this.cancelAttacks();
     this.dead = true;
     this.index = -1;
     this.run.opts.onBossDown?.(this.name, this.kind);
     this.run.onBossDefeated(this.kind);
+  }
+
+  /** Drop every attack still pending: the telegraph, scheduled meteors (generation check), this boss's pools and projectiles. */
+  cancelAttacks(ownerId = this.index) {
+    this.attackGen++;
+    this.windup = 0;
+    this.active = null;
+    this.nextMove = null;
+    const run = this.run;
+    for (let i = run.zones.length - 1; i >= 0; i--) if (run.zones[i].hostile && run.zones[i].owner === ownerId) run.zones.splice(i, 1);
+    for (let i = run.projectiles.length - 1; i >= 0; i--) if (run.projectiles[i].hostile && run.projectiles[i].owner === ownerId) run.projectiles.splice(i, 1);
   }
 }
