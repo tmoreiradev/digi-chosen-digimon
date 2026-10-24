@@ -231,6 +231,34 @@ test("Silph Scope: the mark also counts for item area damage, status ticks and t
   assert.equal(run.enemies.filter((e) => e.marked).length, 2, "two copies, two marks");
 });
 
+test("Silph Scope: a burn applied by a hit on the mark is boosted once, not twice; thorns hit the mark harder", () => {
+  const { run } = setup();
+  run.player.iframes = 1e9;
+  give(run, "silph-scope");
+  run.player.scopeT = 1e9; // keep the marks as set here
+  const a = sturdy(run, 3, 0);
+  const b = sturdy(run, 4, 3);
+  a.marked = true;
+  const burn = { type: "fire", cls: "special", status: "burn", statusChance: 1 };
+  withRandom(0, () => {
+    run.hitEnemy(a, 100, burn, true);
+    run.hitEnemy(b, 100, burn, true);
+  });
+  assert.ok(Math.abs(a.burnDps - b.burnDps) < 1e-9, "same stored DPS");
+  const h = [a.hp, b.hp];
+  frames(run, 1);
+  assert.ok(Math.abs((h[0] - a.hp) / (h[1] - b.hp) - 1.4) < 1e-6, "x1.4 on the tick, once");
+
+  const p = run.player;
+  p.stats.thorns = 50;
+  const bh = [a.hp, b.hp];
+  p.iframes = 0;
+  run.hitPlayer(1, a);
+  p.iframes = 0;
+  run.hitPlayer(1, b);
+  assert.ok(Math.abs((bh[0] - a.hp) / (bh[1] - b.hp) - 1.4) < 1e-9, "thorns x1.4 on the mark");
+});
+
 test("Poké Flute: the ultimate charges 25 % faster and recharges every move on cast", () => {
   const { run } = setup({ speciesId: 4 });
   const p = run.player;

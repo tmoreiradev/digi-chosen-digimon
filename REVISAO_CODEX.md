@@ -948,3 +948,9 @@ dano de área dos itens (`hitAround`), nos tiques de queimadura/veneno e nos esp
 agora cada cópia marca mais um dos inimigos mais fortes em 14 u (descrição atualizada). (3) O teste de TM Case/Max Ether
 não exercitava o Max Ether nem os tetos finais: viraram dois testes, golpe 8 → 9 → teto 10 e vitamina 10 → 11 → teto 12.
 Suíte **165 / 165**; build + `check-bundle` OK.
+
+**Vigésima nona rodada** (`825bae5..fb579e9`, `reviews/codex-2026-10-24-07-11-825bae5..HEAD.md`): **Aprovado com ressalvas**, 1 P2 +
+1 P3, aceitos: (P2) queimadura/veneno aplicados por um golpe no alvo marcado guardavam o DPS já com o +40 % e o tique
+multiplicava de novo (×1,96); agora o DPS é guardado sem a marca e ela entra só no tique. (P3) o teste prometia espinhos
+sem exercitá-los; o teste novo aplica a queimadura por `hitEnemy` real em alvo marcado e desmarcado (mesmo DPS guardado,
+tique ×1,4 uma vez) e compara o dano dos espinhos (×1,4 no marcado). Suíte **166 / 166**; build + `check-bundle` OK.

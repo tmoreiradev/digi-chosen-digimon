@@ -1172,8 +1172,9 @@ export class Run {
     // Status application
     if (def?.status && def.statusChance > 0 && Math.random() < def.statusChance * s.statusChance) {
       e.statuses[def.status] = 3.2;
-      if (def.status === "burn") e.burnDps = Math.max(e.burnDps ?? 0, amount * 0.06);
-      if (def.status === "poison") e.poisonDps = Math.max(e.poisonDps ?? 0, amount * 0.05);
+      const dotBase = e.marked ? amount / 1.4 : amount; // the Silph Scope mark is applied on each tick, not baked in
+      if (def.status === "burn") e.burnDps = Math.max(e.burnDps ?? 0, dotBase * 0.06);
+      if (def.status === "poison") e.poisonDps = Math.max(e.poisonDps ?? 0, dotBase * 0.05);
     }
 
     // Flinch (King's Rock): a chance to stop the target for half a second; bosses shrug it off.
