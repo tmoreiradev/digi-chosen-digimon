@@ -879,3 +879,15 @@ com alvos a 14/20/25 u do chão e 10/25 u no pulo (o código anterior caía em x
   random); em `moveups.test.mjs` o teste antigo do projétil do Metronome virou "chama golpes diferentes com as cartas
   dele", e há teste de `+dur`/`+count` no orbit. Navegador: três esferas verdes girando em volta do Bulbasaur com
   Petal Dance. Suíte **146 / 146**; build + `check-bundle` OK.
+
+**Vigésima quarta rodada** (fase 16, `fdd92fb..fc40d6a`, `reviews/codex-2026-10-24-06-51-fdd92fb..HEAD.md`): **Aprovado com
+ressalvas**, 3 achados (P2), aceitos: (1) no teto de 600 projéteis `spawnProjectile` recusava em silêncio e o orbit
+pegava `.at(-1)` — **outro** projétil, até hostil, virava esfera. `spawnProjectile` agora devolve o criado (ou `null`) e o
+orbit para no teto. (2) A limpeza global de `hits` a cada 0,5 s permitia acertar de novo logo após a limpeza; agora
+cada esfera guarda o instante do último acerto por inimigo (`orbit.hitT`) e só libera depois de 0,5 s. Com isso o orbit
+acerta menos e a estimativa foi recalibrada para 0,6 passagem/s por esfera (Petal Dance 25,0 estimado / 24,3–25,0
+medido; Bone Rush 10,6 / 10,8–10,9). (3) A estimativa do Metronome usava só o dano base médio com classe/tipo do
+próprio Metronome; agora é a média de `castDamage(def, m)` — o lançamento completo de cada golpe sorteável, com as
+cartas e o nível do Metronome — sobre a recarga dele. `castDamage` virou o cálculo único por lançamento. Testes em
+`tests/archetypes.test.mjs` (teto, intervalo por esfera, estimativa do Metronome; dois falham no código anterior — o do
+intervalo passa nos dois, fica como guarda). Suíte **149 / 149**; build + `check-bundle` OK.

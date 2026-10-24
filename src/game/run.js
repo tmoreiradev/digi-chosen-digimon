@@ -754,10 +754,10 @@ export class Run {
         // every 0.5 s per orb). It used to sample the ring once per cast, so it almost never hit.
         const radius = 1.6 + area * 0.5;
         for (let i = 0; i < count; i++) {
-          this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: 0, speed: 0, life: Math.max(1, dur), radius: 0.6, dmg, def });
-          const pr = this.projectiles.at(-1);
+          const pr = this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: 0, speed: 0, life: Math.max(1, dur), radius: 0.6, dmg, def });
+          if (!pr) break; // projectile cap reached
           pr.pierce = 1e9; // an orb keeps circling through what it hits
-          pr.orbit = { angle: (i / count) * TAU, radius, w: 3 * mv.mods.speed * p.stats.projSpeed, reset: 0 }; // +speed = faster orbit
+          pr.orbit = { angle: (i / count) * TAU, radius, w: 3 * mv.mods.speed * p.stats.projSpeed, hitT: new Map() }; // +speed = faster orbit
         }
         break;
       }
@@ -905,9 +905,9 @@ export class Run {
   /* -------------------------------------------------------- projectiles */
 
   spawnProjectile(o) {
-    if (this.projectiles.length > 600) return;
+    if (this.projectiles.length > 600) return null;
     const speed = o.speed || 18;
-    this.projectiles.push({
+    const pr = {
       id: nextId++,
       x: o.x,
       y: o.y,
@@ -928,7 +928,9 @@ export class Run {
       returnHome: !!o.returnHome,
       age: 0,
       hits: new Set(),
-    });
+    };
+    this.projectiles.push(pr);
+    return pr;
   }
 
   updateProjectiles(dt) {
@@ -962,10 +964,12 @@ export class Run {
         pr.x = p.x + Math.cos(o.angle) * o.radius;
         pr.z = p.z + Math.sin(o.angle) * o.radius;
         pr.y = p.y + 0.9;
-        o.reset -= dt;
-        if (o.reset <= 0) {
-          o.reset = 0.5;
-          pr.hits.clear();
+        // Each enemy can be hit again by this orb 0.5 s after its last hit.
+        for (const [id, t] of o.hitT) {
+          if (this.time - t >= 0.5) {
+            o.hitT.delete(id);
+            pr.hits.delete(id);
+          }
         }
       } else if (pr.lob) {
         // The bomb arcs toward its target (it used to rise and fall in place, exploding at the player).
@@ -1014,6 +1018,7 @@ export class Run {
           const rr = pr.radius + e.radius;
           if (dist2(pr.x, pr.z, e.x, e.z) > rr * rr) continue;
           pr.hits.add(e.id);
+          pr.orbit?.hitT.set(e.id, this.time);
           this.hitEnemy(e, pr.dmg, pr.def);
           if (pr.explodeR > 0) {
             this.explode(pr);
@@ -1871,30 +1876,36 @@ export class Run {
     const s = p.stats;
     let dps = 0;
     for (const m of p.moves) {
-      const def = m.def;
-      // Hits per cast on a boss-sized target at close range, measured: a chain hits it once whatever its
-      // jumps; each orb hits and then explodes on it (two hits); everything else, once per projectile.
-      const projectiles = Math.max(1, Math.floor(def.count + m.mods.count + (def.arch === "barrage" ? s.projectiles : 0)));
-      // Fanned archetypes: projectile i flies ceil(i/2) steps off the aimed line; past ~0.7 rad it passes
-      // beside a boss-sized target at 3 u, so only the inner ones count.
-      const step = FAN_STEP[def.arch];
-      let landing = projectiles;
-      if (step) for (landing = 0; landing < projectiles && Math.ceil(landing / 2) * step <= 0.7; landing++);
-      // An orbit orb hits a boss beside it about once a second for the whole duration.
-      const orbitSecs = def.arch === "orbit" ? Math.max(1, def.dur * m.mods.dur * s.duration) : 1;
-      const count = (def.arch === "chain" ? 1 : def.arch === "orb" ? 2 * landing : landing) * orbitSecs;
-      const cdSecs = Math.max(0.12, (def.cd * m.mods.cd) / s.attackSpeed);
-      const share = def.arch === "vortex" ? 0.35 : 1; // a vortex pull deals 35 % of the move damage
-      // Metronome has no power of its own: use the average damage of the moves it can call.
-      const pool = def.arch === "random" ? this.metronomePool() : null;
-      const base = pool?.length ? (pool.reduce((t, d) => t + d.dmg, 0) / pool.length) * 1.3 * m.mods.dmg * (1 + (m.level - 1) * 0.04) : this.moveDamage(m);
-      dps += (base * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * count * share) / cdSecs;
+      const cdSecs = Math.max(0.12, (m.def.cd * m.mods.cd) / s.attackSpeed);
+      // Metronome has no power of its own: the average full cast of the moves it can call, on its cooldown.
+      const pool = m.def.arch === "random" ? this.metronomePool() : null;
+      const perCast = pool?.length ? pool.reduce((t, d) => t + this.castDamage(d, m), 0) / pool.length : this.castDamage(m.def, m);
+      dps += perCast / cdSecs;
     }
     // Ally hits go through hitEnemy too, so they take the same multipliers.
     for (const a of this.allies.list) {
       dps += (this.allies.power(a) * this.expectedHitMul(a.physical ? "physical" : "special", a.types[0], 0)) / this.allies.cooldown(a);
     }
     return dps;
+  }
+
+  /** Expected damage of one cast of `def` with move `m`'s level and cards, on a boss-sized target at close range. */
+  castDamage(def, m) {
+    const s = this.player.stats;
+    // Hits per cast on a boss-sized target at close range, measured: a chain hits it once whatever its
+    // jumps; each orb hits and then explodes on it (two hits); everything else, once per projectile.
+    const projectiles = Math.max(1, Math.floor(def.count + m.mods.count + (def.arch === "barrage" ? s.projectiles : 0)));
+    // Fanned archetypes: projectile i flies ceil(i/2) steps off the aimed line; past ~0.7 rad it passes
+    // beside a boss-sized target at 3 u, so only the inner ones count.
+    const step = FAN_STEP[def.arch];
+    let landing = projectiles;
+    if (step) for (landing = 0; landing < projectiles && Math.ceil(landing / 2) * step <= 0.7; landing++);
+    // An orbit orb passes a boss beside it about 0.6 times a second (measured) for the whole duration.
+    const orbitSecs = def.arch === "orbit" ? Math.max(1, 0.6 * def.dur * m.mods.dur * s.duration) : 1;
+    const count = (def.arch === "chain" ? 1 : def.arch === "orb" ? 2 * landing : landing) * orbitSecs;
+    const share = def.arch === "vortex" ? 0.35 : 1; // a vortex pull deals 35 % of the move damage
+    const base = this.moveDamage({ ...m, def });
+    return base * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * count * share;
   }
 
   /** Average multiplier hitEnemy applies to a hit of this class and type from the player's side (no enemy terms). */
