@@ -3,7 +3,8 @@
 // through the DevTools protocol and fails on any page error.
 //
 // Usage: npm run build && npm run e2e
-// No dependencies: Node's built-in WebSocket and fetch talk to the browser.
+// No dependencies: Node's built-in WebSocket and fetch talk to the browser, so this script needs Node >= 22
+// (the rest of the project runs on Node >= 18).
 
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -31,6 +32,7 @@ const fail = (msg) => {
 };
 
 async function main() {
+  if (typeof WebSocket !== "function") return fail(`needs Node >= 22 for the built-in WebSocket (this is ${process.version})`);
   if (!fs.existsSync(BUNDLE)) return fail(`${BUNDLE} not found; run npm run build first`);
   const exe = CANDIDATES.find((p) => fs.existsSync(p));
   if (!exe) return fail("no Chromium-based browser found (set CHROME_PATH)");
@@ -102,20 +104,21 @@ async function scenario() {
   await sleep(400);
   const run = globalThis.__PB__?.run;
   expect(run && run.state === "running", "a run started");
-  // Headless pages still get animation frames; give the loop real time and drive it a little too.
+  // The real requestAnimationFrame loop must move the run on its own: no manual update before this check.
   const t0 = run.time;
   await sleep(800);
-  for (let i = 0; i < 120; i++) run.update(1 / 60);
-  expect(run.time > t0, "the simulation advances");
+  expect(run.time > t0 + 0.2, "the main loop advances the run by itself");
   expect(document.querySelectorAll("canvas").length >= 1, "the game renders to a canvas");
   run.addXp(run.player.xpNext + 1);
   for (let i = 0; i < 3; i++) run.update(1 / 60);
   await sleep(200);
   expect(/Subiu de nível!/i.test(body()), "level-up cards");
-  [...document.querySelectorAll(".levelup button")].find((b) => /^1/.test(b.textContent.trim()))?.click() ??
-    document.querySelector(".levelup .lu-card, .levelup [class*=card]")?.click();
-  key("1", "Digit1");
+  const picked = run.stats.items + run.player.moves.length + run.player.vitamins.size + run.player.moves.reduce((t, m) => t + m.level, 0);
+  key("1", "Digit1"); // the keyboard shortcut alone picks the first card
   await sleep(200);
+  expect(!/Subiu de nível!/i.test(body()), "key 1 closes the cards");
+  const after = run.stats.items + run.player.moves.length + run.player.vitamins.size + run.player.moves.reduce((t, m) => t + m.level, 0);
+  expect(after > picked, "key 1 applied the first card");
   key("p", "KeyP");
   await sleep(150);
   expect(/Pausado/i.test(body()), "pause menu");

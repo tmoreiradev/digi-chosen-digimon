@@ -61,7 +61,7 @@ when the project was renamed, so existing profiles keep loading.
 
 **End-to-end check of the offline bundle:** `npm run build && npm run e2e` opens `dist/digi-chosen.html` from disk
 (`file://`) in a headless Edge or Chrome, plays through the menus, a run, a level-up and the pause screen, and fails on
-any page error. It needs a local Chromium-based browser (`CHROME_PATH` to pick one) and no npm packages.
+any page error. It needs a local Chromium-based browser (`CHROME_PATH` to pick one), Node 22+ (built-in `WebSocket`) and no npm packages.
 
 ## Controls
 

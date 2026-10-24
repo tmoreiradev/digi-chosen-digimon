@@ -1000,3 +1000,9 @@ de um golpe, ambos ×1,3 com Big Root (a regeneração falha no código anterior
   o menu. Qualquer `exception` ou `console.error` da página reprova.
 - **Verificado:** passa no bundle atual; com um erro injetado no bundle (`setTimeout(() => { throw … })`) reprova com a
   mensagem e a linha. Fica fora do `npm test` porque depende de um navegador local; está em `AGENTS.md` e no README.
+
+**Trigésima terceira rodada** (fase 19, `d6bef3c..a29850c`, `reviews/codex-2026-10-24-07-22-d6bef3c..HEAD.md`): **Aprovado com
+ressalvas**, 3 P3, aceitos: o script exige Node ≥ 22 (o `WebSocket` global não existe no 18 mínimo do projeto) e diz isso;
+o avanço da run é conferido **antes** de qualquer `update` manual (prova o loop real por `requestAnimationFrame`); a
+escolha da carta é só pela tecla `1`, e o teste exige que o painel feche e que o upgrade tenha sido aplicado. Os textos da
+§30 sobre "escolha por tecla" e "avança" passam a valer com isso. `npm run e2e` OK.
