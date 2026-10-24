@@ -28,7 +28,7 @@ test("a boss pool hurts the player but never the horde or the boss itself", () =
   p.iframes = 0;
   const hp = p.hp;
   const bossHp = g.hp;
-  frames(run, 1);
+  run.updateProjectiles(1 / 60); // zones tick here; no contact damage from updateEnemies
   assert.ok(p.hp < hp, "the player standing in the pool takes damage");
   assert.equal(g.hp, bossHp, "the boss is not hurt by its own pool");
   assert.ok(!g.captureReady, "and not weakened by it");

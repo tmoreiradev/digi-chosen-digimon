@@ -469,6 +469,11 @@ parada por status cobre o controlador do boss. Suíte **126 / 126**; build + `ch
 Afirmação corrigida: "antes de tiquetear" passa a valer — nada dentro do tick de uma poça hostil pode mais cancelá-la.
 Suíte **127 / 127**; build + `check-bundle` OK.
 
+**Décima sétima rodada** (`2c1cd58..bcd6d79`, `reviews/codex-2026-10-24-06-14-2c1cd58..HEAD.md`): **Aprovado com
+ressalvas**, 1 achado P3, aceito: o teste da 16.ª passava mesmo sem o dano da poça, porque o contato do boss e do
+inimigo encostados também tirava HP no mesmo frame. O passo do teste virou só `run.updateProjectiles(1 / 60)` (onde
+as zonas tiquetam); conferido por mutação — removendo `hitPlayer` da poça, o teste falha.
+
 ---
 
 ## 15. Playtest automatizado — um bot que joga (23/10/2026)
