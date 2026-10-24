@@ -15,6 +15,9 @@ function levelled(speciesId) {
 test("the estimate tracks measured single-target damage within 25 % (typeless target)", () => {
   for (const sp of [4, 7, 25, 63, 74, 92, 133]) {
     const run = levelled(sp);
+    // Base damage only: statuses add situational amplifiers the estimate leaves out on purpose
+    // (sleep x1.8, curse x1.25, burn/poison ticks); Gastly's curses pushed it to the 1.25 edge.
+    run.player.stats.statusChance = 0;
     const est = run.playerExpectedDps();
     const e = run.spawnEnemy(16, run.player.x + 3, run.player.z, "boss") /* boss-sized target, as in a boss fight */;
     e.hp = e.maxHp = 1e9;

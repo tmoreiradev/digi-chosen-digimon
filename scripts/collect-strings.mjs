@@ -100,7 +100,17 @@ export async function collectMissing() {
     const upd = run.update.bind(run);
     run.update = (dt) => {
       upd(dt);
-      if (++frames % 600 === 0) hud.update(run);
+      if (++frames % 600 === 0) {
+        hud.update(run);
+        scan(hudRoot);
+      }
+    };
+    // Every panel the bot opens is read before it acts on it (the bot closes them right away).
+    const openPanel = run.events.openPanel.bind(run.events);
+    run.events.openPanel = (ev) => {
+      const out = openPanel(ev);
+      scan(document.getElementById("ui"));
+      return out;
     };
     bot.push({ mode, ...playRun({ run, input, calls, seed, maxSeconds: 25 * 60, godMode: true }) });
     for (const b of banners) tr(b);

@@ -1032,7 +1032,7 @@ substituído por um estoque conhecido e o teste exige exatamente um sorteio e es
 ressalvas**, 1 P2 aceito: convidados de saves antigos (nome gravado "Guest") apareciam como "Treinador: Guest". O rótulo
 agora vem do tipo da conta (`kind === "guest"` → "Convidado"), sem tocar no nome salvo; teste com um convidado chamado
 "Guest". **Achado de passagem:** `src/ui/account.js` tinha um byte NUL cru dentro da string do `passHash` (escrito pelo
-shell na fase 14); funcionava, mas o git e o `grep` tratavam o arquivo como binário. Trocado pelo escape ` ` — mesma
+shell na fase 14); funcionava, mas o git e o `grep` tratavam o arquivo como binário. Trocado pelo escape `\u0000` — mesma
 string, mesmo hash (`passHash("Ash", "pikachu123")` = `f1:1tifgc5` antes e depois). Suíte **176 / 176**; build e
 `check-bundle` OK. ⚠ Correção deste registro: `npm run e2e` **falhou** nesta rodada, na limpeza (EPERM ao apagar o perfil
 temporário do navegador ainda aberto), e o encadeamento do meu comando não barrou porque a saída passava por `tail`. O
@@ -1081,5 +1081,17 @@ traduzido (nome da conta no título, na lista de perfis e nos resultados) e o di
 (`Object.hasOwn`). (4) A varredura só via o que passava por `tr`; agora lê também os nós de texto realmente renderizados
 (incluindo `textContent` direto) depois de cada tela e de uma compra na loja. (5) O bot reconhecia baú, loja e botões só
 em português e, em inglês, fechava os painéis sem usá-los; agora lê os dois idiomas e o teste exige baú aberto e compra
-feita nas runs em inglês. Correção do registro da §33: "zero em português" só passou a valer com esta rodada. Suíte **"+process.env.N+" / "+process.env.N+"**;
+feita nas runs em inglês. Correção do registro da §33: "zero em português" só passou a valer com esta rodada. Suíte **181 / 181** no meu ambiente (no worktree do Codex, 181 / 182 — ver a 39.ª rodada);
 build, `check-bundle` e `npm run e2e` OK.
+
+**Trigésima nona rodada** (`0ef55f0..33f3323`, `reviews/codex-2026-10-24-16-30-0ef55f0..HEAD.md`): **Aprovado com ressalvas**, 2 P3,
+aceitos, e um registro meu corrigido:
+- O total de testes da 38.ª rodada saiu como um texto de código (`"+process.env.N+"`) por erro de escape no comando que
+  gravou o registro; o mesmo comando já tinha deixado um byte NUL cru no texto da 35.ª rodada (`REVISAO_CODEX.md` virou
+  "binário" para o `grep`). Os dois foram reparados com um script em arquivo.
+- No worktree do Codex a suíte deu **181 / 182**: o teste de calibração do DPS (`dps.test.mjs`) reprovou. Medi 20 repetições:
+  Gastly ia de 1,10× a 1,23× (limite 1,25×) porque seus golpes fantasma amaldiçoam o alvo (×1,25 de dano), amplificador
+  situacional que a estimativa deixa de fora de propósito, como o sono. O teste agora zera a chance de status para medir o
+  dano base; nas mesmas 20 repetições o máximo caiu para 1,11×. Não é bug do jogo.
+- A varredura de idioma passou a ler o HUD e **cada painel que o bot abre** durante as runs, antes de ele agir, além dos
+  estados finais. Suíte **182 / 182**; build, `check-bundle` e `npm run e2e` OK (saídas com código de saída conferido).
