@@ -170,6 +170,12 @@ export class Boss {
       return;
     }
     const e = this.enemy;
+    // Weakened for capture: the boss stops fighting until the ball lands or it recovers.
+    if (e.captureReady) {
+      this.windup = 0;
+      this.active = null;
+      return;
+    }
     this.fightT += dt;
 
     // Phases advance on HP thresholds.
@@ -380,5 +386,14 @@ export class Boss {
     if (e) run.burst(e.x, e.y + 1, e.z, 0xffd166, 30, "star");
     run.opts.onBossDown?.(this.name, this.kind);
     run.onBossDefeated(this.kind);
+  }
+
+  /** The player caught the boss: same progression as a defeat, without the kill fanfare (Capture.caught announced it). */
+  onCaptured() {
+    if (this.index < 0 || this.dead) return;
+    this.dead = true;
+    this.index = -1;
+    this.run.opts.onBossDown?.(this.name, this.kind);
+    this.run.onBossDefeated(this.kind);
   }
 }

@@ -1,13 +1,18 @@
 // Capture and allies: weaken enemies, throw a Poké Ball, and have captured
 // Pokémon fight alongside you.
 //
-// Ports the upstream flow: an alpha's HP is flagged capturable at low HP, it
-// stops fighting ("down" state), and pressing E within range throws a ball.
+// Ports the upstream flow: an alpha's (or boss's) HP is flagged capturable at low HP, it
+// stops fighting ("down" state), and pressing E within range throws a ball. Catching a
+// boss counts as beating it (Boss.onCaptured): zone cleared, floor advanced or victory.
 // Catch chance is 0.45 + captureRate/255*0.35 + 0.2 per failed attempt (+0.15
 // if statused). Caught species join an ally team that orbits the player, auto
 // attacks and grants a damage boost of its primary type.
 
 import { clamp, dist } from "../core/math.js";
+
+/** Tiers the capture flow accepts: alphas and every Boss-controlled enemy (zone guardian, legendary, tower totem/summoner/guardian). */
+export const CAPTURABLE_TIERS = new Set(["alpha", "boss", "totem", "summoner"]);
+export const isBossTier = (tier) => tier !== "alpha" && CAPTURABLE_TIERS.has(tier);
 
 export class Capture {
   constructor(run) {
@@ -25,7 +30,7 @@ export class Capture {
   /** Called when an enemy drops below the weaken threshold. */
   weaken(e) {
     if (!e.alive || e.dying > 0) return false;
-    if (e.tier !== "alpha" && e.tier !== "boss") return false;
+    if (!CAPTURABLE_TIERS.has(e.tier)) return false;
     if (this.state !== "idle") return false;
     const pct = e.hp / e.maxHp;
     if (pct > this.cfg.weakenHpPct) return false;
@@ -70,6 +75,7 @@ export class Capture {
   caught(e) {
     const run = this.run;
     this.reset();
+    e.captured = true;
     e.alive = false;
     e.dying = 0.01;
     e.hp = 0;
@@ -78,7 +84,7 @@ export class Capture {
     // chance. Read the counter BEFORE recording the catch.
     const firstOfRun = run.capturesThisRun === 0;
     run.capturesThisRun++;
-    run.allies.recruit(e.species, e.tier === "boss" ? 1.5 : 1, e.shiny);
+    run.allies.recruit(e.species, isBossTier(e.tier) ? 1.5 : 1, e.shiny);
     run.markCaught(e.species.id); // the Pokédex list is the only record of captures
     run.achievements.recordCatch(e.species, e.shiny);
     if (run.eggs && !run.eggs.egg.active && (firstOfRun || Math.random() < 0.25)) {
@@ -87,6 +93,9 @@ export class Capture {
     run.banner(`Pegou! ${e.species.name}${e.shiny ? " shiny" : ""} foi capturado!`);
     run.burst(e.x, e.y + 1, e.z, e.shiny ? 0xffd700 : 0xffd166, e.shiny ? 40 : 26, "star");
     run.opts.onCaught?.(e.species.name);
+    // A caught boss leaves the fight as a defeat for progression; done here, not in Boss.update,
+    // so it cannot depend on whether the corpse was compacted first.
+    if (run.boss && run.boss.index === e.id) run.boss.onCaptured();
   }
 
   breakFree(e) {

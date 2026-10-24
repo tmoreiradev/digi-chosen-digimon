@@ -592,3 +592,32 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   segurado) ainda vinham do `items.json` em inglês. Fechado com `HELD_ITEM_DESC_PT` (descreve o efeito implementado) +
   teste; a frase "todos os textos que o jogador lê" acima passou a valer com essa correção — o que resta em inglês
   são só os nomes próprios dos dados.
+
+## 20. Fase 9 — Bosses capturáveis (BACKLOG 3) (24/10/2026)
+
+- **Decisão:** boss **é** capturável, como `Capture.weaken` e o README já diziam. Vale para o guardião de zona, o
+  lendário do santuário e os guardiões da Torre — tudo que o `Boss` controla (tiers `boss`, `totem`, `summoner`), além
+  dos alfas. `CAPTURABLE_TIERS` em `capture.js` é a única lista; `hitEnemy` (antes `e.tier === "alpha"`) e `weaken`
+  leem dela. Elite e normal seguem fora.
+- **Boss "down" não luta:** `Boss.update` zera `windup`/`active` e não avança `fightT`/`moveT` enquanto
+  `e.captureReady`; o inimigo já não perseguia nem dava dano de contato (`updateEnemies`). Se a bola falha
+  (`breakFree`, HP volta a 30 %) ou a janela de 8 s fecha (`recovered`, 25 %), a IA retoma de onde parou.
+- **Captura = derrota para a progressão:** `Capture.caught` marca `e.captured` e chama `Boss.onCaptured()` na hora
+  (não espera `Boss.update` ver `!alive`, que depende de a compactação dos mortos rodar antes ou depois): `dead`,
+  `index = -1`, `opts.onBossDown` (sfx) e `run.onBossDefeated(kind)` — zona limpa / santuário / vitória / próximo
+  andar — **sem** o banner "X foi derrotado!" nem o burst de abate; o "Pegou!" do `caught` é o anúncio. O boss
+  recruta com vínculo 1,5 (`isBossTier`, antes só `tier === "boss"`), entra no Pokédex e nas conquistas como
+  qualquer captura; não há XP/ouro de abate (`killEnemy` não roda), a recompensa é o aliado.
+- **Chance:** a mesma dos alfas (`0,45 + captureRate/255 × 0,35 + 0,2 por tentativa`, teto 0,95). Para o lendário
+  (captureRate 3) são ~45 % na primeira bola — e como capturar já vence, o único custo de errar é o boss voltar a
+  30 % de HP. ⚠ Decisão de balanceamento para o playtest humano: se for fácil demais, uma penalidade por tier
+  (`× 0,5` para boss, por exemplo) entra em `Capture.throw`.
+- **Testes** (`tests/capture-boss.test.mjs`, 6; 5 falham no código antigo): guardião enfraquecido para de atacar
+  (120 frames sem telegraph/padrão, `moveT` congelado, ainda capturável); captura limpa a zona (stage 2, "Zona 1
+  limpa!", sem "foi derrotado", aliado com vínculo 1,5, Pokédex, `onCaught`, e a compactação do corpo não conta
+  uma segunda derrota); captura do lendário = vitória; bola falha → 30 % de HP e a IA retoma; Torre: capturar o
+  guardião avança o andar; elite/normal continuam incapturáveis. Suíte **93 / 93**; build + `check-bundle` OK.
+- **Navegador (`localhost:8080`, página recarregada — a 1.ª tentativa rodou módulos antigos em cache):** guardião
+  Scyther a 5 % + um acerto → "Scyther está enfraquecido! Aperte E para lançar a bola", `windup 0`/`active null`;
+  tecla E com `Math.random` fixo em 0 → "Pegou! Scyther foi capturado!" + "Zona 1 limpa!", `stage 2`, boss morto,
+  aliado `Scyther@1.5`, nenhum "foi derrotado". Bot (`playtest.test.mjs`) continua vencendo Clássico e Torre.

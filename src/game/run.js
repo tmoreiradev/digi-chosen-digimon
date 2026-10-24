@@ -21,7 +21,7 @@ import {
 } from "./rules.js";
 import { Director } from "./director.js";
 import { Boss } from "./boss.js";
-import { Allies, Capture } from "./capture.js";
+import { Allies, Capture, CAPTURABLE_TIERS } from "./capture.js";
 import { Tower } from "./tower.js";
 import { WorldEvents } from "./events.js";
 import { AchievementTracker, EggSystem } from "./achievements.js";
@@ -1068,7 +1068,7 @@ export class Run {
 
     if (e.hp <= 0) this.killEnemy(e, def);
     // Weakening: an alpha/boss knocked below the threshold can be captured.
-    if (e.hp > 0 && e.hp <= e.maxHp * this.rules.capture.weakenHpPct && e.tier === "alpha") {
+    if (e.hp > 0 && e.hp <= e.maxHp * this.rules.capture.weakenHpPct && CAPTURABLE_TIERS.has(e.tier)) {
       this.capture.weaken(e);
     }
   }

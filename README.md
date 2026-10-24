@@ -95,9 +95,12 @@ hits and the horde scales through the stage. The level cap is 50.
   spawns), each closed by a guardian; enemies and guardians scale by the floor's own curve, and
   floor 7's bell summons the lord of the tower.
 
-**Capture & allies** — Weaken an alpha below 10% HP; it stops fighting and you can press `E` to
-throw a ball. Caught Pokémon join your team (up to 3, oldest leaves first) as allies that orbit
-you, auto-attack with their own power and type, and grant a damage boost.
+**Capture & allies** — Weaken an alpha — or a boss: zone guardian, tower guardian, legendary — below
+10% HP; it stops fighting for 8 s and you can press `E` to throw a ball (same odds as an alpha; a failed
+throw lets it recover to 30% HP). Catching a boss counts as beating it: the zone clears, the floor
+advances or the run is won, and it joins the team with a stronger bond. Caught Pokémon join your team
+(up to 3, oldest leaves first) as allies that orbit you, auto-attack with their own power and type, and
+grant a damage boost.
 
 **Eggs** — The first capture of each run always grants an egg (if none is incubating); later
 captures have a 25% chance. Walk to hatch it (200 steps); the hatched species joins the team.
