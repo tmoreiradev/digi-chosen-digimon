@@ -50,7 +50,8 @@ const SHINY_XP_BONUS = 0.5; // +50% de XP/dust ao derrotar um shiny
  * upstream (Alpha/Boss/Totem/Summoner/Capture/Shiny/Ranged).
  */
 /** Angle step between fanned projectiles (fireMove), for the DPS estimate. Keep in step with fireMove. */
-const FAN_STEP = { orb: 0.45, lob: 0.45, meteor: 0.45, boomerang: 0.45, drain: 0.45, random: 0.3 };
+// lob is left out: its bombs land around the target and the blast (radius 2.2 x sqrt(area)) covers the spread.
+const FAN_STEP = { orb: 0.45, meteor: 0.45, boomerang: 0.45, drain: 0.45, random: 0.3 };
 
 export const ENEMY_TIER = {
   normal: { flag: 0, hpMul: 1, hpScale: 1, dmgMul: 1, scale: 1, xpMul: 1, speedMul: 1, tough: true },
@@ -641,7 +642,8 @@ export class Run {
             y: p.y + 0.9,
             z: p.z,
             angle: dir + spread,
-            speed: def.arch === "lob" ? speed * 0.8 : speed,
+            // A bomb is thrown to land on the target: about 0.72 s in the air (vy 6, gravity 18, from 0.9 up).
+            speed: def.arch === "lob" ? clamp((target >= 0 ? dist(p.x, p.z, this.enemyById(target).x, this.enemyById(target).z) : 6) / 0.72, 2, 20) : speed,
             life: 2.2,
             radius: def.arch === "lob" ? 0.45 : 0.55,
             dmg,
@@ -937,6 +939,9 @@ export class Run {
       }
 
       if (pr.lob) {
+        // The bomb arcs toward its target (it used to rise and fall in place, exploding at the player).
+        pr.x += pr.vx * dt;
+        pr.z += pr.vz * dt;
         pr.vy -= 18 * dt;
         pr.y += pr.vy * dt;
         if (pr.y <= 0.1) {
@@ -973,7 +978,8 @@ export class Run {
           list.splice(i, 1);
           continue;
         }
-      } else {
+      } else if (!pr.lob) {
+        // A bomb is in the air until it lands (and explodes there); it does not collide on the way.
         for (const e of this.enemies) {
           if (!e.alive || pr.hits.has(e.id)) continue;
           const rr = pr.radius + e.radius;

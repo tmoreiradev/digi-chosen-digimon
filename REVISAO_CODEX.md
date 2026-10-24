@@ -839,3 +839,12 @@ aceitos: (P2) com o leque progressivo, o 4.º projétil sai a 0,9 rad e passa ao
 agora só os projéteis do leque com desvio ≤ 0,7 rad (`FAN_STEP` em `run.js`, mesmo passo do `fireMove`); teste mede
 `orb`/`boomerang` com +3 e +5 dentro de ±25 %. (P3) o teste do anti-stall atravessa `2 × fightSecs + 25 s` com o boss
 dormindo e exige `exhaust() > 2`. Suíte **142 / 142**; build + `check-bundle` OK.
+
+**Vigésima primeira rodada** (`feda03a..7a340ee`, `reviews/codex-2026-10-24-06-41-feda03a..HEAD.md`): **Aprovado com ressalvas**,
+1 achado (P2), aceito — e de novo um bug de jogo por trás: a bomba (`lob`, ex.: Rock Throw) **não andava em x/z**;
+subia e descia no lugar e explodia no pé do jogador, como uma onda em volta dele. Agora é lançada para cair no alvo
+(velocidade horizontal = distância ÷ 0,72 s de voo, entre 2 e 20 u/s) e **não colide no ar** (ao andar, ela passou
+a acertar tudo no caminho, ~3 acertos por bomba); explode só ao cair. `lob` saiu do limite angular do leque (a
+explosão de raio 2,2 × √área cobre o desvio). Medido a 3 u: 0,94–1,00× com +0 a +5 bombas. Teste novo: a bomba cai
+a < 2,5 u do alvo a 8 u, o inimigo sob o arco não é atingido, e +3/+5 ficam em ±25 %. ⚠ Mudança de jogo: Rock
+Throw deixa de ser uma área em volta do jogador. Suíte **143 / 143**; build + `check-bundle` OK.

@@ -90,3 +90,44 @@ test("orb and boomerang: +count raises the estimate as much as the measured dama
     }
   }
 });
+
+test("lob bombs fly to the target, explode on landing only, and +count is counted", () => {
+  const run = levelled(74); // Geodude: Rock Throw is a lob
+  const p = run.player;
+  run.player.moves = run.player.moves.filter((m) => m.def.arch === "lob");
+  const e = run.spawnEnemy(16, p.x + 8, p.z, "normal");
+  e.hp = e.maxHp = 1e9;
+  e.speed = 0;
+  e.types = [];
+  const near = run.spawnEnemy(16, p.x + 3, p.z, "normal"); // under the arc, not the target
+  near.hp = near.maxHp = 1e9;
+  near.speed = 0;
+  run.player.moves[0].timer = 0;
+  // aim at the far one
+  const nearest = run.nearestEnemy.bind(run);
+  run.nearestEnemy = () => e.id;
+  run.update(1 / 60);
+  run.nearestEnemy = nearest;
+  const bomb = run.projectiles.find((pr) => pr.lob);
+  assert.ok(bomb, "a bomb was thrown");
+  for (let i = 0; i < 60 && run.projectiles.includes(bomb); i++) run.update(1 / 60);
+  assert.ok(!run.projectiles.includes(bomb), "it landed");
+  assert.ok(Math.abs(bomb.x - e.x) < 2.5, `landed near the target (x ${bomb.x.toFixed(1)} vs ${e.x})`);
+  assert.equal(near.hp, near.maxHp, "the enemy under the arc was not hit in the air");
+  assert.ok(e.hp < e.maxHp, "the target took the blast");
+
+  for (const extra of [3, 5]) {
+    const r = levelled(74);
+    r.player.moves = r.player.moves.filter((m) => m.def.arch === "lob");
+    r.player.moves[0].mods.count += extra;
+    const est = r.playerExpectedDps();
+    const t = r.spawnEnemy(16, r.player.x + 3, r.player.z, "boss");
+    t.hp = t.maxHp = 1e9;
+    t.speed = 0;
+    t.types = [];
+    const d0 = r.stats.damage;
+    for (let i = 0; i < 1800; i++) r.update(1 / 60);
+    const ratio = (r.stats.damage - d0) / 30 / est;
+    assert.ok(ratio > 0.75 && ratio < 1.25, `lob +${extra}: measured/estimate = ${ratio.toFixed(2)}`);
+  }
+});
