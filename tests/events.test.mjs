@@ -99,3 +99,36 @@ test("an altar is consumed by healing, not by leaving at full HP", () => {
   run.update(1 / 60);
   assert.equal(run.events.events.length, 0, "healed: consumed");
 });
+
+test("a shop keeps its stock between visits; a paid renewal rerolls it and costs more each time", () => {
+  const { run } = makeRun();
+  const p = run.player;
+  run.stats.gold = 1000;
+  run.events.events.length = 0;
+  run.events.spawn("shop", p.x + 1, p.z);
+  const ev = run.events.events[0];
+  const titles = () => ui.all().filter((n) => n.classList?.contains("shop-title")).map((n) => n.textContent);
+  open(run);
+  const first = titles();
+  click(/^Sair/);
+  for (let i = 0; i < 5; i++) {
+    open(run);
+    assert.deepEqual(titles(), first, "same stock on every visit");
+    click(/^Sair/);
+  }
+  open(run);
+  const price = run.events.renewPrice(run, ev);
+  assert.equal(price, 20);
+  click(/^Renovar/);
+  assert.equal(run.stats.gold, 1000 - 20, "renewal charged");
+  assert.equal(ev.renewals, 1);
+  assert.ok(run.events.panel, "the shop panel is open again with the new stock");
+  assert.deepEqual(titles(), ev.stock.map((it) => it.title));
+  assert.equal(run.events.renewPrice(run, ev), 35, "the next renewal costs more");
+  run.stats.gold = 10;
+  click(/^Sair/);
+  open(run);
+  const renewBtn = findButtons(ui, /^Renovar/)[0];
+  assert.ok(renewBtn.disabled, "cannot renew without the gold");
+  click(/^Sair/);
+});

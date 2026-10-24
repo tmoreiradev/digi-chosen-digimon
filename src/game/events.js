@@ -149,7 +149,9 @@ export class WorldEvents {
         else if (e.code === "Digit2") { e.preventDefault(); close(); }
       };
     } else if (ev.kind === "shop") {
-      const items = this.shopSelection();
+      // The stock belongs to the shop: rolled once (leaving and coming back used to reroll it for free);
+      // a paid renewal rerolls it.
+      const items = (ev.stock ??= this.shopSelection());
       // The wallet is run.stats.gold (what the HUD shows); player.stats.gold is the coin multiplier.
       const goldLine = () => "Mercadorias à venda. Seu ouro: " + Math.floor(run.stats.gold) + "G";
       const goldText = el("p", { class: "shop-gold" }, goldLine());
@@ -175,9 +177,16 @@ export class WorldEvents {
         list.append(row);
       });
       body.append(list);
-      body.append(el("div", { class: "event-hint" }, "Aperte 1-3 para comprar, 0 para sair."));
+      body.append(el("div", { class: "event-hint" }, "Aperte 1-3 para comprar, R para renovar, 0 para sair."));
+      const renewBtn = el("button", { class: "btn ghost" }, `Renovar ${this.renewPrice(run, ev)}G `, el("kbd", {}, "R"));
+      renewBtn.onclick = (e) => {
+        e?.preventDefault?.();
+        if (!this.renew(run, ev)) return;
+        close();
+        this.openPanel(ev); // redraw with the new stock
+      };
       const leaveBtn = el("button", { class: "btn ghost", onclick: close }, "Sair ", el("kbd", {}, "0"));
-      footer.append(leaveBtn);
+      footer.append(renewBtn, leaveBtn);
       const refresh = () => {
         goldText.textContent = goldLine();
         buyButtons.forEach((b, i2) => {
@@ -186,6 +195,9 @@ export class WorldEvents {
           b.disabled = !ok;
           b.className = "btn" + (ok ? "" : " disabled");
         });
+        const canRenew = run.stats.gold >= this.renewPrice(run, ev);
+        renewBtn.disabled = !canRenew;
+        renewBtn.className = "btn ghost" + (canRenew ? "" : " disabled");
       };
       refresh();
 
@@ -196,6 +208,9 @@ export class WorldEvents {
           e.preventDefault();
           const btn = buyButtons[idx - 1];
           if (btn && !btn.disabled) btn.click();
+        } else if (e.code === "KeyR") {
+          e.preventDefault();
+          if (!renewBtn.disabled) renewBtn.click();
         } else if (e.code === "Digit0") { e.preventDefault(); close(); }
       };
     } else if (ev.kind === "altar") {
@@ -237,6 +252,22 @@ export class WorldEvents {
 
     window.addEventListener("keydown", this._panelKey);
     backdrop.addEventListener("mousedown", (e) => { if (e.target === backdrop) close(); });
+  }
+
+  /** Renewal price: 20G, +15G per renewal of this shop, with the Gold Teeth discount. */
+  renewPrice(run, ev) {
+    return this.price(run, { cost: 20 + 15 * (ev.renewals ?? 0) });
+  }
+
+  /** Pay to reroll a shop's stock. False when the wallet is short. */
+  renew(run, ev) {
+    const cost = this.renewPrice(run, ev);
+    if (run.stats.gold < cost) return false;
+    run.stats.gold -= cost;
+    ev.renewals = (ev.renewals ?? 0) + 1;
+    ev.stock = this.shopSelection();
+    this.opts.onBanner?.(`Estoque renovado por ${cost}G.`);
+    return true;
   }
 
   shopSelection() {

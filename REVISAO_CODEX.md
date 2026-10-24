@@ -1006,3 +1006,14 @@ ressalvas**, 3 P3, aceitos: o script exige Node ≥ 22 (o `WebSocket` global nã
 o avanço da run é conferido **antes** de qualquer `update` manual (prova o loop real por `requestAnimationFrame`); a
 escolha da carta é só pela tecla `1`, e o teste exige que o painel feche e que o upgrade tenha sido aplicado. Os textos da
 §30 sobre "escolha por tecla" e "avança" passam a valer com isso. `npm run e2e` OK.
+
+## 31. Fase 20 — Estoque da loja e renovação (24/10/2026)
+
+- **Bug de passagem:** `openPanel` sorteava o estoque da loja a cada abertura — sair e entrar renovava de graça. O
+  estoque agora é do evento (`ev.stock`, sorteado uma vez).
+- **Renovação:** botão "Renovar NG" (tecla `R`) sorteia outro estoque por 20G, +15G a cada renovação daquela loja,
+  com o desconto do Gold Teeth (`renewPrice` usa `price`). Banner "Estoque renovado por NG."; o painel reabre com o
+  estoque novo; o botão fica desabilitado sem ouro.
+- **Teste** (`events.test.mjs`, falha no código anterior em "same stock on every visit"): 6 visitas com o mesmo estoque,
+  renovação cobra 20, reabre com `ev.stock`, próxima custa 35, sem ouro o botão desabilita. Suíte **174 / 174**; build,
+  `check-bundle` e `npm run e2e` OK.

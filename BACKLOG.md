@@ -39,7 +39,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 
-- Santuários, mercadores ambulantes e lojas de renovação de itens.
+- Santuários e mercadores ambulantes: o santuário do Clássico (fase 2) e a loja ambulante (fase 5) existem; ~~renovação do estoque~~ feita na fase 20 (24/10).
 - Tarefas/conquistas avançadas com recompensas aplicadas de verdade (ver item 5).
 - Nome de jogador permanente (hoje só apelido do Pokémon).
 - ~~Mais itens segurados com efeito~~ — fase 18 (24/10): 13 itens (Leftovers, Choice Band, Life Orb e 10 de atributo).
