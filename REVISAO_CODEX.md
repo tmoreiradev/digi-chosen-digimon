@@ -859,3 +859,23 @@ Throw deixa de ser uma área em volta do jogador. Suíte **143 / 143**; build + 
 voava ~0,87 s e passava 5 u do alvo a 25 u. O tempo agora sai da altura real: `(6 + √(36 + 36·(p.y + 0,8))) ÷ 18`. Teste
 com alvos a 14/20/25 u do chão e 10/25 u no pulo (o código anterior caía em x = 30,1). Suíte **144 / 144**; build +
 `check-bundle` OK.
+
+## 27. Fase 16 — Auditoria dos arquétipos de golpe (24/10/2026)
+
+- **Por quê:** os bugs da bomba (`lob`) e do leque só apareceram medindo. Disparei dois golpes de cada arquétipo contra
+  um alvo parado a 3 u e a 8 u por 10 s.
+- **Achados:** `orbit` (Petal Dance, Bone Rush) e `random` (Metronome) davam **dano zero**. O orbit testava a posição
+  das esferas uma vez por lançamento (a cada ~5 s), então quase nunca acertava; o Metronome tem poder 0 no dado (é um
+  golpe de status). Os demais zeros são esperados: corpo a corpo (`strike`, `spin`, `aura`, `dash`, `trap`) a 8 u,
+  `trail` com o jogador parado, `buff`/`weather` sem dano.
+- **Correções:** o orbit cria esferas (projéteis com `orbit`, `pierce` infinito) que giram em volta do jogador durante
+  `dur` (raio `1,6 + área × 0,5`, 3 rad/s × `+speed`) e acertam cada inimigo no máximo a cada 0,5 s por esfera; `+dur`
+  passou a valer para orbit (saiu de `NO_EFFECT_UPS`). O Metronome, como no original, chama um golpe de dano aleatório
+  (`Run.metronomePool()`), disparado pelo arquétipo dele com o nível e as cartas do Metronome, e mostra o nome sorteado.
+- **Estimativa de DPS:** orbit conta `projéteis × dur` acertos (≈ 1/s por esfera contra o boss); Metronome usa o dano
+  médio do sorteio. Medido contra alvo-boss em 60 s: Petal Dance 41,7 estimado / 42–43 medido, Bone Rush 17,7 / 17,5–17,8,
+  Metronome 6,0 / 5,7–6,4.
+- **Testes:** `tests/archetypes.test.mjs` exige dano de todo arquétipo de dano a 3 u (no código anterior falham orbit e
+  random); em `moveups.test.mjs` o teste antigo do projétil do Metronome virou "chama golpes diferentes com as cartas
+  dele", e há teste de `+dur`/`+count` no orbit. Navegador: três esferas verdes girando em volta do Bulbasaur com
+  Petal Dance. Suíte **146 / 146**; build + `check-bundle` OK.

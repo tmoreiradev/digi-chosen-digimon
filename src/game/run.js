@@ -36,7 +36,7 @@ const STAGE_SECS = 300; // a zone lasts five minutes before its guardian (classi
 // Card stats the data lists for an archetype but this engine cannot honour, so they are not
 // offered: beam, cone, orbit and vortex strike instantly (no duration); buff has no duration;
 // dash and wave have no projectile speed.
-const NO_EFFECT_UPS = { beam: ["dur"], cone: ["dur"], orbit: ["dur"], vortex: ["dur"], buff: ["dur"], dash: ["speed"], wave: ["speed"] };
+const NO_EFFECT_UPS = { beam: ["dur"], cone: ["dur"], vortex: ["dur"], buff: ["dur"], dash: ["speed"], wave: ["speed"] };
 const SHINY_RATE = 1 / 256; // ~0.39% chance de um selvagem nascer shiny
 const SHINY_XP_BONUS = 0.5; // +50% de XP/dust ao derrotar um shiny
 
@@ -581,6 +581,15 @@ export class Run {
   }
 
   fireMove(mv) {
+    // Metronome (random): its data entry has no power; like the original, it calls a random damaging
+    // move, fired through that move's archetype with Metronome's level and card upgrades.
+    if (mv.def.arch === "random") {
+      const pool = this.metronomePool();
+      if (!pool.length) return;
+      const picked = pool[Math.floor(Math.random() * pool.length)];
+      this.floater(this.player.x, this.player.y + 2.2, this.player.z, picked.name, "#ffe27a");
+      return this.fireMove({ ...mv, def: picked });
+    }
     const p = this.player;
     const def = this.effectiveDef(mv); // upgrades bought on the cards reach every hit and projectile
     const dmg = this.moveDamage(mv);
@@ -741,14 +750,14 @@ export class Run {
         break;
       }
       case "orbit": {
+        // Orbs circle the player for the move's duration and hit what they touch (each enemy at most
+        // every 0.5 s per orb). It used to sample the ring once per cast, so it almost never hit.
+        const radius = 1.6 + area * 0.5;
         for (let i = 0; i < count; i++) {
-          const a = (i / count) * TAU + this.time * mv.mods.speed * p.stats.projSpeed; // +speed = faster orbit
-          const ox = p.x + Math.cos(a) * (1.6 + area);
-          const oz = p.z + Math.sin(a) * (1.6 + area);
-          for (const en of this.enemies) {
-            if (!en.alive) continue;
-            if (dist(en.x, en.z, ox, oz) < 1.1) this.hitEnemy(en, dmg, def);
-          }
+          this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: 0, speed: 0, life: Math.max(1, dur), radius: 0.6, dmg, def });
+          const pr = this.projectiles.at(-1);
+          pr.pierce = 1e9; // an orb keeps circling through what it hits
+          pr.orbit = { angle: (i / count) * TAU, radius, w: 3 * mv.mods.speed * p.stats.projSpeed, reset: 0 }; // +speed = faster orbit
         }
         break;
       }
@@ -880,6 +889,13 @@ export class Run {
     }
   }
 
+  /** Damaging moves Metronome can call (built once). */
+  metronomePool() {
+    return (this._metronomePool ??= this.data.moves
+      .map((m) => buildMoveDef(m, this.rules))
+      .filter((d) => d && d.dmg > 0 && !["random", "buff", "weather", "fusion"].includes(d.arch)));
+  }
+
   moveDamage(mv) {
     const p = this.player;
     const def = mv.def;
@@ -939,7 +955,19 @@ export class Run {
         }
       }
 
-      if (pr.lob) {
+      if (pr.orbit) {
+        const o = pr.orbit;
+        const p = this.player;
+        o.angle += o.w * dt;
+        pr.x = p.x + Math.cos(o.angle) * o.radius;
+        pr.z = p.z + Math.sin(o.angle) * o.radius;
+        pr.y = p.y + 0.9;
+        o.reset -= dt;
+        if (o.reset <= 0) {
+          o.reset = 0.5;
+          pr.hits.clear();
+        }
+      } else if (pr.lob) {
         // The bomb arcs toward its target (it used to rise and fall in place, exploding at the player).
         pr.x += pr.vx * dt;
         pr.z += pr.vz * dt;
@@ -1852,10 +1880,15 @@ export class Run {
       const step = FAN_STEP[def.arch];
       let landing = projectiles;
       if (step) for (landing = 0; landing < projectiles && Math.ceil(landing / 2) * step <= 0.7; landing++);
-      const count = def.arch === "chain" ? 1 : def.arch === "orb" ? 2 * landing : landing;
+      // An orbit orb hits a boss beside it about once a second for the whole duration.
+      const orbitSecs = def.arch === "orbit" ? Math.max(1, def.dur * m.mods.dur * s.duration) : 1;
+      const count = (def.arch === "chain" ? 1 : def.arch === "orb" ? 2 * landing : landing) * orbitSecs;
       const cdSecs = Math.max(0.12, (def.cd * m.mods.cd) / s.attackSpeed);
       const share = def.arch === "vortex" ? 0.35 : 1; // a vortex pull deals 35 % of the move damage
-      dps += (this.moveDamage(m) * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * count * share) / cdSecs;
+      // Metronome has no power of its own: use the average damage of the moves it can call.
+      const pool = def.arch === "random" ? this.metronomePool() : null;
+      const base = pool?.length ? (pool.reduce((t, d) => t + d.dmg, 0) / pool.length) * 1.3 * m.mods.dmg * (1 + (m.level - 1) * 0.04) : this.moveDamage(m);
+      dps += (base * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * count * share) / cdSecs;
     }
     // Ally hits go through hitEnemy too, so they take the same multipliers.
     for (const a of this.allies.list) {

@@ -195,7 +195,7 @@ test("+area lengthens chain jumps and widens the smite splash", () => {
 
 test("stats an archetype cannot honour are never offered on its cards", () => {
   const { run } = makeRun();
-  for (const [arch, blocked] of [["beam", "dur"], ["cone", "dur"], ["orbit", "dur"], ["dash", "speed"]]) {
+  for (const [arch, blocked] of [["beam", "dur"], ["cone", "dur"], ["dash", "speed"]]) {
     const mv = withMove(run, arch);
     for (let i = 0; i < 40; i++) {
       for (const up of run.rollMoveUps(mv)) assert.notEqual(up.key, blocked, `${arch} never offers +${blocked}`);
@@ -215,19 +215,37 @@ test("+status is not offered for a real move that has no status to apply", () =>
   for (let i = 0; i < 40; i++) for (const up of run.rollMoveUps(mv)) assert.notEqual(up.key, "status", `${move.name} never offers +status`);
 });
 
-test("+area and +dur reach the random (Metronome-style) projectile", () => {
+test("Metronome calls a random damaging move, carrying its own card upgrades", () => {
   const { run } = makeRun();
   const mv = withMove(run, "random");
+  const pool = run.metronomePool();
+  assert.ok(pool.length > 50 && pool.every((d) => d.dmg > 0 && d.arch !== "random"));
+  const seen = new Set();
+  const orig = run.fireMove.bind(run);
+  run.fireMove = (m) => {
+    seen.add(m.def.name);
+    assert.equal(m.mods, mv.mods, "same card upgrades");
+    return orig(m);
+  };
+  for (let i = 0; i < 20; i++) run.fireMove(mv);
+  assert.ok(seen.size > 3, "different moves get called: " + [...seen].join(", "));
+});
+
+test("+dur makes an orbit last longer; +count adds orbs", () => {
+  const { run } = makeRun();
+  const mv = withMove(run, "orbit");
   run.spawnEnemy(16, 5, 0, "normal");
   run.fireMove(mv);
-  const base = run.projectiles.at(-1);
+  const orbs = run.projectiles.filter((pr) => pr.orbit);
+  assert.ok(orbs.length >= 1);
+  const life = orbs[0].life;
   run.projectiles.length = 0;
-  mv.mods.area = 2;
   mv.mods.dur = 2;
+  mv.mods.count += 1;
   run.fireMove(mv);
-  const upgraded = run.projectiles.at(-1);
-  assert.ok(Math.abs(upgraded.radius / base.radius - 2) < 1e-9, "twice as wide");
-  assert.ok(Math.abs(upgraded.life / base.life - 2) < 1e-9, "flies twice as long");
+  const more = run.projectiles.filter((pr) => pr.orbit);
+  assert.equal(more.length, orbs.length + 1);
+  assert.ok(Math.abs(more[0].life / life - 2) < 1e-9, "twice as long");
 });
 
 test("+status raises the chance that a hit applies the move's status", () => {
