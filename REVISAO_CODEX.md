@@ -652,3 +652,49 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   deslocamento 0; `popCap(0)` 10 → 11 com `enemyAmount 1,12`.
 - ⚠ Balanceamento para o playtest: espinhos de 25/40 por acerto matam inimigos comuns no contato (HP de zona 1 na
   faixa de 30–60); `flinch` 6 % com rajadas pode travar alvos frequentemente. Números são os do upstream.
+
+## 22. Fase 11 — Itens scriptados entram no pool (BACKLOG 11) (24/10/2026)
+
+- **O que era:** dos 126 upgrades do `rules.json`, 38 não têm `mods` (são os itens *scriptados* do upstream: Shell
+  Bell, Focus Sash, Revive…) e `rollChoices` só oferecia entradas com `mods.length` — logo nunca apareciam, e o
+  único gancho que existia no engine (`poke-doll` → vaga de aliado) era inalcançável. Além disso a tag `type:` dos
+  18 itens de tipo (Charcoal…) **nunca foi aplicada**: `hitEnemy` lia `s.typeBoost[tipo]`, mas nada o preenchia —
+  a carta dizia "fortalece golpes de Fogo" e só o `+3 % dano` do `mods` valia. E, com `tags: []`, o peso de sorteio
+  desses itens caía para 0,35 (`!u.tags` falso para array vazio).
+- **Decisão:** implementar os scriptados que cabem nos ganchos que o engine já tem (acerto, abate, dano recebido,
+  aliados, loja) e manter os demais fora, de forma explícita. Novo módulo `src/game/scripted.js`: `SCRIPTED` (22
+  chaves) e os ganchos `itemDamageMul` (Metronome +2 %/s sem levar golpe até +40 %, lendo `lastHitT`; Binding
+  Band +20 % em para/root/freeze/sleep/flinch; Full Heal +6 % por status distinto até +30 %; Reaper Cloth +1 % por
+  100 abates até +30 %; Thick Club físico +1 % por 2 de armadura até +50 %), `itemBonk` (Stick 3 % → ×8, "Bonk!"),
+  `itemOnHit` (Shell Bell cura 0,8 % do dano × `healing`; Grip Claw 4 % root 2 s; Awakening 2,5 % sleep 3 s; Razor
+  Fang executa inimigo **comum** abaixo de 8 % + 4 %/cópia — alfas e bosses ficam de fora por causa da captura),
+  `itemOnKill` (Berry Juice 5 % → cura 2 %; Fire Stone: vítima queimada explode, 40 % do HP dela em 3 u; Leaf
+  Stone 10 % → redemoinho 30 % em 3 u + cura 1 %), `itemBlockHit` (Guard Spec. bloqueia um golpe a cada 14 s,
+  flutuante "bloqueado") e `itemSurvive` (Focus Sash 1×/zona; Focus Band 15 %/cópia a cada 20 s; Max Revive 60 %
+  e Revive 35 %, uma vez por cópia, 1,5 s de invulnerabilidade). Em `capture.js`: S.S. Ticket +1 vaga (antes era
+  o Poké Doll ÷ 3), Lemonade aliados ×1,25 dano e ÷1,15 recarga, Poké Doll passiva ×1,5. Em `events.js`: Gold
+  Teeth −8 %/cópia (teto −24 %) em `price()`, usado no rótulo, na checagem e na cobrança. Área fixa dos itens:
+  `Run.hitAround` (sem multiplicadores do jogador, passa pelo orçamento do boss, mata por `killEnemy`).
+- **Pool e cartas:** `Run.itemPool()` = `mods.length || SCRIPTED.has(key)`, não banido, abaixo do `max` (o dado
+  tem `max` por item: Focus Sash 1, Revive 2…). Peso: `!u.tags?.length`. `describeUpgrade` cai em `ITEM_DESC_PT`
+  (`i18n.js`, 22 descrições do que **este** engine faz) em vez do espanhol do dado. Tag `type:` aplicada em
+  `recompute`: `typeBoost[tipo] += 0,3 × cópias`. **Ficam fora (16):** soda-pop, adrenaline-orb, metal-powder,
+  ice-heal, secret-key, old-rod, eviolite, shed-shell, cell-battery, dowsing-machine, griseous-orb, electirizer,
+  silph-scope, max-ether, tm-case, poke-flute — cada um pede um subsistema próprio (altares Unown, pesca, marca,
+  tetos de nível) ou um estado dinâmico de velocidade/armadura que o engine não tem.
+- **Testes** (`tests/items.test.mjs`, 13; o arquivo nem carrega no código antigo): pool inclui todos os
+  `SCRIPTED` e Charcoal, exclui os 16, respeita `max`; cada chave tem descrição pt-BR; tag de tipo ×1,3 (×1,6 com
+  duas) só no tipo; Metronome 1,4 → 1,0 → 1,2; Binding Band/Full Heal; Reaper/Thick Club (e especial ignora o
+  Club); Stick ×8 + "Bonk!"; Shell Bell/Grip Claw/Awakening; Razor Fang (comum sim, alfa não, 12 % com duas);
+  Berry Juice/Fire Stone (só queimado, só em 3 u)/Leaf Stone; Guard Spec.; Sash/Band/Revive/Max Revive;
+  S.S. Ticket/Lemonade/Poké Doll; Gold Teeth 25 → 23 → 19. Pegadinhas do teste: o dado traz `mods: []` (array
+  vazio é truthy — `applyChoice` recomputava e restaurava a evasão zerada; o `if` virou `mods?.length`), o Bulbasaur
+  tem `healing 1,25` pela habilidade, e o bundle concatena módulos num escopo só (o helper local de `capture.js`
+  colidiu com o `itemCount` exportado e virou `upgradeCount`). Suíte **115 / 115**; build + `check-bundle` OK
+  (28 módulos).
+- **Navegador (`localhost:8080`, recarregado):** pool 110 (88 + 22), scriptados presentes e os 16 ausentes; cartas
+  "Charcoal — +3% dano · fortalece golpes de Fogo" e "Gold Teeth — A loja cobra 8% menos (até −24%)."; Guard
+  Spec. bloqueia o 1.º golpe (HP intacto, flutuante "bloqueado") e deixa o 2.º passar; Revive devolve 38 / 108 com
+  o banner "Revive! De volta com 35% do HP".
+- ⚠ Balanceamento: Fire Stone em cadeia e Razor Fang com rajadas podem acelerar demais o abate de hordas;
+  Metronome dá +40 % desde o 1.º segundo (nunca levou golpe). Números do upstream, para o playtest.

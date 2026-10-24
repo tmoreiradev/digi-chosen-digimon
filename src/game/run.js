@@ -22,6 +22,7 @@ import {
 import { Director } from "./director.js";
 import { Boss } from "./boss.js";
 import { Allies, Capture, CAPTURABLE_TIERS, isBossTier } from "./capture.js";
+import { SCRIPTED, itemDamageMul, itemBonk, itemOnHit, itemOnKill, itemBlockHit, itemSurvive } from "./scripted.js";
 import { Tower } from "./tower.js";
 import { WorldEvents } from "./events.js";
 import { AchievementTracker, EggSystem } from "./achievements.js";
@@ -183,7 +184,11 @@ export class Run {
       attackT: 0,
       ultPoseT: 0,
       hurtT: 0,
-      lastHitT: -1e9, // run time of the last hit that landed (shield regen waits on it)
+      lastHitT: -1e9, // run time of the last hit that landed (shield regen and Metronome read it)
+      guardT: -1e9, // Guard Spec.: last blocked hit
+      bandT: -1e9, // Focus Band: last save
+      sashStage: 0, // Focus Sash: zone it was used in
+      revived: {}, // Revive / Max Revive uses per key
       dead: false,
       lastEvoCheck: 1,
       evoPlan: null, // decided once per species (see tryEvolve); a re-roll per check used to move the target
@@ -210,6 +215,14 @@ export class Run {
     groups.push(...this.allies.mods());
     const stats = applyMods(base, groups);
     clampStats(stats);
+    // Type items (Charcoal, Mystic Water…): the `type:` tag is +30 % per copy to moves of that type.
+    for (const up of this.upgrades.values()) {
+      for (const tag of up.tags ?? []) {
+        if (!tag.startsWith("type:")) continue;
+        const t = tag.slice(5);
+        stats.typeBoost[t] = (stats.typeBoost[t] ?? 1) + 0.3 * up.count;
+      }
+    }
 
     const prevMax = p.maxHp;
     p.stats = stats;
@@ -1041,6 +1054,7 @@ export class Run {
     if (this.weather === "sand" && dtype === "rock") amount *= 1.3;
 
     if (["elite", "alpha", "totem", "summoner", "boss"].includes(e.tier)) amount *= s.eliteDamage;
+    amount *= itemDamageMul(this, e, def);
 
     if (!noReact) {
       const critChance = s.critChance + s.megaCrit + (def?.critBonus ?? 0);
@@ -1049,6 +1063,7 @@ export class Run {
         this.floater(e.x, e.y + 1.4, e.z, Math.round(amount), "#ffe27a");
         this.burst(e.x, e.y + 1, e.z, 0xffe27a, 8, "star");
       }
+      amount *= itemBonk(this, e);
     }
 
     if (e.statuses.sleep > 0) amount *= 1.8;
@@ -1065,6 +1080,7 @@ export class Run {
 
     if (def?.drain) this.healPlayer(amount * def.drain * s.healing);
     if (s.lifesteal > 0 && Math.random() < 0.2) this.healPlayer(amount * s.lifesteal);
+    itemOnHit(this, e, amount);
 
     // Status application
     if (def?.status && def.statusChance > 0 && Math.random() < def.statusChance * s.statusChance) {
@@ -1105,6 +1121,7 @@ export class Run {
       this.floater(p.x, p.y + 2, p.z, "errou", "#9ca3ff");
       return;
     }
+    if (itemBlockHit(this)) return;
     p.lastHitT = this.time;
     if (p.shield > 0) {
       const absorbed = Math.min(p.shield, dmg);
@@ -1127,6 +1144,7 @@ export class Run {
       this.opts.onHurt?.();
     }
     if (p.hp <= 0) {
+      if (itemSurvive(this)) return;
       p.hp = 0;
       p.dead = true;
       this.state = "dead";
@@ -1137,6 +1155,19 @@ export class Run {
   healPlayer(amount) {
     const p = this.player;
     p.hp = Math.min(p.maxHp, p.hp + amount);
+  }
+
+  /** Flat area damage for item effects: no player multipliers, through the boss budget, kills handled. */
+  hitAround(x, z, radius, dmg, def, exceptId = -1) {
+    const r2 = radius * radius;
+    for (const e of this.enemies) {
+      if (!e.alive || e.dying > 0 || e.id === exceptId || dist2(e.x, e.z, x, z) > r2) continue;
+      const through = this.boss.index === e.id && this.boss.alive ? this.boss.capDamage(dmg * this.boss.hitMul()) : dmg;
+      e.hp -= through;
+      e.flash = 1;
+      this.stats.damage += through;
+      if (e.hp <= 0) this.killEnemy(e, def);
+    }
   }
 
   /* ----------------------------------------------------------- enemies */
@@ -1239,6 +1270,7 @@ export class Run {
     this.player.ultCharge = Math.min(1, this.player.ultCharge + 0.006);
     this.opts.onKill?.();
     if (this.tower) this.tower.countKill();
+    itemOnKill(this, e);
 
     const p = this.player;
     this.burst(e.x, e.y + 0.8, e.z, this.typeRgb(e.types[0]), 10, "star");
@@ -1467,10 +1499,9 @@ export class Run {
       });
     }
 
-    // Item upgrade (only mod-bearing entries: their effects are fully modelled).
-    const pool = this.rules.upgrades.filter(
-      (u) => u.mods?.length && !this.banished.has(u.key) && (this.upgrades.get(u.key)?.count ?? 0) < (u.max ?? 10)
-    );
+    // Item upgrade: mod-bearing entries plus the scripted ones the engine implements; anything else
+    // would be a card with no effect.
+    const pool = this.itemPool();
     if (pool.length) {
       const available = [0, 1, 2, 3, 4].map((r) => pool.some((u) => u.rarity === r));
       const rarity = rollRarity({
@@ -1483,7 +1514,7 @@ export class Run {
       let bucket = pool.filter((u) => u.rarity === rarity && !this.banished.has(u.key));
       if (!bucket.length) bucket = pool;
       const chosen = this.rng.weighted(bucket, (u) => {
-        if (!u.tags) return 1;
+        if (!u.tags?.length) return 1;
         if (u.tags.some((t) => t.startsWith("type:") && p.types.includes(t.slice(5)))) return 4;
         return 0.35;
       });
@@ -1574,6 +1605,16 @@ export class Run {
     return ups;
   }
 
+  /** Upgrades the cards may offer: mods or a scripted implementation, not banished, below their max. */
+  itemPool() {
+    return this.rules.upgrades.filter(
+      (u) =>
+        (u.mods?.length || SCRIPTED.has(u.key)) &&
+        !this.banished.has(u.key) &&
+        (this.upgrades.get(u.key)?.count ?? 0) < (u.max ?? 10)
+    );
+  }
+
   applyChoice(choice) {
     const p = this.player;
     if (choice.kind === "newMove") {
@@ -1630,7 +1671,7 @@ export class Run {
         const prev = this.upgrades.get(up.key);
         this.upgrades.set(up.key, { ...up, count: (prev?.count ?? 0) + 1 });
         this.stats.items++;
-        if (up.mods) this.recompute(p);
+        if (up.mods?.length || up.tags?.length) this.recompute(p);
       }
     } else if (choice.kind === "fusion") {
       applyFusion(this, choice);

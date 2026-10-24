@@ -14,6 +14,8 @@ import { clamp, dist } from "../core/math.js";
 export const CAPTURABLE_TIERS = new Set(["alpha", "boss", "totem", "summoner"]);
 export const isBossTier = (tier) => tier !== "alpha" && CAPTURABLE_TIERS.has(tier);
 
+const upgradeCount = (run, key) => run.upgrades.get(key)?.count ?? 0; // local copy: scripted.js imports this module
+
 export class Capture {
   constructor(run) {
     this.run = run;
@@ -145,7 +147,7 @@ export class Allies {
   }
 
   get cap() {
-    return this.cfg.cap + Math.floor((this.run.upgrades.get("poke-doll")?.count ?? 0) / 3);
+    return this.cfg.cap + upgradeCount(this.run, "ss-ticket"); // S.S. Ticket: +1 slot per copy
   }
 
   /** Recruit a captured species as an ally. */
@@ -194,14 +196,15 @@ export class Allies {
       (cfg.powerBst + a.species.bst / cfg.powerBstDiv) *
       (1 + cfg.powerStage * (run.stage - 1)) *
       (1 + cfg.powerBond * (a.bond - 1)) *
-      (a.shiny ? cfg.shinyMul : 1)
+      (a.shiny ? cfg.shinyMul : 1) *
+      (1 + 0.25 * upgradeCount(run, "lemonade"))
     );
   }
 
   /** Ally attack cooldown (upstream `cooldown`). */
   cooldown(a) {
     const base = a.physical ? this.cfg.cooldownPhysical : this.cfg.cooldownSpecial;
-    return base / Math.sqrt(this.run.player.stats.attackSpeed);
+    return base / Math.sqrt(this.run.player.stats.attackSpeed) / (1 + 0.15 * upgradeCount(this.run, "lemonade"));
   }
 
   /** Per-type support the allies grant the player. */
@@ -209,7 +212,7 @@ export class Allies {
     const p = this.run.player;
     const groups = [];
     for (const a of this.list) {
-      const boost = this.cfg.supportBoost * (a.shiny ? 2 : 1);
+      const boost = this.cfg.supportBoost * (a.shiny ? 2 : 1) * (1 + 0.5 * upgradeCount(this.run, "poke-doll"));
       groups.push([{ stat: "damage", mul: 1 + boost }]);
     }
     return groups;

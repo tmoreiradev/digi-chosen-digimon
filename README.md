@@ -85,6 +85,10 @@ slot**, or a **fusion** (merges two moves into a dual-type one). Level past the 
 **evolve**, charge your **ultimate** by fighting, and keep moving: contact damage lands in discrete
 hits and the horde scales through the stage. The level cap is 50.
 
+**Items** — 88 stat items, the 18 type items (+3% damage and +30% to moves of that type) and 22 of the
+upstream scripted items (Shell Bell, Metronome, Razor Fang, Focus Sash, Revive, Gold Teeth…), each with its
+own hook in `src/game/scripted.js`. Scripted items the engine does not model are never offered.
+
 **Game modes**
 - **Classic** — three 5-minute zones, each closed by a **zone guardian** picked from the biome's
   own list; the zone only advances once it falls. After zone 3 the run enters the **sanctuary**:

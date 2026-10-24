@@ -169,7 +169,7 @@ export class WorldEvents {
             el("div", { class: "shop-title" }, it.title),
             el("div", { class: "shop-desc" }, it.desc)
           ),
-          el("div", { class: "shop-price" }, it.cost + "G"),
+          el("div", { class: "shop-price" }, this.price(run, it) + "G"),
           btn
         );
         list.append(row);
@@ -182,7 +182,7 @@ export class WorldEvents {
         goldText.textContent = goldLine();
         buyButtons.forEach((b, i2) => {
           const it2 = items[i2];
-          const ok = run.stats.gold >= it2.cost && this.canApply(run, it2);
+          const ok = run.stats.gold >= this.price(run, it2) && this.canApply(run, it2);
           b.disabled = !ok;
           b.className = "btn" + (ok ? "" : " disabled");
         });
@@ -297,12 +297,19 @@ export class WorldEvents {
     return true;
   }
 
+  /** Shop price after Gold Teeth (−8 % per copy, at most −24 %). */
+  price(run, it) {
+    const teeth = Math.min(3, run.upgrades?.get("gold-teeth")?.count ?? 0);
+    return Math.round(it.cost * (1 - 0.08 * teeth));
+  }
+
   /** Buy an item: apply the effect first and charge only when it applied. */
   buy(run, it) {
-    if (run.stats.gold < it.cost || !this.canApply(run, it)) return false;
+    const cost = this.price(run, it);
+    if (run.stats.gold < cost || !this.canApply(run, it)) return false;
     if (!this.applyShopItem(run, it)) return false;
-    run.stats.gold -= it.cost;
-    this.opts.onBanner?.(`Comprou ${it.title} por ${it.cost}G.`);
+    run.stats.gold -= cost;
+    this.opts.onBanner?.(`Comprou ${it.title} por ${cost}G.`);
     this.opts.onSfx?.("pickup");
     return true;
   }

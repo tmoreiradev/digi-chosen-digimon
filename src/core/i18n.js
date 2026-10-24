@@ -120,3 +120,31 @@ export const HELD_ITEM_DESC_PT = {
   "choice-band": "+50% de dano em todos os golpes.",
 };
 export const heldItemDesc = (key, def) => HELD_ITEM_DESC_PT[key] ?? def?.desc ?? "";
+
+// Scripted upgrades (src/game/scripted.js): rules.json carries the upstream Spanish text; these
+// describe what THIS engine does. An item without an entry falls back to the data description.
+export const ITEM_DESC_PT = {
+  "grip-claw": "Cada acerto tem 4% de chance de enraizar o inimigo por 2 s.",
+  "berry-juice": "Cada abate tem 5% de chance de curar 2% do HP máximo.",
+  "shell-bell": "Recupera 0,8% do dano que você causa.",
+  metronome: "+2% de dano por segundo sem levar golpe (até +40%).",
+  "binding-band": "+20% de dano em inimigos paralisados, enraizados, congelados, dormindo ou recuando.",
+  awakening: "Cada acerto tem 2,5% de chance de adormecer o inimigo por 3 s.",
+  lemonade: "Seus aliados causam 25% mais dano e atacam 15% mais rápido.",
+  "poke-doll": "As passivas dos seus aliados valem 50% mais.",
+  stick: "3% de chance de um acerto causar ×8 de dano: Bonk!",
+  "razor-fang": "Elimina na hora inimigos comuns abaixo de 8% de HP (+4% por cópia). Alfas e bosses não.",
+  "focus-band": "15% de chance de sobreviver a um golpe letal com 1 HP (uma vez a cada 20 s).",
+  "full-heal": "+6% de dano por status diferente no inimigo (até +30%).",
+  "guard-spec": "A cada 14 s, bloqueia o próximo golpe por completo.",
+  "gold-teeth": "A loja cobra 8% menos (até −24%).",
+  "focus-sash": "Sobrevive a um golpe letal uma vez por zona.",
+  revive: "Revive uma vez com 35% do HP.",
+  "reaper-cloth": "+1% de dano a cada 100 abates na partida (até +30%).",
+  "thick-club": "Dano físico +1% a cada 2 de armadura (até +50%).",
+  "fire-stone": "Inimigos queimados explodem ao morrer (40% do HP deles, em 3 u).",
+  "leaf-stone": "Cada abate tem 10% de chance de soltar um redemoinho de folhas que corta os inimigos próximos e cura 1% do HP.",
+  "ss-ticket": "+1 vaga para aliados nesta partida.",
+  "max-revive": "Revive uma vez com 60% do HP.",
+};
+export const itemDesc = (key, def) => ITEM_DESC_PT[key] ?? def?.desc ?? "";

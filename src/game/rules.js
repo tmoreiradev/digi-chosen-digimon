@@ -1,7 +1,7 @@
 // Gameplay formulas, ported from the analysed PokéBonk build (see README "Provenance").
 
 import { clamp, lerp } from "../core/math.js";
-import { typeName } from "../core/i18n.js";
+import { typeName, itemDesc } from "../core/i18n.js";
 
 /* ------------------------------------------------------------------ types */
 
@@ -427,7 +427,7 @@ export function describeUpgrade(up) {
       if (tag.startsWith("type:")) parts.push(`fortalece golpes de ${typeName(tag.slice(5))}`);
     }
   }
-  return parts.join(" · ") || up.desc || "";
+  return parts.join(" · ") || itemDesc(up.key, up);
 }
 
 /* ------------------------------------------------------------- evolution */
