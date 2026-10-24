@@ -804,7 +804,7 @@ com ressalvas**, 6 achados, todos aceitos:
 
 | Achado | Decisão |
 |---|---|
-| A estimativa multiplicava todo golpe por `count`, mas `chain` acerta cada inimigo uma vez (P2) | Medido por arquétipo contra alvo único sem tipo (30 golpes de 10 espécies): `chain` 1 acerto, `orb` e `boomerang` **2** (impacto + explosão; ida + volta), `barrage` ~3 de 4 (×0,75), `vortex` 35 % do dano. Com isso todos os golpes ficam entre 0,92× e 1,09× do medido; a exceção é Sleep Powder (1,58×), porque alvo dormindo leva ×1,8 — situacional, fora da estimativa. |
+| A estimativa multiplicava todo golpe por `count`, mas `chain` acerta cada inimigo uma vez (P2) | Medido por arquétipo contra alvo único sem tipo (30 golpes de 10 espécies): `chain` 1 acerto, `orb` e `boomerang` **2** (impacto + explosão; corrigido na 19.ª rodada: não é "ida + volta", e contra alvo do tamanho do boss o boomerang acerta 1), `barrage` ~3 de 4 (×0,75; contra o boss acerta os 4 — fator removido na 19.ª), `vortex` 35 % do dano. Com isso todos os golpes ficam entre 0,92× e 1,09× do medido; a exceção é Sleep Powder (1,58×), porque alvo dormindo leva ×1,8 — situacional, fora da estimativa. |
 | DPS dos aliados ignorava físico/especial, STAB, crítico e Choice Band (P2) | `Run.expectedHitMul(cls, tipo, critBonus)` é o multiplicador comum de golpes e aliados (inclui Choice Band, que faltava nos golpes também). |
 | `new URL` fora do `try`: `//[` derrubava o servidor (P3) | Construção da URL dentro do `try` → 400. |
 | Tentativas retidas quando o alvo escapa e morre depois (P3) | `killEnemy` apaga a entrada (caminho central de morte). |
@@ -813,3 +813,14 @@ com ressalvas**, 6 achados, todos aceitos:
 
 `tests/dps.test.mjs` agora usa alvo sem tipo e faixa ±25 % para 7 espécies; testes novos de chain, aliado e
 tentativa. 3 falham no código anterior. Suíte **140 / 140**; build + `check-bundle` OK.
+
+**Décima nona rodada** (`42d0825..4803caa`, `reviews/codex-2026-10-24-06-35-42d0825..HEAD.md`): **Aprovado com ressalvas**, 1 achado
+(P2) + 1 explicação contestada, ambos aceitos — e o achado escondia um bug de jogo:
+
+| Achado | Decisão |
+|---|---|
+| `orb`/`boomerang` com 2 acertos fixos ignoravam `+count` (P2) | Ao medir `+1` projétil o dano caiu a **zero**: o leque de `orb`/`lob`/`meteor`/`boomerang`/`drain` (e do `random`) era simétrico, sem projétil central com contagem par — um alvo à frente não era atingido por nenhum. Mesmo defeito do raio na 11.ª rodada. O 1.º projétil agora mira o alvo e os extras abrem alternando (±0,45 rad; ±0,3 no `random`). A estimativa foi recalibrada contra **alvo do tamanho do boss a 3 u** (o uso real): `chain` 1 acerto, `orb` 2 por projétil, demais 1 por projétil, `vortex` 35 %; o fator da `barrage` saiu (contra o boss acertam os 4). 30 golpes de 10 espécies: 0,92–1,10×, exceto Sleep Powder (1,68×, alvo dormindo leva ×1,8). |
+| §26 dizia "boomerang acerta na ida e na volta" | Errado: `pr.hits` não é limpo no retorno; eram impacto + explosão, e contra alvo grande só 1. Texto corrigido acima. |
+
+Testes: `dps.test.mjs` usa alvo-boss; novo teste mede `orb`/`boomerang` antes e depois de `+1` (estimativa e dano
+medido sobem > 1,5×; no código anterior o medido ia a 0). Suíte **141 / 141**; build + `check-bundle` OK.

@@ -16,7 +16,7 @@ test("the estimate tracks measured single-target damage within 25 % (typeless ta
   for (const sp of [4, 7, 25, 63, 74, 92, 133]) {
     const run = levelled(sp);
     const est = run.playerExpectedDps();
-    const e = run.spawnEnemy(16, run.player.x + 3, run.player.z, "normal");
+    const e = run.spawnEnemy(16, run.player.x + 3, run.player.z, "boss") /* boss-sized target, as in a boss fight */;
     e.hp = e.maxHp = 1e9;
     e.speed = 0;
     e.types = []; // no type chart in the way: the estimate has no enemy terms
@@ -59,4 +59,29 @@ test("chain jumps add nothing against a lone target; ally hits take the player's
   r2.player.moves.push(...moves);
   assert.ok(Math.abs(allyOnly / allyPlain - 1.5 * r2.player.stats.critDamage) < 1e-9, "crit and Choice Band reach the ally term");
   assert.ok(before > allyPlain);
+});
+
+test("orb and boomerang: +count raises the estimate as much as the measured damage", () => {
+  for (const [sp, arch] of [[25, "orb"], [74, "boomerang"]]) {
+    const measure = (extra) => {
+      const run = levelled(sp);
+      run.player.moves = run.player.moves.filter((m) => m.def.arch === arch);
+      assert.equal(run.player.moves.length, 1, sp + " has a " + arch);
+      run.player.moves[0].mods.count += extra;
+      const est = run.playerExpectedDps();
+      const e = run.spawnEnemy(16, run.player.x + 3, run.player.z, "boss") /* boss-sized target, as in a boss fight */;
+      e.hp = e.maxHp = 1e9;
+      e.speed = 0;
+      e.types = [];
+      const d0 = run.stats.damage;
+      for (let i = 0; i < 1800; i++) run.update(1 / 60);
+      return { est, meas: (run.stats.damage - d0) / 30 };
+    };
+    const a = measure(0);
+    const b = measure(1);
+    assert.ok(b.est > a.est * 1.5, arch + ": +1 projectile doubles the estimate");
+    assert.ok(b.meas > a.meas * 1.5, arch + ": and the measured damage (the fan no longer misses with an even count)");
+    const r = b.meas / b.est;
+    assert.ok(r > 0.75 && r < 1.25, arch + " +1: measured/estimate = " + r.toFixed(2));
+  }
 });

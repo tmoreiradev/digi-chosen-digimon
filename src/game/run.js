@@ -630,7 +630,9 @@ export class Run {
         const target = aim.target;
         const dir = target >= 0 ? Math.atan2(this.enemyById(target).z - p.z, this.enemyById(target).x - p.x) : aimAngle;
         for (let i = 0; i < count; i++) {
-          const spread = count > 1 ? (i / (count - 1) - 0.5) * 0.9 : 0;
+          // The first projectile flies at the target, extras fan out around it: the old symmetric fan had
+          // no centre with an even count, so +1 projectile made the move miss a target straight ahead.
+          const spread = Math.ceil(i / 2) * (i % 2 ? 0.45 : -0.45);
           this.spawnProjectile({
             x: p.x,
             y: p.y + 0.9,
@@ -864,7 +866,7 @@ export class Run {
         const e = this.enemyById(target);
         const dir = Math.atan2(e.z - p.z, e.x - p.x);
         for (let i = 0; i < count; i++) {
-          const spread = count > 1 ? (i / (count - 1) - 0.5) * 0.6 : 0; // +count = extra projectiles
+          const spread = Math.ceil(i / 2) * (i % 2 ? 0.3 : -0.3); // +count = extra projectiles fanned around the aimed one
           // +area widens the projectile, +dur lets it fly longer
           this.spawnProjectile({ x: p.x, y: p.y + 0.9, z: p.z, angle: dir + spread, speed, life: 1.5 * durScale, radius: 0.4 * mv.mods.area * p.stats.area, dmg, def });
         }
@@ -1832,15 +1834,12 @@ export class Run {
     let dps = 0;
     for (const m of p.moves) {
       const def = m.def;
-      // Hits per cast on a lone target, measured: a chain hits it once whatever its jumps; an orb
-      // hits and then explodes on it; a boomerang hits going out and coming back.
-      const count =
-        def.arch === "chain" ? 1
-        : def.arch === "orb" || def.arch === "boomerang" ? 2
-        : Math.max(1, Math.floor(def.count + m.mods.count + (def.arch === "barrage" ? s.projectiles : 0)));
+      // Hits per cast on a boss-sized target at close range, measured: a chain hits it once whatever its
+      // jumps; each orb hits and then explodes on it (two hits); everything else, once per projectile.
+      const projectiles = Math.max(1, Math.floor(def.count + m.mods.count + (def.arch === "barrage" ? s.projectiles : 0)));
+      const count = def.arch === "chain" ? 1 : def.arch === "orb" ? 2 * projectiles : projectiles;
       const cdSecs = Math.max(0.12, (def.cd * m.mods.cd) / s.attackSpeed);
-      // Measured shares: a barrage fan lands about 3 of 4 on one target; a vortex pull deals 35 %.
-      const share = def.arch === "barrage" ? 0.75 : def.arch === "vortex" ? 0.35 : 1;
+      const share = def.arch === "vortex" ? 0.35 : 1; // a vortex pull deals 35 % of the move damage
       dps += (this.moveDamage(m) * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * count * share) / cdSecs;
     }
     // Ally hits go through hitEnemy too, so they take the same multipliers.
