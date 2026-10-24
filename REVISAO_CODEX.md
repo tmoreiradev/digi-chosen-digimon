@@ -891,3 +891,14 @@ próprio Metronome; agora é a média de `castDamage(def, m)` — o lançamento 
 cartas e o nível do Metronome — sobre a recarga dele. `castDamage` virou o cálculo único por lançamento. Testes em
 `tests/archetypes.test.mjs` (teto, intervalo por esfera, estimativa do Metronome; dois falham no código anterior — o do
 intervalo passa nos dois, fica como guarda). Suíte **149 / 149**; build + `check-bundle` OK.
+
+**Vigésima quinta rodada** (`fc40d6a..9a40bfc`, `reviews/codex-2026-10-24-06-58-fc40d6a..HEAD.md`): **Aprovado com ressalvas**,
+1 achado P2 + 2 P3, aceitos: (P2) `trap`/`trail` contavam um acerto por zona, mas tiquetam a cada 0,4 s pela vida toda.
+Medido contra alvo-boss **encostado** (2 u — um boss que persegue fica assim; a 3 u o rastro nem o alcança): rastro =
+`3 × dur` acertos-equivalentes por lançamento (0,4 × dano, 3 s), armadilha = `5,25 × dur` (0,35 × dano, 6 s; do anel só
+a central fica sob o boss). Spikes 0,97/0,89×, Flame Wheel 1,08/0,99×, Steel Roller 1,04/0,96× com dur 1/2; Spore
+1,6–1,7× porque adormece o alvo (×1,8), como Sleep Powder. (P3) o teste de intervalo do orbit agora instrumenta o
+`hitT` de cada esfera e exige que nenhum par esfera/inimigo seja reatingido antes de 0,5 s. (P3) o teste do Metronome
+não usa mais `castDamage`: simula 290 s com aleatório determinístico (mulberry32) e compara o dano no alvo com a
+estimativa (o primeiro rascunho media `stats.damage` por 600 s e contava o guardião da zona, que nasce aos 300 s).
+Suíte **151 / 151**; build + `check-bundle` OK.

@@ -1903,6 +1903,13 @@ export class Run {
     // An orbit orb passes a boss beside it about 0.6 times a second (measured) for the whole duration.
     const orbitSecs = def.arch === "orbit" ? Math.max(1, 0.6 * def.dur * m.mods.dur * s.duration) : 1;
     const count = (def.arch === "chain" ? 1 : def.arch === "orb" ? 2 * landing : landing) * orbitSecs;
+    // Ground zones tick every 0.4 s for their life: a trail (0.4 x damage, 3 s) under a boss in contact
+    // is 3 x dur hits; of a trap ring (0.35 x damage, 6 s) only the central trap sits under it, 5.25 x dur.
+    const durScale = m.mods.dur * s.duration;
+    if (def.arch === "trail" || def.arch === "trap") {
+      const zoneHits = (def.arch === "trail" ? 3 : 5.25) * durScale;
+      return this.moveDamage({ ...m, def }) * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * zoneHits;
+    }
     const share = def.arch === "vortex" ? 0.35 : 1; // a vortex pull deals 35 % of the move damage
     const base = this.moveDamage({ ...m, def });
     return base * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * count * share;

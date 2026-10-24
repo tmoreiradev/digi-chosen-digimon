@@ -53,35 +53,82 @@ test("orbit at the projectile cap does not hijack an existing (hostile) projecti
   assert.equal(run.projectiles.filter((pr) => pr.orbit).length, 0);
 });
 
-test("an orb hits the same enemy at most every 0.5 s", () => {
+test("an orb never hits the same enemy twice within 0.5 s, sweeping in and out of several", () => {
   const { run } = makeRun();
   run.director.update = () => {};
   run.player.iframes = 1e9;
-  const mv = withDef(run, "Petal Dance");
-  const big = run.spawnEnemy(16, run.player.x + 2, run.player.z, "boss");
-  big.hp = big.maxHp = 1e9;
-  big.speed = 0;
-  big.radius = 6; // always touching every orb
-  const times = [];
-  const orig = run.hitEnemy.bind(run);
-  run.hitEnemy = (e, ...a) => {
-    if (e === big) times.push(run.time);
-    return orig(e, ...a);
-  };
-  run.fireMove(mv);
-  mv.timer = 1e9;
-  const orbs = run.projectiles.filter((pr) => pr.orbit).length;
-  for (let i = 0; i < 120; i++) run.update(1 / 60);
-  assert.ok(times.length >= orbs * 3 && times.length <= orbs * 5, `${times.length} hits from ${orbs} orbs in 2 s`);
+  const mv = withDef(run, "Bone Rush");
+  const radius = 1.6 + mv.def.area * 0.5;
+  for (const a of [0, 1.1, 2.3, 3.9, 5.2]) {
+    const e = run.spawnEnemy(16, run.player.x + Math.cos(a) * radius, run.player.z + Math.sin(a) * radius, "normal");
+    e.hp = e.maxHp = 1e9;
+    e.speed = 0;
+  }
+  const gaps = [];
+  const watched = new WeakSet();
+  for (let i = 0; i < 600; i++) {
+    for (const pr of run.projectiles) {
+      if (!pr.orbit || watched.has(pr)) continue;
+      watched.add(pr);
+      const last = new Map();
+      const set = pr.orbit.hitT.set.bind(pr.orbit.hitT);
+      pr.orbit.hitT.set = (id, time) => {
+        if (last.has(id)) gaps.push(time - last.get(id));
+        last.set(id, time);
+        return set(id, time);
+      };
+    }
+    run.update(1 / 60);
+  }
+  assert.ok(gaps.length > 10, "orbs re-hit enemies: " + gaps.length);
+  assert.deepEqual(gaps.filter((g) => g < 0.5 - 1e-9), [], "no re-hit closer than 0.5 s");
 });
 
-test("Metronome's estimate is the mean full cast of its pool over its cooldown", () => {
-  const { run } = makeRun();
-  const mv = withDef(run, "Metronome");
-  const pool = run.metronomePool();
-  const mean = pool.reduce((t, d) => t + run.castDamage(d, mv), 0) / pool.length;
-  const cd = Math.max(0.12, mv.def.cd / run.player.stats.attackSpeed);
-  assert.ok(Math.abs(run.playerExpectedDps() - mean / cd) < 1e-9);
-  run.player.stats.physical *= 2; // the called moves' class now counts
-  assert.ok(run.playerExpectedDps() > mean / cd, "physical bonus reaches the physical moves Metronome calls");
+test("Metronome's estimate matches what it actually deals (simulated, deterministic random)", () => {
+  let seed = 12345;
+  const orig = Math.random;
+  Math.random = () => {
+    // mulberry32: a deterministic, well-mixed stream
+    seed = (seed + 0x6d2b79f5) | 0;
+    let r = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+    r = (r + Math.imul(r ^ (r >>> 7), 61 | r)) ^ r;
+    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+  };
+  try {
+    const { run } = makeRun();
+    run.director.update = () => {};
+    run.player.iframes = 1e9;
+    withDef(run, "Metronome");
+    const est = run.playerExpectedDps();
+    const e = run.spawnEnemy(16, run.player.x + 2, run.player.z, "boss");
+    e.hp = e.maxHp = 1e9;
+    e.speed = 0;
+    e.types = [];
+    for (let i = 0; i < 60 * 290; i++) run.update(1 / 60); // before the zone guardian shows up at 300 s
+    const ratio = (e.maxHp - e.hp) / 290 / est;
+    assert.ok(ratio > 0.6 && ratio < 1.5, "measured/estimate = " + ratio.toFixed(2));
+  } finally {
+    Math.random = orig;
+  }
+});
+
+test("trap and trail: the estimate counts their ticks and +dur", () => {
+  for (const name of ["Spikes", "Flame Wheel"]) {
+    for (const dur of [1, 2]) {
+      const { run } = makeRun();
+      run.director.update = () => {};
+      run.player.iframes = 1e9;
+      const mv = withDef(run, name);
+      mv.mods.dur = dur;
+      const est = run.playerExpectedDps();
+      const e = run.spawnEnemy(16, run.player.x + 2, run.player.z, "boss"); // in contact, as a chasing boss is
+      e.hp = e.maxHp = 1e9;
+      e.speed = 0;
+      e.types = [];
+      const d0 = run.stats.damage;
+      for (let i = 0; i < 3600; i++) run.update(1 / 60);
+      const ratio = (run.stats.damage - d0) / 60 / est;
+      assert.ok(ratio > 0.75 && ratio < 1.25, name + " dur " + dur + ": measured/estimate = " + ratio.toFixed(2));
+    }
+  }
 });
