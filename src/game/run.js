@@ -37,6 +37,7 @@ import {
   itemOnDash,
   itemOnUltimate,
   itemCount,
+  HELD_MODS,
 } from "./scripted.js";
 import { Tower } from "./tower.js";
 import { WorldEvents } from "./events.js";
@@ -239,6 +240,7 @@ export class Run {
     if (p.ability?.mods) groups.push(p.ability.mods);
     groups.push(...vitaminGroups(p, this.rules));
     groups.push(...this.allies.mods());
+    if (HELD_MODS[p.heldItem]?.length) groups.push(HELD_MODS[p.heldItem]);
     const stats = applyMods(base, groups);
     clampStats(stats);
     // Eviolite: while this species can still evolve, +50 % armour and +25 % max HP.
@@ -534,6 +536,8 @@ export class Run {
         continue;
       }
       this.fireMove(mv);
+      // Life Orb: each cast costs 2 % of max HP, never the last point.
+      if (p.heldItem === "life-orb") p.hp = Math.max(1, p.hp - p.maxHp * 0.02);
       mv.timer = cd;
       p.attackT = 0.22;
       this.opts.onShoot?.(def);
@@ -1128,6 +1132,7 @@ export class Run {
     amount *= s.damage * (cls === "physical" ? s.physical : s.special);
     // Choice Band: +50% damage.
     if (p.heldItem === "choice-band") amount *= 1.5;
+    if (p.heldItem === "life-orb") amount *= 1.3; // paid in HP on each cast (fireMove)
 
     if (p.types.includes(dtype)) amount *= 1.25;
     amount *= s.typeBoost?.[dtype] ?? 1;
@@ -1987,7 +1992,7 @@ export class Run {
     return (
       s.damage *
       (cls === "physical" ? s.physical : s.special) *
-      (p.heldItem === "choice-band" ? 1.5 : 1) *
+      (p.heldItem === "choice-band" ? 1.5 : p.heldItem === "life-orb" ? 1.3 : 1) *
       (p.types.includes(type) ? 1.25 : 1) *
       (s.typeBoost?.[type] ?? 1) *
       (1 + crit * (s.critDamage - 1))

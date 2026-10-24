@@ -107,6 +107,27 @@ export function itemOnUltimate(run) {
 
 export const itemCount = (run, key) => run.upgrades.get(key)?.count ?? 0;
 
+/**
+ * Held items the pause screen offers, in order. Leftovers (regen), Choice Band (x1.5 damage) and
+ * Life Orb (x1.3 damage, 2 % of max HP per cast) are handled in run.js; the rest are plain stat mods.
+ */
+export const HELD_MODS = {
+  leftovers: [],
+  "choice-band": [],
+  "life-orb": [],
+  "scope-lens": [{ stat: "critChance", add: 0.1 }],
+  "muscle-band": [{ stat: "physical", mul: 1.15 }],
+  "wise-glasses": [{ stat: "special", mul: 1.15 }],
+  "expert-belt": [{ stat: "superEffective", mul: 1.25 }],
+  "quick-claw": [{ stat: "attackSpeed", mul: 1.1 }],
+  "bright-powder": [{ stat: "evasion", add: 0.08 }],
+  "rocky-helmet": [{ stat: "thorns", add: 20 }],
+  "big-root": [{ stat: "healing", mul: 1.3 }],
+  "lucky-egg": [{ stat: "xpGain", mul: 1.3 }],
+  "amulet-coin": [{ stat: "gold", mul: 1.5 }],
+};
+export const HELD_ITEMS = Object.keys(HELD_MODS);
+
 const STOP_STATUSES = ["para", "root", "freeze", "sleep", "flinch"];
 
 /** Multiplier on outgoing damage (before crit and the boss budget): Metronome, Binding Band, Full Heal, Reaper Cloth, Thick Club. */

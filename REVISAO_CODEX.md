@@ -961,3 +961,16 @@ diferente com e sem marca). Agora a base (sem a marca) é tirada antes do teto; 
 própria, então o orçamento do boss segue respeitado. Efeito colateral intencional: queimadura em boss deixa de ser
 derivada do golpe já cortado. Teste: golpe de 1000 com o teto quase vazio guarda o mesmo DPS de base com e sem marca
 (no código anterior: 0,06). Suíte **167 / 167**; build + `check-bundle` OK.
+
+## 29. Fase 18 — Mais itens segurados (24/10/2026)
+
+- **Antes:** só Leftovers e Choice Band tinham efeito. **Agora 13:** Life Orb (×1,3 de dano; cada golpe lançado custa 2 %
+  do HP máximo, nunca o último ponto) e dez itens de atributo em `HELD_MODS` (`scripted.js`): Scope Lens +10 % crítico,
+  Muscle Band +15 % físico, Wise Glasses +15 % especial, Expert Belt +25 % super-efetivo, Quick Claw +10 % velocidade de
+  ataque, Bright Powder +8 % evasão, Rocky Helmet +20 espinhos, Big Root +30 % cura, Lucky Egg +30 % XP, Amulet Coin +50 %
+  moedas. Os mods entram no `recompute`; a tela de pausa recalcula na hora ao trocar o item (antes só valia no próximo
+  recálculo — sem efeito para Leftovers/Choice Band, que são lidos direto). `HELD_ITEMS` é a lista única da tela.
+- **Testes** (`helditem.test.mjs`, 3 novos/alterados; 4 falham no código anterior): lista oferecida = `HELD_ITEMS`,
+  descrições pt-BR, Scope Lens vale na hora, persiste na próxima run e sai ao escolher "Nenhum", Life Orb ×1,3 e 2 %
+  por lançamento sem matar. Navegador: 13 itens + "Nenhum", Scope Lens +0,1 de crítico na hora. Suíte **169 / 169**;
+  build + `check-bundle` OK.

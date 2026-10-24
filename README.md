@@ -183,7 +183,7 @@ Honest gap list vs the live game (details and more in `BACKLOG.md`):
 - **World events** — shrines, wandering merchants and item-renewal shops are still missing.
 - **Dex & progression** — 8 achievements and 5 species tasks exist, but their rewards are not
   granted yet; permanent player names are missing.
-- **Held items** — only Leftovers and Choice Band have effects.
+- **Held items** — 13 with effects (Leftovers, Choice Band, Life Orb and ten stat items, `HELD_MODS` in `src/game/scripted.js`); the rest of `items.json` has none.
 - **More content** — the live game's full species/move/upgrade rosters beyond the 40-species league
   roster and 126 upgrades extracted here.
 

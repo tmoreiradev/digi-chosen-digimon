@@ -42,7 +42,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 - Santuários, mercadores ambulantes e lojas de renovação de itens.
 - Tarefas/conquistas avançadas com recompensas aplicadas de verdade (ver item 5).
 - Nome de jogador permanente (hoje só apelido do Pokémon).
-- Mais itens segurados com efeito (hoje Leftovers e Choice Band).
+- ~~Mais itens segurados com efeito~~ — fase 18 (24/10): 13 itens (Leftovers, Choice Band, Life Orb e 10 de atributo).
 - Roster completo de espécies/golpes/upgrades além das 40 da liga e 126 upgrades.
 - ~~Tradução completa para pt-BR~~ — feito na fase 8 (23/10); a escolha de idioma segue em aberto.
 - Testes de interface no navegador automatizados (hoje: `node --test` + validação manual via console).

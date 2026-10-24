@@ -118,6 +118,17 @@ export const THREAT_PT = ["CALMO", "INQUIETO", "ALERTA", "PERIGO", "CERCADO"];
 export const HELD_ITEM_DESC_PT = {
   leftovers: "Recupera cerca de 1/16 do HP máximo por segundo.",
   "choice-band": "+50% de dano em todos os golpes.",
+  "life-orb": "+30% de dano; cada golpe lançado custa 2% do HP máximo.",
+  "scope-lens": "+10% de chance de crítico.",
+  "muscle-band": "+15% de dano físico.",
+  "wise-glasses": "+15% de dano especial.",
+  "expert-belt": "+25% de dano super-efetivo.",
+  "quick-claw": "+10% de velocidade de ataque.",
+  "bright-powder": "+8% de evasão.",
+  "rocky-helmet": "Quem te acerta leva 20 de dano.",
+  "big-root": "+30% de cura recebida.",
+  "lucky-egg": "+30% de experiência.",
+  "amulet-coin": "+50% de moedas.",
 };
 export const heldItemDesc = (key, def) => HELD_ITEM_DESC_PT[key] ?? def?.desc ?? "";
 

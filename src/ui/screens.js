@@ -8,6 +8,7 @@ import { portraitStyle } from "../render/sprites.js";
 import { Pokedex } from "./pokedex.js";
 import { ACHIEVEMENTS, DEX_TASKS, progressSnapshot } from "../game/achievements.js";
 import { typeName, biomeName, biomeDesc, rankName, heldItemDesc } from "../core/i18n.js";
+import { HELD_ITEMS } from "../game/scripted.js";
 
 export class Screens {
   constructor(root, data) {
@@ -489,8 +490,7 @@ export class Screens {
     const run = this.getRun();
     const player = run?.player;
     // Only offer items with implemented held-item effects.
-    const ITEMS_WITH_HELD_EFFECT = ["leftovers", "choice-band"];
-    const keys = ITEMS_WITH_HELD_EFFECT.filter((k) => (this.data.items ?? {})[k]);
+    const keys = HELD_ITEMS.filter((k) => (this.data.items ?? {})[k]); // only items with an implemented effect
     const items = Object.fromEntries(
       keys.map((k) => [k, this.data.items[k]])
     );
@@ -502,7 +502,7 @@ export class Screens {
       list.append(el("p", { class: "muted" }, "Escolha um item para segurar (ou nenhum):"));
       const none = el("button", {
         class: "btn " + (current === null ? "red" : "ghost"),
-        onclick: () => { if (player) { player.heldItem = null; profile.data.heldItem = null; profile.save(); } refresh(); },
+        onclick: () => { if (player) { player.heldItem = null; profile.data.heldItem = null; profile.save(); run.recompute(player); } refresh(); },
       }, "Nenhum" + (current === null ? " ✓" : ""));
       list.append(none);
       for (const key of keys) {
@@ -511,7 +511,7 @@ export class Screens {
         list.append(
           el("button", {
             class: "btn " + (isCur ? "red" : "ghost"),
-            onclick: () => { if (player) { player.heldItem = key; profile.data.heldItem = key; profile.save(); } refresh(); },
+            onclick: () => { if (player) { player.heldItem = key; profile.data.heldItem = key; profile.save(); run.recompute(player); } refresh(); },
           }, it.name + " — " + heldItemDesc(key, it) + (isCur ? " ✓" : ""))
         );
       }
