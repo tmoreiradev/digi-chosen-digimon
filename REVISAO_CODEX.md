@@ -917,3 +917,27 @@ cobertura agora é a média sobre 16 direções do boss encostado. Spikes já na
 para um teste que mede a média de 8 direções (+0 dur 1/2, +1, +2, +3: 0,89–0,94×); o teste de rastro ficou só com
 Flame Wheel. O teste novo também passa com a fórmula anterior (0,84–1,01× — a média por direção não se afastava muito); fica
 como guarda. Suíte **151 / 151**; build + `check-bundle` OK.
+
+## 28. Fase 17 — Segunda leva de itens scriptados (24/10/2026)
+
+- **Entram 14 dos 16** que ficaram fora na fase 11: Soda Pop (onda de bolhas no dash), Adrenaline Orb (+20 % velocidade /
+  +12 % ataque por 3 s após levar golpe), Metal Powder (parado 0,5 s: +30 % armadura / +8 % ataque), Ice Heal (alvo
+  congelado: +60 %, descongela e paralisa os vizinhos), Old Rod (Magikarp a cada 9 s; 10 %/cópia de Gyarados ×5/1,5),
+  Eviolite (+50 % armadura / +25 % HP enquanto a espécie ainda evolui), Shed Shell (dash com 0,35 s de invulnerabilidade e
+  recarga −10 %), Cell Battery (+1,5 % ataque a cada 10 abates sem levar golpe, até +25 %), Griseous Orb (12 %/cópia por
+  abate: sombra que fere e amaldiçoa em 3 u), Electirizer (raio a cada 2,5 s nos 2 + cópias inimigos mais próximos, 30 %
+  de paralisia), Silph Scope (marca o mais forte em 14 u a cada 6 s: +40 % de dano; remarca na hora se ele cair), Max
+  Ether (+2 níveis de vitamina), TM Case (+2 níveis de golpe), Poké Flute (ult carrega 25 % mais rápido; ao usar, todos
+  os golpes recarregam e +30 % de ataque por 6 s).
+- **Ficam fora:** Secret Key e Dowsing Machine (altares Unown e Poké Balls extras — o jogo não tem esses sistemas).
+- **Onde:** `scripted.js` ganhou `itemPower` (dano dos ataques criados por item: `(10 + 2 × nível) × damage`),
+  `itemAtkMul`, `itemMoveMul`, `itemArmorMul`, `itemTick` (Electirizer, Silph Scope, Old Rod), `itemOnDash`,
+  `itemOnUltimate`, e os ramos de Ice Heal/Silph Scope em `itemDamageMul`/`itemOnHit` e de Griseous Orb em `itemOnKill`;
+  `run.js` chama os ganchos (velocidade, recarga, armadura, dash, ult, abate, dano recebido, tetos de nível, Eviolite no
+  `recompute`). Descrições pt-BR em `ITEM_DESC_PT`.
+- **Fora da estimativa de DPS:** os bônus temporários (Adrenaline, Metal Powder, Cell Battery, Flute) e os ataques de
+  item (Electirizer, Old Rod, Soda Pop, Griseous) não entram em `playerExpectedDps` — são condicionais; o orçamento de boss
+  fica um pouco baixo para quem os pega.
+- **Testes:** `tests/items2.test.mjs` (12) cobre cada item; `items.test.mjs` e `review14.test.mjs` passam a exigir só
+  Secret Key e Dowsing Machine fora do pool. Navegador: pool 124 itens, carta "Old Rod — A cada 9 s um Magikarp salta
+  sobre um inimigo…", Electirizer acerta. Suíte **163 / 163**; build + `check-bundle` OK.

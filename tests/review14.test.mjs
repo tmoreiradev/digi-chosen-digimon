@@ -15,12 +15,9 @@ function setup(opts) {
   made.run.player.stats.evasion = 0;
   return made;
 }
-const UNIMPLEMENTED = [
-  "soda-pop", "adrenaline-orb", "metal-powder", "ice-heal", "secret-key", "old-rod", "eviolite", "shed-shell",
-  "cell-battery", "dowsing-machine", "griseous-orb", "electirizer", "silph-scope", "max-ether", "tm-case", "poke-flute",
-];
+const UNIMPLEMENTED = ["secret-key", "dowsing-machine"]; // need Unown altars / Poké Balls, which this game does not have
 
-test("the 16 scripted items without an implementation all exist in the data and none is offered", () => {
+test("the scripted items without an implementation all exist in the data and none is offered", () => {
   const { run } = setup();
   const pool = new Set(run.itemPool().map((u) => u.key));
   const noMods = run.rules.upgrades.filter((u) => !(u.mods ?? []).length).map((u) => u.key);

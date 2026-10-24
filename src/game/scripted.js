@@ -11,7 +11,99 @@ export const SCRIPTED = new Set([
   "stick", "razor-fang", "focus-band", "full-heal", "guard-spec", "gold-teeth", // r2
   "focus-sash", "revive", "reaper-cloth", "thick-club", "fire-stone", "leaf-stone", "ss-ticket", // r3
   "max-revive", // r4
+  // second wave (phase 17)
+  "soda-pop", "adrenaline-orb", "metal-powder", "ice-heal", "old-rod", "eviolite", "shed-shell", "cell-battery",
+  "griseous-orb", "electirizer", "silph-scope", "max-ether", "tm-case", "poke-flute",
 ]);
+
+/** Flat damage of item-made attacks (lightning, Magikarp, bubbles, shadows): grows with level and the damage stat. */
+export const itemPower = (run) => (10 + 2 * run.player.level) * run.player.stats.damage;
+
+/** Attack speed multiplier from timed items: Adrenaline Orb, Metal Powder, Cell Battery, Poké Flute. */
+export function itemAtkMul(run) {
+  const p = run.player;
+  let mul = 1;
+  const orb = itemCount(run, "adrenaline-orb");
+  if (orb && p.adrenalineT > 0) mul *= 1 + 0.12 * orb;
+  const powder = itemCount(run, "metal-powder");
+  if (powder && p.stillT >= 0.5) mul *= 1 + 0.08 * powder;
+  const battery = itemCount(run, "cell-battery");
+  if (battery) mul *= 1 + Math.min(0.25, Math.floor(p.streak / 10) * 0.015 * battery);
+  if (p.fluteT > 0) mul *= 1.3;
+  return mul;
+}
+
+/** Move speed multiplier: Adrenaline Orb after being hit. */
+export function itemMoveMul(run) {
+  const orb = itemCount(run, "adrenaline-orb");
+  return orb && run.player.adrenalineT > 0 ? 1 + 0.2 * orb : 1;
+}
+
+/** Armour multiplier: Metal Powder while standing still. */
+export function itemArmorMul(run) {
+  const powder = itemCount(run, "metal-powder");
+  return powder && run.player.stillT >= 0.5 ? 1 + 0.3 * powder : 1;
+}
+
+/** Periodic items, once per step: Electirizer lightning, Silph Scope mark, Old Rod. */
+export function itemTick(run, dt) {
+  const p = run.player;
+  const elec = itemCount(run, "electirizer");
+  if (elec && (p.elecT -= dt) <= 0) {
+    p.elecT = 2.5;
+    const near = run.enemies
+      .filter((e) => e.alive && !(e.dying > 0) && Math.hypot(e.x - p.x, e.z - p.z) < 12)
+      .sort((a, b) => Math.hypot(a.x - p.x, a.z - p.z) - Math.hypot(b.x - p.x, b.z - p.z))
+      .slice(0, 2 + elec);
+    for (const e of near) {
+      run.burst(e.x, e.y + 1.5, e.z, 0xffe14a, 8, "star");
+      run.hitAround(e.x, e.z, 0.1, itemPower(run) * 0.6, { type: "electric", cls: "special" });
+      if (e.hp > 0 && Math.random() < 0.3) e.statuses.para = Math.max(e.statuses.para, 1.5);
+    }
+  }
+  const scope = itemCount(run, "silph-scope");
+  if (scope) {
+    const marked = run.enemies.find((e) => e.marked && e.alive && !(e.dying > 0));
+    if (!marked) p.scopeT = 0; // the mark fell: mark another at once
+    if ((p.scopeT -= dt) <= 0) {
+      p.scopeT = 6;
+      for (const e of run.enemies) e.marked = false;
+      let best = null;
+      for (const e of run.enemies) {
+        if (!e.alive || e.dying > 0 || Math.hypot(e.x - p.x, e.z - p.z) > 14) continue;
+        if (!best || e.maxHp > best.maxHp) best = e;
+      }
+      if (best) best.marked = true;
+    }
+  }
+  const rod = itemCount(run, "old-rod");
+  if (rod && (p.rodT -= dt) <= 0) {
+    p.rodT = 9;
+    const pool = run.enemies.filter((e) => e.alive && !(e.dying > 0) && Math.hypot(e.x - p.x, e.z - p.z) < 14);
+    const e = pool[Math.floor(Math.random() * pool.length)];
+    if (e) {
+      const gyarados = Math.random() < 0.1 * rod;
+      run.floater(e.x, e.y + 2, e.z, gyarados ? "Gyarados!" : "Magikarp!", "#7ab8ff");
+      run.hitAround(e.x, e.z, gyarados ? 3 : 0.1, itemPower(run) * (gyarados ? 5 : 1.5) * rod, { type: "water", cls: "physical" });
+    }
+  }
+}
+
+/** Soda Pop: a dash bursts a bubble wave around the player. */
+export function itemOnDash(run) {
+  const pop = itemCount(run, "soda-pop");
+  if (!pop) return;
+  const p = run.player;
+  run.ring(p.x, p.y + 0.2, p.z, 3.5, 0x9ad8ff, 0.3);
+  run.hitAround(p.x, p.z, 3.5, itemPower(run) * 0.5 * pop, { type: "water", cls: "special" });
+}
+
+/** Poké Flute on an ultimate: every move is ready again and attack speed +30 % for 6 s. */
+export function itemOnUltimate(run) {
+  if (!itemCount(run, "poke-flute")) return;
+  for (const mv of run.player.moves) mv.timer = 0;
+  run.player.fluteT = 6;
+}
 
 export const itemCount = (run, key) => run.upgrades.get(key)?.count ?? 0;
 
@@ -29,6 +121,12 @@ export function itemDamageMul(run, e, def) {
   if (fullHeal) {
     const distinct = Object.values(e.statuses).filter((t) => t > 0).length;
     mul *= 1 + Math.min(0.3, 0.06 * distinct * fullHeal);
+  }
+  if (e.marked) mul *= 1.4; // Silph Scope
+  const iceHeal = itemCount(run, "ice-heal");
+  if (iceHeal && e.statuses.freeze > 0) {
+    mul *= 1 + 0.6 * iceHeal; // Ice Heal: the hit shatters the ice (itemOnHit thaws it)
+    e.shatter = true;
   }
   const reaper = itemCount(run, "reaper-cloth");
   if (reaper) mul *= 1 + Math.min(0.3, Math.floor(run.stats.kills / 100) * 0.01 * reaper);
@@ -48,6 +146,13 @@ export function itemBonk(run, e) {
 /** After a hit landed (hp already reduced): Shell Bell heal, Grip Claw root, Awakening sleep, Razor Fang execute. */
 export function itemOnHit(run, e, amount) {
   const p = run.player;
+  if (e.shatter) {
+    e.shatter = false;
+    e.statuses.freeze = 0;
+    for (const n of run.enemies) {
+      if (n !== e && n.alive && Math.hypot(n.x - e.x, n.z - e.z) < 3) n.statuses.para = Math.max(n.statuses.para, 1.5); // shards chill
+    }
+  }
   const bell = itemCount(run, "shell-bell");
   if (bell) run.healPlayer(amount * 0.008 * bell * p.stats.healing);
   if (e.hp <= 0) return;
@@ -69,6 +174,14 @@ export function itemOnKill(run, e) {
   if (fire && e.statuses.burn > 0) {
     run.burst(e.x, e.y + 0.8, e.z, 0xff7a3c, 18, "star");
     run.hitAround(e.x, e.z, 3, e.maxHp * 0.4 * fire, { type: "fire", cls: "special" }, e.id);
+  }
+  const shadow = itemCount(run, "griseous-orb");
+  if (shadow && Math.random() < 0.12 * shadow) {
+    run.burst(e.x, e.y + 0.8, e.z, 0x6a4a9a, 14, "star");
+    for (const n of run.enemies) {
+      if (n !== e && n.alive && Math.hypot(n.x - e.x, n.z - e.z) < 3) n.statuses.curse = Math.max(n.statuses.curse ?? 0, 4);
+    }
+    run.hitAround(e.x, e.z, 3, itemPower(run), { type: "ghost", cls: "special" }, e.id);
   }
   const leaf = itemCount(run, "leaf-stone");
   if (leaf && Math.random() < 0.1 * leaf) {

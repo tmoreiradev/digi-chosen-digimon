@@ -43,7 +43,7 @@ test("the pool offers mod items and the implemented scripted items, never the re
   const keys = new Set(run.itemPool().map((u) => u.key));
   assert.ok(keys.has("charcoal"), "mod item");
   for (const k of SCRIPTED) assert.ok(keys.has(k), `scripted item offered: ${k}`);
-  for (const k of ["soda-pop", "old-rod", "poke-flute", "tm-case"]) assert.ok(!keys.has(k), `not implemented, not offered: ${k}`);
+  for (const k of ["secret-key", "dowsing-machine"]) assert.ok(!keys.has(k), `not implemented, not offered: ${k}`);
   for (const k of SCRIPTED) {
     assert.ok(run.rules.upgrades.some((u) => u.key === k), `${k} exists in rules.json`);
     assert.ok(ITEM_DESC_PT[k], `${k} has a pt-BR description`);

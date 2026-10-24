@@ -22,7 +22,22 @@ import {
 import { Director } from "./director.js";
 import { Boss } from "./boss.js";
 import { Allies, Capture, CAPTURABLE_TIERS, isBossTier } from "./capture.js";
-import { SCRIPTED, itemDamageMul, itemBonk, itemOnHit, itemOnKill, itemBlockHit, itemSurvive } from "./scripted.js";
+import {
+  SCRIPTED,
+  itemDamageMul,
+  itemBonk,
+  itemOnHit,
+  itemOnKill,
+  itemBlockHit,
+  itemSurvive,
+  itemAtkMul,
+  itemMoveMul,
+  itemArmorMul,
+  itemTick,
+  itemOnDash,
+  itemOnUltimate,
+  itemCount,
+} from "./scripted.js";
 import { Tower } from "./tower.js";
 import { WorldEvents } from "./events.js";
 import { AchievementTracker, EggSystem } from "./achievements.js";
@@ -193,6 +208,13 @@ export class Run {
       bandT: -1e9, // Focus Band: last save
       sashStage: 0, // Focus Sash: zone it was used in
       revived: {}, // Revive / Max Revive uses per key
+      adrenalineT: 0, // Adrenaline Orb: speed burst after a hit
+      stillT: 0, // Metal Powder: time standing still
+      streak: 0, // Cell Battery: kills since the last hit taken
+      fluteT: 0, // Poké Flute: attack speed burst after an ultimate
+      elecT: 2.5, // Electirizer timer
+      scopeT: 0, // Silph Scope timer
+      rodT: 9, // Old Rod timer
       dead: false,
       lastEvoCheck: 1,
       evoPlan: null, // decided once per species (see tryEvolve); a re-roll per check used to move the target
@@ -219,6 +241,11 @@ export class Run {
     groups.push(...this.allies.mods());
     const stats = applyMods(base, groups);
     clampStats(stats);
+    // Eviolite: while this species can still evolve, +50 % armour and +25 % max HP.
+    if (itemCount(this, "eviolite") && this.data.evolutionsOf(p.speciesId).length) {
+      stats.armor *= 1.5;
+      stats.maxHp *= 1.25;
+    }
     // Type items (Charcoal, Mystic Water…): the `type:` tag is +30 % per copy to moves of that type.
     for (const up of this.upgrades.values()) {
       for (const tag of up.tags ?? []) {
@@ -278,6 +305,7 @@ export class Run {
 
     // Encounter systems
     this.capture.update(dt);
+    itemTick(this, dt);
     this.allies.update(dt);
     this.boss.update(dt);
     this.events.update(dt);
@@ -381,7 +409,7 @@ export class Run {
     }
 
     // Movement
-    const speed = 4.6 * p.stats.moveSpeed * (p.statuses.para > 0 ? 0.55 : 1) * (p.statuses.root > 0 ? 0.25 : 1);
+    const speed = 4.6 * p.stats.moveSpeed * itemMoveMul(this) * (p.statuses.para > 0 ? 0.55 : 1) * (p.statuses.root > 0 ? 0.25 : 1);
     let mx = 0;
     let mz = 0;
     if (input.left) mx -= 1;
@@ -389,6 +417,9 @@ export class Run {
     if (input.up) mz -= 1;
     if (input.down) mz += 1;
     const len = Math.hypot(mx, mz);
+    p.stillT = len > 0 ? 0 : p.stillT + dt; // Metal Powder
+    if (p.adrenalineT > 0) p.adrenalineT -= dt;
+    if (p.fluteT > 0) p.fluteT -= dt;
     if (len > 0) {
       mx /= len;
       mz /= len;
@@ -413,9 +444,11 @@ export class Run {
     // Dash
     if (p.dashT > 0) p.dashT -= dt;
     if (input.dash && p.dashCd <= 0 && len > 0) {
+      const shed = itemCount(this, "shed-shell"); // Shed Shell: longer invulnerable start, faster recharge
       p.dashT = 0.18;
-      p.dashCd = 1.4;
-      p.iframes = Math.max(p.iframes, 0.22);
+      p.dashCd = shed ? 1.4 * 0.9 : 1.4;
+      p.iframes = Math.max(p.iframes, shed ? 0.35 : 0.22);
+      itemOnDash(this);
       p.vx = mx * speed * 2.6;
       p.vz = mz * speed * 2.6;
       this.burst(p.x, p.y + 0.8, p.z, 0xffffff, 10, "soft");
@@ -487,7 +520,7 @@ export class Run {
     if (p.ultCd > 0) p.ultCd -= dt;
 
     // Ultimate charge
-    p.ultCharge = Math.min(1, p.ultCharge + dt * 0.035);
+    p.ultCharge = Math.min(1, p.ultCharge + dt * 0.035 * (itemCount(this, "poke-flute") ? 1.25 : 1));
     if (input.ultPressed && p.ultCharge >= 1 && p.ultCd <= 0) this.castUltimate();
 
     // Auto attacks
@@ -495,7 +528,7 @@ export class Run {
       mv.timer -= dt;
       if (mv.timer > 0) continue;
       const def = mv.def;
-      const cd = Math.max(0.12, def.cd * mv.mods.cd / p.stats.attackSpeed);
+      const cd = Math.max(0.12, def.cd * mv.mods.cd / (p.stats.attackSpeed * itemAtkMul(this)));
       if (!this.hasTarget(def)) {
         mv.timer = 0.12;
         continue;
@@ -1169,7 +1202,7 @@ export class Run {
       dmg *= clamp(eff, 0.5, 1.6);
     }
     // Upstream armour curve: 1 - armor / (armor + 45).
-    const armor = p.stats.armor;
+    const armor = p.stats.armor * itemArmorMul(this);
     dmg *= 1 - armor / (armor + 45);
     if (p.statuses.freeze > 0) dmg *= 1.15;
     if (p.ability?.dmgTaken) dmg *= p.ability.dmgTaken;
@@ -1199,6 +1232,10 @@ export class Run {
       this.floater(p.x, p.y + 2, p.z, "-" + Math.round(dmg), "#ff6b6b");
       this.shake(0.12);
       this.opts.onHurt?.();
+    }
+    if (dmg > 0) {
+      p.streak = 0; // Cell Battery
+      p.adrenalineT = 3; // Adrenaline Orb
     }
     if (p.hp <= 0) {
       if (itemSurvive(this)) return;
@@ -1328,6 +1365,7 @@ export class Run {
     this.player.ultCharge = Math.min(1, this.player.ultCharge + 0.006);
     this.opts.onKill?.();
     if (this.tower) this.tower.countKill();
+    this.player.streak++; // Cell Battery
     itemOnKill(this, e);
 
     const p = this.player;
@@ -1455,6 +1493,7 @@ export class Run {
     const p = this.player;
     p.ultCharge = 0;
     p.ultCd = 14;
+    itemOnUltimate(this);
     p.ultPoseT = 1;
     const type = p.types[0];
     const color = this.typeRgb(type);
@@ -1528,7 +1567,7 @@ export class Run {
 
     // Move upgrade
     for (const mv of p.moves) {
-      if (mv.level >= 8) continue;
+      if (mv.level >= 8 + 2 * itemCount(this, "tm-case")) continue; // TM Case: two more levels
       const ups = this.rollMoveUps(mv);
       if (!ups.length) continue;
       options.push({
@@ -1595,7 +1634,7 @@ export class Run {
     for (const fo of fusionOpts) options.push(fo);
 
     // Vitamins (permanent stat growth).
-    const vitOpts = vitaminChoices(this, 10);
+    const vitOpts = vitaminChoices(this, 10 + 2 * itemCount(this, "max-ether")); // Max Ether: two more levels
     for (const vo of vitOpts) options.push(vo);
 
     if (!options.length) return [];
