@@ -1273,6 +1273,7 @@ export class Run {
 
   killEnemy(e, def) {
     if (!e.alive || e.dying > 0) return;
+    this.capture.attempts.delete(e.id); // its capture bonus dies with it, whatever state it was in
     e.dying = 0.35;
     e.hp = 0;
     this.stats.kills++;
@@ -1831,16 +1832,37 @@ export class Run {
     let dps = 0;
     for (const m of p.moves) {
       const def = m.def;
-      const cls = def.cls === "physical" ? s.physical : s.special;
-      const stab = p.types.includes(def.type) ? 1.25 : 1;
-      const crit = Math.min(1, s.critChance + s.megaCrit + m.mods.crit + (def.critBonus ?? 0));
-      const count = Math.max(1, Math.floor(def.count + m.mods.count + (def.arch === "barrage" ? s.projectiles : 0)));
+      // Hits per cast on a lone target, measured: a chain hits it once whatever its jumps; an orb
+      // hits and then explodes on it; a boomerang hits going out and coming back.
+      const count =
+        def.arch === "chain" ? 1
+        : def.arch === "orb" || def.arch === "boomerang" ? 2
+        : Math.max(1, Math.floor(def.count + m.mods.count + (def.arch === "barrage" ? s.projectiles : 0)));
       const cdSecs = Math.max(0.12, (def.cd * m.mods.cd) / s.attackSpeed);
-      const hit = this.moveDamage(m) * s.damage * cls * stab * (s.typeBoost?.[def.type] ?? 1) * (1 + crit * (s.critDamage - 1));
-      dps += (hit * count) / cdSecs;
+      // Measured shares: a barrage fan lands about 3 of 4 on one target; a vortex pull deals 35 %.
+      const share = def.arch === "barrage" ? 0.75 : def.arch === "vortex" ? 0.35 : 1;
+      dps += (this.moveDamage(m) * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * count * share) / cdSecs;
     }
-    for (const a of this.allies.list) dps += (this.allies.power(a) * s.damage) / this.allies.cooldown(a);
+    // Ally hits go through hitEnemy too, so they take the same multipliers.
+    for (const a of this.allies.list) {
+      dps += (this.allies.power(a) * this.expectedHitMul(a.physical ? "physical" : "special", a.types[0], 0)) / this.allies.cooldown(a);
+    }
     return dps;
+  }
+
+  /** Average multiplier hitEnemy applies to a hit of this class and type from the player's side (no enemy terms). */
+  expectedHitMul(cls, type, critBonus) {
+    const p = this.player;
+    const s = p.stats;
+    const crit = Math.min(1, s.critChance + s.megaCrit + critBonus);
+    return (
+      s.damage *
+      (cls === "physical" ? s.physical : s.special) *
+      (p.heldItem === "choice-band" ? 1.5 : 1) *
+      (p.types.includes(type) ? 1.25 : 1) *
+      (s.typeBoost?.[type] ?? 1) *
+      (1 + crit * (s.critDamage - 1))
+    );
   }
 
   /** Fire a hostile projectile from an enemy (boss attacks). */

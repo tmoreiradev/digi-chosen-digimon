@@ -12,17 +12,18 @@ function levelled(speciesId) {
   return run;
 }
 
-test("the estimate tracks measured single-target damage within a factor of 1.5", () => {
-  for (const sp of [1, 4, 7, 25, 92]) {
+test("the estimate tracks measured single-target damage within 25 % (typeless target)", () => {
+  for (const sp of [4, 7, 25, 63, 74, 92, 133]) {
     const run = levelled(sp);
     const est = run.playerExpectedDps();
     const e = run.spawnEnemy(16, run.player.x + 3, run.player.z, "normal");
     e.hp = e.maxHp = 1e9;
     e.speed = 0;
+    e.types = []; // no type chart in the way: the estimate has no enemy terms
     const d0 = run.stats.damage;
     for (let i = 0; i < 1800; i++) run.update(1 / 60);
     const ratio = (run.stats.damage - d0) / 30 / est;
-    assert.ok(ratio > 1 / 1.5 && ratio < 1.5, `species ${sp}: measured/estimate = ${ratio.toFixed(2)}`);
+    assert.ok(ratio > 0.75 && ratio < 1.25, `species ${sp}: measured/estimate = ${ratio.toFixed(2)}`);
   }
 });
 
@@ -35,4 +36,27 @@ test("attack speed counts once; allies add their own damage", () => {
   run.player.stats.attackSpeed /= 2;
   run.allies.recruit(run.data.get(16), 1, false);
   assert.ok(run.playerExpectedDps() > base, "an ally raises the estimate");
+});
+
+test("chain jumps add nothing against a lone target; ally hits take the player's multipliers", () => {
+  const run = levelled(25); // Pikachu: Thunderbolt is a chain
+  const chain = run.player.moves.find((m) => m.def.arch === "chain");
+  assert.ok(chain, "a chain move");
+  const base = run.playerExpectedDps();
+  chain.mods.count += 3;
+  assert.equal(run.playerExpectedDps(), base, "+3 jumps: same single-target DPS");
+
+  const r2 = levelled(4);
+  r2.allies.recruit(r2.data.get(16), 1, false);
+  const before = r2.playerExpectedDps();
+  r2.player.stats.critChance = 1;
+  r2.player.heldItem = "choice-band";
+  const moves = r2.player.moves.splice(0); // keep only the ally in the sum
+  const allyOnly = r2.playerExpectedDps();
+  r2.player.stats.critChance = 0;
+  r2.player.heldItem = null;
+  const allyPlain = r2.playerExpectedDps();
+  r2.player.moves.push(...moves);
+  assert.ok(Math.abs(allyOnly / allyPlain - 1.5 * r2.player.stats.critDamage) < 1e-9, "crit and Choice Band reach the ally term");
+  assert.ok(before > allyPlain);
 });

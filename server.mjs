@@ -22,11 +22,16 @@ const MIME = {
   ".woff2": "font/woff2",
 };
 
-export function handle(req, res) {
-  const url = new URL(req.url, "http://localhost");
+/** Request handler serving files under `root` (exported for the tests). */
+export function makeHandler(root) {
+  return (req, res) => serve(root, req, res);
+}
+export const handle = makeHandler(ROOT);
+
+function serve(ROOT, req, res) {
   let rel;
   try {
-    rel = decodeURIComponent(url.pathname);
+    rel = decodeURIComponent(new URL(req.url, "http://localhost").pathname);
   } catch {
     res.writeHead(400, { "Content-Type": "text/plain" }).end("Bad request"); // malformed %-escape used to crash the server
     return;

@@ -798,3 +798,18 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   `tests/dps.test.mjs` exige a faixa 1/1,5–1,5 nos cinco e velocidade de ataque contada uma vez; aliado aumenta.
 - **Efeito:** cedo a curva de zona ainda é o piso — guardião da zona 1 no nível 7: 4115 → 4815 HP, teto de dano
   103 → 120/s. Bots do playtest seguem vencendo Clássico e Torre. Suíte **138 / 138**; build + `check-bundle` OK.
+
+**Décima oitava rodada** (fases 12–15, `a59470c..42d0825`, `reviews/codex-2026-10-24-06-31-a59470c..HEAD.md`): **Aprovado
+com ressalvas**, 6 achados, todos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| A estimativa multiplicava todo golpe por `count`, mas `chain` acerta cada inimigo uma vez (P2) | Medido por arquétipo contra alvo único sem tipo (30 golpes de 10 espécies): `chain` 1 acerto, `orb` e `boomerang` **2** (impacto + explosão; ida + volta), `barrage` ~3 de 4 (×0,75), `vortex` 35 % do dano. Com isso todos os golpes ficam entre 0,92× e 1,09× do medido; a exceção é Sleep Powder (1,58×), porque alvo dormindo leva ×1,8 — situacional, fora da estimativa. |
+| DPS dos aliados ignorava físico/especial, STAB, crítico e Choice Band (P2) | `Run.expectedHitMul(cls, tipo, critBonus)` é o multiplicador comum de golpes e aliados (inclui Choice Band, que faltava nos golpes também). |
+| `new URL` fora do `try`: `//[` derrubava o servidor (P3) | Construção da URL dentro do `try` → 400. |
+| Tentativas retidas quando o alvo escapa e morre depois (P3) | `killEnemy` apaga a entrada (caminho central de morte). |
+| Teste do servidor aceitava 404 sem arquivo externo (P3) | `makeHandler(root)` exportado; o teste monta `tmp/site` + `tmp/site2/secret.txt` + `tmp/outside.txt` e exige **403** para os dois. |
+| "Still alive" testado em outra instância (P3) | Todas as requisições do teste vão ao mesmo servidor. |
+
+`tests/dps.test.mjs` agora usa alvo sem tipo e faixa ±25 % para 7 espécies; testes novos de chain, aliado e
+tentativa. 3 falham no código anterior. Suíte **140 / 140**; build + `check-bundle` OK.
