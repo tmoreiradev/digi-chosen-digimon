@@ -130,6 +130,14 @@ the start of the next run ("Recompensas pendentes"). The pause menu's **Conquist
 all of them with progress, reward and pending gold. During a boss fight the HUD shows a boss bar
 (name, kind, phase, HP) under the region block.
 
+## Language
+
+The interface is in Brazilian Portuguese (`lang="pt-BR"`): screens, HUD, level-up cards, event panels and
+banners. Proper names from the data stay as they are — species, moves, items, abilities, roster roles and
+ultimate names. Biome, archetype, vitamin, rarity and tower-floor labels are translated at display time by the
+tables in `src/core/i18n.js`, so `src/data/*.json` is untouched and old saves need no migration. There is no
+language selector yet.
+
 ## Provenance & fidelity
 
 Everything here is a from-scratch reimplementation built from the game's public data tables. The

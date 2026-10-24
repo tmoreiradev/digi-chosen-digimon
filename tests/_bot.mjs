@@ -208,27 +208,27 @@ class Bot {
     const title = ui.querySelector("h2")?.textContent ?? "";
     const ev = run.events.findNear(p.x, p.z);
     if (ev) this.visited.set(ev.id, run.stats.gold);
-    if (/Chest/.test(title)) {
+    if (/Baú/.test(title)) {
       summary.chests++;
-      byText(/^Open/)?.click();
+      byText(/^Abrir/)?.click();
     } else if (/Altar/.test(title)) {
       summary.altars++;
-      (byText(/^Heal/) ?? byText(/^Leave/)).click();
-    } else if (/Shop/.test(title)) {
+      (byText(/^Curar/) ?? byText(/^Sair/)).click();
+    } else if (/Loja/.test(title)) {
       summary.shops++;
       for (const row of ui.querySelectorAll(".shop-row")) {
         const name = row.querySelector(".shop-title").textContent;
         const btn = row.querySelector("button");
         if (btn.disabled) continue;
         const want =
-          (name === "Rare Candy" && run.stats.gold >= 100) ||
-          (name === "Potion" && p.hp < p.maxHp * 0.5) ||
-          (name === "Full Restore" && p.hp < p.maxHp * 0.35) ||
-          (name === "Vitamin" && run.stats.gold >= 200);
+          (name === "Doce Raro" && run.stats.gold >= 100) ||
+          (name === "Poção" && p.hp < p.maxHp * 0.5) ||
+          (name === "Restaurador" && p.hp < p.maxHp * 0.35) ||
+          (name === "Vitamina" && run.stats.gold >= 200);
         if (want) btn.click();
       }
       if (ev) this.visited.set(ev.id, run.stats.gold); // after buying, so the next look needs new gold
-      byText(/^Leave/)?.click();
+      byText(/^Sair/)?.click();
     } else {
       run.events.panel?.close();
     }

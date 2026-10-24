@@ -19,6 +19,7 @@ export const MODULE_ORDER = [
   "src/core/math.js",
   "src/core/rng.js",
   "src/ui/dom.js",
+  "src/core/i18n.js",
   "src/render/palette.js",
   "src/render/sprites.js",
   "src/render/creature.js",
@@ -80,7 +81,7 @@ export function build() {
   const css = fs.readFileSync(path.join(ROOT, "styles.css"), "utf8");
 
   const html = `<!doctype html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />

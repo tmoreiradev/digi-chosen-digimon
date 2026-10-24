@@ -20,7 +20,7 @@ test("an Eevee keeps one evolution target and threshold across checks, then evol
   assert.equal(run.tryEvolve(), true);
   assert.equal(p.speciesId, plan.to.id, "evolved into the planned target");
   assert.equal(p.evoPlan, null, "an Eeveelution has nowhere further to go");
-  assert.ok(calls.banners.includes(`Evolved into ${plan.to.name}!`));
+  assert.ok(calls.banners.includes(`Evoluiu para ${plan.to.name}!`));
 });
 
 test("a three-stage line plans the next stage after each evolution", () => {

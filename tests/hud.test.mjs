@@ -19,9 +19,9 @@ test("the boss bar appears during a boss fight and tracks its HP", () => {
   const e = run.boss.spawn(123, run.player.x + 5, run.player.z, "guardian");
   hud.update(run);
   assert.equal(wrap.classList.contains("show"), true);
-  assert.equal(root.querySelector(".hud-boss-name").textContent, "Scyther · Guardian");
+  assert.equal(root.querySelector(".hud-boss-name").textContent, "Scyther · Guardião");
   assert.equal(root.querySelector(".fill.boss").style.width, "100%");
-  assert.match(root.querySelector(".bar.boss").querySelector(".bar-text").textContent, /^Phase 1 · \d+ \/ \d+$/);
+  assert.match(root.querySelector(".bar.boss").querySelector(".bar-text").textContent, /^Fase 1 · \d+ \/ \d+$/);
 
   e.hp = e.maxHp / 2;
   hud.update(run);
@@ -39,5 +39,5 @@ test("the legendary is labelled as such", () => {
   const { run } = makeRun();
   run.boss.spawn(151, run.player.x + 5, run.player.z, "legendary");
   hud.update(run);
-  assert.equal(root.querySelector(".hud-boss-name").textContent, "Mew · Legendary");
+  assert.equal(root.querySelector(".hud-boss-name").textContent, "Mew · Lendário");
 });

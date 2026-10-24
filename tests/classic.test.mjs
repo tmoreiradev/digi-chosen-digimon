@@ -18,7 +18,7 @@ test("classic: the zone guardian spawns when the timer runs out and the zone wai
   assert.equal(run.boss.kind, "guardian");
   const guardian = run.boss.enemy;
   assert.ok(run.biome.guardians[0].includes(guardian.species.id), "picked from biome.guardians[zone]");
-  assert.ok(calls.banners.some((b) => /guardian of the Green Forest/.test(b)));
+  assert.ok(calls.banners.some((b) => /guardião da Floresta Verde/.test(b)));
 
   frames(run, 60);
   assert.equal(run.boss.enemy, guardian, "no second guardian while the first lives");
@@ -28,7 +28,7 @@ test("classic: the zone guardian spawns when the timer runs out and the zone wai
   frames(run, 1);
   assert.equal(run.stage, 2);
   assert.ok(run.stageTime < 1, "zone timer restarts");
-  assert.ok(calls.banners.includes("Zone 1 cleared!"));
+  assert.ok(calls.banners.includes("Zona 1 limpa!"));
   assert.equal(run.zoneBossSpawned, false);
 });
 
@@ -46,7 +46,7 @@ test("classic: after zone 3's guardian the sanctuary opens, the legendary arrive
   }
   assert.equal(run.sanctuary, true);
   assert.equal(run.stage, 3, "the stage counter stays at 3; the sanctuary is not zone 4");
-  assert.ok(calls.banners.some((b) => /sanctuary/i.test(b)));
+  assert.ok(calls.banners.some((b) => /santuário/i.test(b)));
 
   frames(run, 60); // one second: the horde fades and nothing new spawns
   assert.equal(run.enemies.filter((e) => e.alive && e.dying <= 0).length, 0);
@@ -56,7 +56,7 @@ test("classic: after zone 3's guardian the sanctuary opens, the legendary arrive
   assert.ok(run.boss.alive);
   assert.equal(run.boss.kind, "legendary");
   assert.ok(run.biome.legendaries.includes(run.boss.enemy.species.id), "picked from biome.legendaries");
-  assert.ok(calls.banners.some((b) => /the legendary!/.test(b)));
+  assert.ok(calls.banners.some((b) => /o lendário!/.test(b)));
 
   run.boss.enemy.hp = 0;
   frames(run, 1);

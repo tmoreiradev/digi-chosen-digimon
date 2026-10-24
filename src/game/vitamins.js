@@ -4,6 +4,7 @@
 // `per * sum(banked scales)`. Mirrors the upstream `addVitamin` + `dt` table.
 
 import { rollRarity } from "./rules.js";
+import { vitaminDesc } from "../core/i18n.js";
 
 /** Build the modifier group contributed by one vitamin at its current level. */
 export function vitaminMod(def, acc) {
@@ -27,20 +28,21 @@ export function rollVitaminScale(run, defs) {
 /** Human text for what one pick of a vitamin grants. */
 export function vitaminGainText(def, scale) {
   const value = def.per * scale;
-  if (def.dice) return `rolls a random stat, 50% stronger`;
+  const what = vitaminDesc(def).toLowerCase();
+  if (def.dice) return `sorteia um atributo, 50% mais forte`;
   if (def.kind === "add") {
     const isPct = ["critChance", "evasion", "lifesteal", "overheal"].includes(def.stat);
-    if (isPct) return `+${Math.round(value * 100)}% ${def.desc.toLowerCase()}`;
-    if (def.stat === "regen" || def.stat === "pickupRange") return `+${value.toFixed(1)} ${def.desc.toLowerCase()}`;
-    return `+${Math.round(value)} ${def.desc.toLowerCase()}`;
+    if (isPct) return `+${Math.round(value * 100)}% ${what}`;
+    if (def.stat === "regen" || def.stat === "pickupRange") return `+${value.toFixed(1)} ${what}`;
+    return `+${Math.round(value)} ${what}`;
   }
-  return `+${Math.round(value * 100)}% ${def.desc.toLowerCase()}`;
+  return `+${Math.round(value * 100)}% ${what}`;
 }
 
 /** Total accumulated text for the HUD. */
 export function vitaminTotalText(def, entry) {
   const value = def.per * (entry?.acc ?? 0);
-  if (def.dice) return `lvl ${entry?.level ?? 0}`;
+  if (def.dice) return `nv ${entry?.level ?? 0}`;
   if (def.kind === "add") {
     const isPct = ["critChance", "evasion", "lifesteal", "overheal"].includes(def.stat);
     if (isPct) return `+${Math.round(value * 100)}%`;
@@ -105,7 +107,7 @@ export function vitaminChoices(run, cap) {
           vit: def.key,
           rarity,
           title: def.name,
-          sub: `Level ${entry.level} → ${entry.level + 1}`,
+          sub: `Nível ${entry.level} → ${entry.level + 1}`,
           lines: [vitaminGainText(def, scale)],
           icon: "vit",
           weight: 1.1,
@@ -118,7 +120,7 @@ export function vitaminChoices(run, cap) {
         vit: def.key,
         rarity,
         title: def.name,
-        sub: "New vitamin",
+        sub: "Vitamina nova",
         lines: [vitaminGainText(def, scale)],
         icon: "vit",
         weight: 1.1,

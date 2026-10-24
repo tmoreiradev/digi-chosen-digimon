@@ -42,9 +42,9 @@ test("classic mode can be won through play: three guardians, the sanctuary, the 
   log(`result: ${s.state} after ${Math.round(s.time)}s, level ${s.level}, ${s.kills} kills`);
   assert.deepEqual(s.invariantFailures, []);
   assert.equal(s.state, "victory");
-  for (const zone of [1, 2]) assert.ok(calls.banners.includes(`Zone ${zone} cleared!`), `zone ${zone} cleared`);
-  assert.ok(calls.banners.some((b) => /sanctuary/i.test(b)));
-  assert.ok(calls.banners.some((b) => /the legendary!/.test(b)));
+  for (const zone of [1, 2]) assert.ok(calls.banners.includes(`Zona ${zone} limpa!`), `zone ${zone} cleared`);
+  assert.ok(calls.banners.some((b) => /santuário/i.test(b)));
+  assert.ok(calls.banners.some((b) => /o lendário!/.test(b)));
 });
 
 test("an honest bot plays five tower runs: no invariant breaks, never dies in the first two minutes", () => {

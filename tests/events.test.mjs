@@ -49,7 +49,7 @@ test("a chest survives a look, keeps the same loot, and is consumed when opened"
   run.events.spawn("chest", p.x + 1, p.z);
   open(run);
   const preview = ui.querySelector(".event-loot-preview").textContent;
-  click(/^Leave/);
+  click(/^Sair/);
   assert.equal(run.stateEventPanel, false);
   run.update(1 / 60);
   assert.equal(run.events.events.length, 1, "leaving does not consume the chest");
@@ -57,7 +57,7 @@ test("a chest survives a look, keeps the same loot, and is consumed when opened"
   assert.equal(ui.querySelector(".event-loot-preview").textContent, preview, "loot was rolled once");
   const gold = run.stats.gold;
   const hp = p.hp;
-  click(/^Open/);
+  click(/^Abrir/);
   assert.ok(run.stats.gold > gold || p.hp > hp || p.vitamins.size > 0, "the loot landed");
   run.update(1 / 60);
   assert.equal(run.events.events.length, 0, "opened: consumed");
@@ -70,11 +70,11 @@ test("a shop is never consumed by buying or leaving; it only expires", () => {
   run.events.events.length = 0;
   run.events.spawn("shop", p.x + 1, p.z);
   open(run);
-  const buy = findButtons(ui, /^Buy/).find((b) => !b.disabled);
+  const buy = findButtons(ui, /^Comprar/).find((b) => !b.disabled);
   assert.ok(buy, "something is affordable with 1000 gold");
   buy.click();
   assert.ok(run.stats.gold < 1000, "bought");
-  click(/^Leave/);
+  click(/^Sair/);
   run.update(1 / 60);
   assert.equal(run.events.events.length, 1, "still there after buying and leaving");
   run.events.events[0].life = 0.001;
@@ -88,13 +88,13 @@ test("an altar is consumed by healing, not by leaving at full HP", () => {
   run.events.events.length = 0;
   run.events.spawn("altar", p.x + 1, p.z);
   open(run); // full HP: only Leave is offered
-  assert.equal(findButtons(ui, /^Heal/).length, 0);
-  click(/^Leave/);
+  assert.equal(findButtons(ui, /^Curar/).length, 0);
+  click(/^Sair/);
   run.update(1 / 60);
   assert.equal(run.events.events.length, 1);
   p.hp = 10;
   open(run);
-  click(/^Heal/);
+  click(/^Curar/);
   assert.equal(p.hp, p.maxHp);
   run.update(1 / 60);
   assert.equal(run.events.events.length, 0, "healed: consumed");

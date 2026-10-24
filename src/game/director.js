@@ -182,7 +182,7 @@ export class Director {
         if (!spot) break;
         const species = run.spawnEnemy(card.id, spot.x, spot.z, "alpha");
         if (species) {
-          run.banner(`Alpha ${species.species.name} appeared!`);
+          run.banner(`Alfa ${species.species.name} apareceu!`);
           run.shake(0.2);
         }
         break;
@@ -195,7 +195,7 @@ export class Director {
           const spot = this.spawnPoint(16, 30);
           if (spot) run.spawnEnemy(card.id, spot.x, spot.z, "elite");
         }
-        run.banner("A wave of elite Pokémon approaches!");
+        run.banner("Uma onda de Pokémon de elite se aproxima!");
         break;
       }
       case "swarm": {
@@ -211,7 +211,7 @@ export class Director {
             run.spawnEnemy(card.id, x, z, "swarm");
           }
         }
-        run.banner("Swarm!");
+        run.banner("Enxame!");
         break;
       }
       case "stampede": {
@@ -226,7 +226,7 @@ export class Director {
           const z = p.z - Math.sin(a) * (30 + along) - Math.cos(a) * lateral;
           run.spawnEnemy(card.id, x, z, "swarm");
         }
-        run.banner("Stampede!");
+        run.banner("Estouro!");
         run.shake(0.2);
         break;
       }

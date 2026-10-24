@@ -74,6 +74,6 @@ test("Fechar returns to the pause menu without resuming", () => {
   screens.showPause(() => resumed++, () => {}, () => {});
   screens.showHeldItem();
   findButtons(root, /^Fechar/)[0].click();
-  assert.ok(root.all().some((n) => n.tagName === "h2" && n.textContent === "Paused"));
+  assert.ok(root.all().some((n) => n.tagName === "h2" && n.textContent === "Pausado"));
   assert.equal(resumed, 0);
 });

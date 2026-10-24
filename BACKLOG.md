@@ -29,7 +29,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 | # | Item | Onde |
 |---|------|------|
 | 13 | HUD reconstrói slots e ult a cada frame (DOM churn) | `hud.js` `update` |
-| 14 | UI mista inglês/português, `lang="en"`, sem i18n | `screens.js`, `index.html`, `build.mjs` |
+| 14 | ~~UI mista inglês/português, `lang="en"`, sem i18n~~ | **Feito na fase 8 (23/10):** `src/core/i18n.js` + literais traduzidos em todos os módulos de UI/jogo; `lang="pt-BR"`. Nomes próprios dos dados seguem em inglês. |
 | 15 | Passphrase das contas em texto puro no `localStorage` (local, mas vale aviso) | `account.js` |
 | 16 | `screens.js` acessa `globalThis.__PB__.run` para apelido/item (acoplamento com `main.js`) | `screens.js` |
 | 17 | `decodeURIComponent` de URL malformada derruba o servidor de desenvolvimento | `server.mjs` |
@@ -44,5 +44,5 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 - Nome de jogador permanente (hoje só apelido do Pokémon).
 - Mais itens segurados com efeito (hoje Leftovers e Choice Band).
 - Roster completo de espécies/golpes/upgrades além das 40 da liga e 126 upgrades.
-- Tradução completa para pt-BR (ou escolha de idioma).
+- ~~Tradução completa para pt-BR~~ — feito na fase 8 (23/10); a escolha de idioma segue em aberto.
 - Testes de interface no navegador automatizados (hoje: `node --test` + validação manual via console).

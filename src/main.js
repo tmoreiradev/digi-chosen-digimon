@@ -119,7 +119,7 @@ function startRun() {
     onUltimate: () => state.sfx.ultimate(),
     onCaught: (name) => {
       state.sfx.pickup();
-      state.hud.banner(`Caught ${name}!`);
+      state.hud.banner(`Capturou ${name}!`);
     },
     // Zone/floor progression after a boss lives in Run.onBossDefeated; this is just the jingle.
     onBossDown: () => state.sfx.levelUp(),
@@ -369,5 +369,5 @@ function drawMenuBackdrop() {
 boot().catch((err) => {
   console.error(err);
   document.getElementById("screens").innerHTML =
-    `<div class="screen dim"><div class="card panel"><h2>Failed to start</h2><p class="muted">${err.message}</p><p class="muted">Serve the folder over HTTP (npm start) and reload.</p></div></div>`;
+    `<div class="screen dim"><div class="card panel"><h2>Falha ao iniciar</h2><p class="muted">${err.message}</p><p class="muted">Sirva a pasta por HTTP (npm start) e recarregue.</p></div></div>`;
 });

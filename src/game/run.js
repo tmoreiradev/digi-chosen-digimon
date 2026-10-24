@@ -27,6 +27,7 @@ import { WorldEvents } from "./events.js";
 import { AchievementTracker, EggSystem } from "./achievements.js";
 import { applyFusion, fusionChoices } from "./fusion.js";
 import { applyVitaminPick, vitaminChoices, vitaminGroups } from "./vitamins.js";
+import { archLabel, typeName } from "../core/i18n.js";
 
 const ENEMY_CAP = 260;
 const PICKUP_CAP = 400;
@@ -284,7 +285,7 @@ export class Run {
     this.stageTime = 0;
     this.zoneBossSpawned = false;
     this.director.onStage(this.stage);
-    this.banner(`Zone ${this.stage} — tougher foes`);
+    this.banner(`Zona ${this.stage} — inimigos mais fortes`);
   }
 
   /* ------------------------------------------------------------ classic */
@@ -321,7 +322,7 @@ export class Run {
     } else if (this.stage >= 3) {
       this.enterSanctuary();
     } else {
-      this.banner(`Zone ${this.stage} cleared!`);
+      this.banner(`Zona ${this.stage} limpa!`);
       this.advanceStage();
     }
   }
@@ -335,7 +336,7 @@ export class Run {
         e.hp = 0;
       }
     }
-    this.banner("The sanctuary — something ancient stirs");
+    this.banner("O santuário — algo antigo desperta");
     const candidates = this.biome.legendaries ?? [];
     const speciesId = candidates.length ? this.rng.pick(candidates) : 150; // Mewtwo when the biome lists none
     this.later(2.5, () => {
@@ -1089,7 +1090,7 @@ export class Run {
     if (p.statuses.freeze > 0) dmg *= 1.15;
     if (p.ability?.dmgTaken) dmg *= p.ability.dmgTaken;
     if (p.stats.evasion > 0 && Math.random() < p.stats.evasion) {
-      this.floater(p.x, p.y + 2, p.z, "miss", "#9ca3ff");
+      this.floater(p.x, p.y + 2, p.z, "errou", "#9ca3ff");
       return;
     }
     if (p.shield > 0) {
@@ -1399,8 +1400,8 @@ export class Run {
           kind: "newMove",
           id: move.id,
           title: move.name,
-          sub: "New move",
-          lines: [`${move.type} · ${this.rules.archetypes[def.arch].label}`],
+          sub: "Golpe novo",
+          lines: [`${typeName(move.type)} · ${archLabel(def.arch, this.rules)}`],
           icon: "move",
           type: move.type,
           weight: 2.2,
@@ -1418,7 +1419,7 @@ export class Run {
         slot: p.moves.indexOf(mv),
         ups, // applyChoice applies these; the card only showed them before
         title: mv.def.name,
-        sub: `Level ${mv.level} → ${mv.level + 1}`,
+        sub: `Nível ${mv.level} → ${mv.level + 1}`,
         lines: ups.map((u) => u.label),
         icon: "move",
         type: mv.def.type,
@@ -1430,8 +1431,8 @@ export class Run {
     if (p.moves.length >= p.moveSlots && p.moveSlots < 6) {
       options.push({
         kind: "slot",
-        title: "Move Slot",
-        sub: "Carry one more move",
+        title: "Espaço de golpe",
+        sub: "Leve mais um golpe",
         lines: [],
         icon: "move",
         rarity: 3,
@@ -1506,40 +1507,40 @@ export class Run {
       switch (key) {
         case "dmg":
           value = 0.22 * v;
-          label = `+${Math.round(value * 100)}% damage`;
+          label = `+${Math.round(value * 100)}% de dano`;
           break;
         case "cd":
           value = Math.min(0.25, 0.08 * v);
-          label = `-${Math.round(value * 100)}% cooldown`;
+          label = `-${Math.round(value * 100)}% de recarga`;
           break;
         case "count":
           value = mv.level >= 6 ? 2 : 1;
-          label = `+${value} projectile${value > 1 ? "s" : ""}`;
+          label = `+${value} ${value > 1 ? "projéteis" : "projétil"}`;
           break;
         case "pierce":
         case "bounce":
           value = Math.max(1, Math.round(mv.level));
-          label = `+${value} ${key}`;
+          label = `+${value} ${key === "pierce" ? "perfuração" : "ricochete"}`;
           break;
         case "area":
           value = 0.15 * v;
-          label = `+${Math.round(value * 100)}% area`;
+          label = `+${Math.round(value * 100)}% de área`;
           break;
         case "speed":
           value = 0.15 * v;
-          label = `+${Math.round(value * 100)}% speed`;
+          label = `+${Math.round(value * 100)}% de velocidade`;
           break;
         case "dur":
           value = 0.2 * v;
-          label = `+${Math.round(value * 100)}% duration`;
+          label = `+${Math.round(value * 100)}% de duração`;
           break;
         case "crit":
           value = 0.05 * v;
-          label = `+${Math.round(value * 100)}% crit`;
+          label = `+${Math.round(value * 100)}% de crítico`;
           break;
         default:
           value = 0.25 * v;
-          label = `+${Math.round(value * 100)}% status chance`;
+          label = `+${Math.round(value * 100)}% de chance de status`;
       }
       ups.push({ key, value, label });
     }
@@ -1628,7 +1629,7 @@ export class Run {
     p.hp = p.maxHp;
     this.stats.evolved++;
     this.achievements.incrementTask("evolve_ally", 1);
-    this.banner(`Evolved into ${plan.to.name}!`);
+    this.banner(`Evoluiu para ${plan.to.name}!`);
     this.burst(p.x, p.y + 1, p.z, 0xff9ae0, 26, "star");
     this.shake(0.2);
     this.learnKitMoves(p);

@@ -4,6 +4,7 @@ import { el, clear, typeCss } from "./dom.js";
 import { creatureSprite } from "../render/creature.js";
 import { paintSpritePortrait } from "../render/sprites.js";
 import { clamp, fmtClock, fmtTime } from "../core/math.js";
+import { typeName, biomeName, THREAT_PT } from "../core/i18n.js";
 
 export class Hud {
   constructor(root) {
@@ -114,9 +115,9 @@ export class Hud {
       this.name.style.color = p.nickname ? "#ffd700" : "";
       this.shinyBadge.style.display = p.shiny ? "inline" : "none";
       clear(this.types);
-      for (const t of p.types) this.types.append(el("span", { class: "chip", style: { background: typeCss(t) } }, t));
+      for (const t of p.types) this.types.append(el("span", { class: "chip", style: { background: typeCss(t) } }, typeName(t)));
       // The evolution plan is fixed per species, so the hint can promise a target and a level.
-      this.evoHint.textContent = p.evoPlan ? `→ ${p.evoPlan.to.name} at Nv ${p.evoPlan.level}` : "";
+      this.evoHint.textContent = p.evoPlan ? `→ ${p.evoPlan.to.name} no Nv ${p.evoPlan.level}` : "";
       this.portraitReady = false;
     }
     // The sheet loads asynchronously, so keep retrying until the real portrait
@@ -124,18 +125,18 @@ export class Hud {
     if (!this.portraitReady) this.portraitReady = this.drawPortrait(p.species);
     this.level.textContent = `Nv ${p.level}`;
 
-    this.region.textContent = run.biome.name;
+    this.region.textContent = biomeName(run.biome);
     clear(this.zonePips);
     for (let i = 0; i < 3; i++) this.zonePips.append(el("i", { class: "pip" + (i < run.stage ? " on" : "") }));
     this.difficulty.textContent = run.difficulty.name.toUpperCase();
     this.difficulty.className = "hud-diff " + run.difficulty.id;
 
     this.clock.textContent = fmtClock(8 * 3600 + run.time * 60);
-    this.runTimer.textContent = `${fmtTime(run.time)} · ${run.sanctuary ? "Sanctuary" : "Zone " + run.stage}`;
+    this.runTimer.textContent = `${fmtTime(run.time)} · ${run.sanctuary ? "Santuário" : "Zona " + run.stage}`;
 
     // Threat meter reflects enemy pressure over the stage.
     const threat = clamp(run.enemies.length / 70, 0, 1);
-    const labels = ["CALM", "RESTLESS", "ALERT", "DANGER", "SWARMED"];
+    const labels = THREAT_PT;
     this.threatLabel.textContent = labels[Math.min(labels.length - 1, Math.floor(threat * labels.length))];
     this.threatBar.style.setProperty("--v", `${Math.round(threat * 100)}%`);
 
@@ -144,11 +145,11 @@ export class Hud {
     const be = boss?.alive ? boss.enemy : null;
     if (be) {
       this.bossWrap.classList.add("show");
-      const kind = boss.kind === "legendary" ? " · Legendary" : boss.kind === "guardian" ? " · Guardian" : "";
+      const kind = boss.kind === "legendary" ? " · Lendário" : boss.kind === "guardian" ? " · Guardião" : boss.kind === "totem" ? " · Totem" : boss.kind === "summoner" ? " · Invocador" : "";
       this.bossName.textContent = `${boss.name}${kind}`;
       const pct = clamp(be.hp / be.maxHp, 0, 1);
       this.bossFill.style.width = `${pct * 100}%`;
-      this.bossText.textContent = `Phase ${boss.phase} · ${Math.ceil(be.hp)} / ${Math.round(be.maxHp)}`;
+      this.bossText.textContent = `Fase ${boss.phase} · ${Math.ceil(be.hp)} / ${Math.round(be.maxHp)}`;
     } else {
       this.bossWrap.classList.remove("show");
     }

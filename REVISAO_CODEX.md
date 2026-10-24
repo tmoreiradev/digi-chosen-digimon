@@ -537,3 +537,45 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   base: Clássico honesto 5 / 10 → **10 / 10** sobreviventes; Torre honesta 0 / 5 → **5 / 5** (2 vitórias).
   ⚠ É uma mudança grande de sensação de jogo — o contato deixa de "vibrar" o jogador para longe; o playtest
   humano decide se o dano de contato (inalterado) basta como punição.
+
+## 19. Fase 8 — Interface em pt-BR (23/10/2026)
+
+- **Escopo:** todos os textos que o jogador lê — título, telas de perfil/parceiro/setup, HUD (zona, santuário,
+  ameaça, barra do boss, dica de evolução), cartas de level-up (títulos, subtítulos, linhas, raridades, botões),
+  painéis de evento (baú, loja, altar, itens à venda), resultados, pausa e todos os banners (zona, guardião,
+  lendário, Torre, director, captura, evolução, fusão, loja). `lang="pt-BR"` no `index.html` e no template do
+  bundle. Idioma único: não há seletor (continua no BACKLOG como "escolha de idioma").
+- **O que fica em inglês, por decisão:** nomes próprios dos dados — espécies, golpes, itens, habilidades, papéis
+  do roster (`Healer`, `Blaze Assault`), nomes dos ultimates (`ultimateName`) e os nomes dos andares da Torre no
+  dado (`rules.json`). Os nomes de andar, biomas e arquétipos **são traduzidos na exibição** por tabela, sem
+  tocar nos dados. As `key`s dos itens da loja (`heal-small`, `xp-boost`…) e todas as chaves do `localStorage`
+  seguem iguais; o perfil convidado já gravado mantém o nome "Guest" (sem migração), convidados novos nascem
+  "Convidado".
+- **Onde:** novo módulo `src/core/i18n.js` (sem dependências; entra no `MODULE_ORDER` do bundle logo após
+  `dom.js`) com as tabelas `TYPE_PT`, `ARCH_PT` (os rótulos de arquétipo do `rules.json` estão em **espanhol**:
+  `Proyectil`, `Ráfaga`, `Embestida`…), `BIOME_PT` (nome + descrição), `RARITY_PT`/`RANK_PT`, `VITAMIN_DESC_PT`
+  (as 25 vitaminas; `vitaminGainText` usava `def.desc.toLowerCase()` em inglês), `TOWER_FLOOR_PT`, `THREAT_PT` e
+  os helpers `typeName`/`archLabel`/`biomeName`/`biomeDesc`/`rankName`/`vitaminDesc`/`towerFloorName`.
+  Literais traduzidos no lugar em `screens.js`, `hud.js`, `levelup.js`, `account.js`, `pokedex.js` (chips de
+  tipo), `main.js`, `run.js` (banners e rótulos de upgrade: "+12% de dano", "+1 projétil", "+2 perfuração"),
+  `rules.js` (`STAT_NAMES`, `RARITY_NAMES`, dificuldades Normal/Difícil/Pesadelo, `describeUpgrade`),
+  `events.js` (`SHOP_ITEMS`: Poção, Restaurador, Vitamina, Doce Raro), `boss.js` (golpes do boss e banners),
+  `tower.js`, `director.js`, `capture.js`, `vitamins.js`, `fusion.js`. O flutuante de esquiva passou de "miss"
+  para "errou".
+- **Testes:** as expectativas de texto acompanharam a tradução — `pause` ("Pausado", "Capturados: 1 / 1025",
+  "Parceiros:"), `helditem`, `hud` ("Scyther · Guardião", "Fase 1 · …", "Mew · Lendário"), `events` e o bot
+  (`/^Abrir/`, `/^Sair/`, `/^Comprar/`, `/^Curar/`, títulos `/Baú/`, `/Loja/`, nomes "Doce Raro", "Poção",
+  "Restaurador", "Vitamina"), `evolution` ("Evoluiu para X!"), `classic` e `playtest` ("Zona N limpa!",
+  `/guardião da Floresta Verde/`, `/santuário/i`, `/o lendário!/`). Suíte: **86 / 86**; `node build.mjs` +
+  `check-bundle` OK (27 módulos, o `i18n.js` incluído).
+- **Navegador (`http://localhost:8080/`, `document.documentElement.lang === "pt-BR"`):** título ("▶ Jogar",
+  "Partidas/Melhor/Capturados/Parceiros"), perfis ("Escolha um perfil", "Jogar como convidado"), parceiro
+  (chips PLANTA/VENENO, raridade COMUM), setup (biomas e descrições em pt-BR, Clássico/Infinito/Torre), HUD
+  ("→ Ivysaur no Nv 24", "Floresta Verde", "CALMO", "0:00 · Zona 1"); pausa com P ("Pausado", Continuar / Pokédex /
+  Conquistas / Apelido / Item segurado / Sair para o menu; P retoma); cartas ("Subiu de nível!", "Escolha um upgrade",
+  "Nível 1 → 2", "-2% de recarga", "+3% de área", VITAMINA, INCOMUM/COMUM, Re-sortear/Pular/Banir); resultados
+  ("Você desmaiou", "Bulbasaur · Floresta Verde · Normal", SOBREVIVIDOS/ABATES/NÍVEIS/UPGRADES/MOEDAS/DANO, "Jogar
+  de novo", "Menu principal"); painéis de evento abertos com `openPanel` — baú ("Baú do Tesouro", "Um baú empoeirado. O que
+  tem dentro?", "16 de ouro", Abrir 1 / Sair 2), loja ("Loja Ambulante", "Mercadorias à venda. Seu ouro: 300G", Poção /
+  Restaurador / Doce Raro com descrições, Comprar 1-3, Sair 0) e altar ("Altar Antigo", "Um altar antigo vibra com poder.",
+  "Você já está com o HP cheio.", Sair 2); "Sair para o menu" na pausa encerra a partida.

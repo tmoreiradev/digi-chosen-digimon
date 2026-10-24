@@ -28,29 +28,29 @@ test("Pokédex, Apelido and Item Segurado return to the pause menu without resum
   const { root, screens, run } = setup();
   let resumed = 0;
   screens.showPause(() => resumed++, () => {}, () => {});
-  assert.deepEqual(h2(root), ["Paused"]);
+  assert.deepEqual(h2(root), ["Pausado"]);
 
   screens.showPokedex();
   assert.deepEqual(h2(root), ["Pokédex"]);
   findButtons(root, /^Fechar/)[0].click();
-  assert.deepEqual(h2(root), ["Paused"], "Pokédex → Fechar goes back to the pause menu");
+  assert.deepEqual(h2(root), ["Pausado"], "Pokédex → Fechar goes back to the pause menu");
 
   screens.showNickname();
   const input = root.all().find((n) => n.tagName === "input");
   input.value = "  Bulba ";
   findButtons(root, /^Salvar/)[0].click();
-  assert.deepEqual(h2(root), ["Paused"]);
+  assert.deepEqual(h2(root), ["Pausado"]);
   assert.equal(run.player.nickname, "Bulba");
   assert.equal(profile.data.nickname, "Bulba");
 
   screens.showNickname();
   findButtons(root, /^Cancelar/)[0].click();
-  assert.deepEqual(h2(root), ["Paused"]);
+  assert.deepEqual(h2(root), ["Pausado"]);
   assert.equal(run.player.nickname, "Bulba", "Cancelar keeps the previous nickname");
 
   screens.showHeldItem();
   findButtons(root, /^Fechar/)[0].click();
-  assert.deepEqual(h2(root), ["Paused"]);
+  assert.deepEqual(h2(root), ["Pausado"]);
 
   assert.equal(resumed, 0, "no submenu resumed the game");
 });
@@ -93,7 +93,7 @@ test("Conquistas lists every achievement and task with progress and returns to p
   assert.match(root.querySelector(".card").textContent, /1 \/ 8 conquistas · 0 \/ 5 tarefas/);
 
   findButtons(root, /^Fechar/)[0].click();
-  assert.deepEqual(h2(root), ["Paused"]);
+  assert.deepEqual(h2(root), ["Pausado"]);
   assert.equal(resumed, 0);
 });
 
@@ -125,8 +125,8 @@ test("title and results read the single Pokédex list", async () => {
   withRandom(0.99, () => run.capture.caught(spawnAlpha(run, 16)));
   screens.showTitle();
   const stats = root.querySelector(".title-stats").textContent;
-  assert.match(stats, /Caught: 1 \/ 1025/);
-  assert.match(stats, /Partners: \d+ \/ 40/);
+  assert.match(stats, /Capturados: 1 \/ 1025/);
+  assert.match(stats, /Parceiros: \d+ \/ 40/);
 
   screens.showResults(run, false);
   assert.equal(profile.data.caught, undefined);

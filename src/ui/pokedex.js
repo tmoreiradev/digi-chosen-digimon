@@ -3,6 +3,7 @@
 
 import { el, clear } from "../ui/dom.js";
 import { portraitStyle } from "../render/sprites.js";
+import { typeName } from "../core/i18n.js";
 
 export class Pokedex {
   constructor(root, data, profile) {
@@ -128,12 +129,12 @@ export class Pokedex {
       const nameRow = el("div", { class: "pokedex-name-row" });
       const num = el("div", { class: "pokedex-num" }, `#${String(sp.id).padStart(3, "0")}`);
       const name = el("div", { class: "pokedex-name" }, sp.name);
-      const shinyStar = isCaught ? el("span", { class: "pokedex-shiny", title: "Shiny visto" }, "★") : null;
+      const shinyStar = isCaught ? el("span", { class: "pokedex-shiny", title: "Capturado" }, "★") : null;
       nameRow.append(num, name, shinyStar);
 
       const types = el("div", { class: "pokedex-types" });
       for (const t of (sp.types || [])) {
-        types.append(el("span", { class: "chip", style: { background: this.typeCss(t) } }, t));
+        types.append(el("span", { class: "chip", style: { background: this.typeCss(t) } }, typeName(t)));
       }
 
       const status = el("div", { class: "pokedex-status" });

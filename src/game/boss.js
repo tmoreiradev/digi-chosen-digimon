@@ -7,16 +7,17 @@
 
 import { clamp, dist, TAU } from "../core/math.js";
 import { enemyHpCurve, enemyDamage as enemyDamageFor } from "./rules.js";
+import { biomeName } from "../core/i18n.js";
 
 const BOSS_MOVE_NAMES = {
-  slams: "Slams",
-  ring: "Shock Ring",
-  charge: "Charge",
-  volley: "Volley",
-  wave: "Shockwave",
-  spiral: "Spiral",
-  meteor: "Skyfall",
-  pools: "Hazard Pools",
+  slams: "Pancadas",
+  ring: "Anel de Choque",
+  charge: "Investida",
+  volley: "Saraivada",
+  wave: "Onda de Choque",
+  spiral: "Espiral",
+  meteor: "Chuva do Céu",
+  pools: "Poças Perigosas",
 };
 
 export class Boss {
@@ -124,7 +125,7 @@ export class Boss {
     this.dead = false;
     this.exhaustSaid = false;
     this.kind = kind;
-    run.banner(`${this.name}, ${kind === "legendary" ? "the legendary" : "guardian of the " + run.biome.name}!`);
+    run.banner(`${this.name}, ${kind === "legendary" ? "o lendário" : "guardião da " + biomeName(run.biome)}!`);
     run.shake(0.4);
     return e;
   }
@@ -155,7 +156,7 @@ export class Boss {
     if (over <= 0) return 1;
     if (!this.exhaustSaid) {
       this.exhaustSaid = true;
-      this.run.banner(`${this.name} is exhausted!`);
+      this.run.banner(`${this.name} está exausto!`);
     }
     return Math.min(1e6, 2 ** (over / 20));
   }
@@ -195,7 +196,7 @@ export class Boss {
 
   onPhase() {
     const run = this.run;
-    run.banner(`${this.name} enters phase ${this.phase}!`);
+    run.banner(`${this.name} entra na fase ${this.phase}!`);
     run.shake(0.3);
     run.burst(this.enemy.x, this.enemy.y + 1.5, this.enemy.z, 0xff5a4a, 24, "star");
   }
@@ -374,7 +375,7 @@ export class Boss {
     const e = this.enemy;
     // Forget the id: once the enemy list is compacted a stale id must not resolve to another enemy.
     this.index = -1;
-    run.banner(`${this.name} is defeated!`);
+    run.banner(`${this.name} foi derrotado!`);
     run.shake(0.4);
     if (e) run.burst(e.x, e.y + 1, e.z, 0xffd166, 30, "star");
     run.opts.onBossDown?.(this.name, this.kind);

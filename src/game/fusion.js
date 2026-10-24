@@ -4,6 +4,8 @@
 // moves at a high enough level can fuse, keeping the first move's shape and
 // picking the better type effectiveness of the two.
 
+import { typeName } from "../core/i18n.js";
+
 const NAME_PAIRS = [
   [0, -1], // first word of A + last word of B
 ];
@@ -30,10 +32,10 @@ export function fusionChoices(run) {
         kind: "fusion",
         slots: [p.moves.indexOf(a), p.moves.indexOf(b)],
         title: fusionName(a.def, b.def),
-        sub: "Fusion — merges two moves",
+        sub: "Fusão — une dois golpes",
         lines: [
           `${a.def.name} + ${b.def.name}`,
-          `dual-type ${a.def.type} / ${b.def.type}`,
+          `tipo duplo ${typeName(a.def.type)} / ${typeName(b.def.type)}`,
         ],
         icon: "move",
         type: a.def.type,
@@ -89,7 +91,7 @@ export function buildFusionDef(a, b) {
     power: Math.round((da.power + db.power) / 2),
     weather: undefined,
     buff: undefined,
-    desc: `Fused from ${da.name} and ${db.name}. Hits use the better of ${da.type}/${db.type} and ${db.type}.`,
+    desc: `Fundido de ${da.name} e ${db.name}. Os acertos usam o melhor entre ${typeName(da.type)} e ${typeName(db.type)}.`,
   };
   return def;
 }
@@ -113,5 +115,5 @@ export function applyFusion(run, choice) {
     timer: 0.3,
     mods: { dmg: 1.15, cd: 1, count: 0, area: 1, speed: 1, dur: 1, pierce: 0, crit: 0, status: 1, bounce: 0 },
   });
-  run.banner(`${def.name}! Two moves became one`);
+  run.banner(`${def.name}! Dois golpes viraram um`);
 }

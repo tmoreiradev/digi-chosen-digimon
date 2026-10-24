@@ -13,10 +13,10 @@ import { applyVitaminPick } from "./vitamins.js";
 import { MAX_LEVEL } from "./rules.js";
 
 export const SHOP_ITEMS = [
-  { key: "heal-small", title: "Potion", desc: "Restore 30 HP.", cost: 25, kind: "heal", amount: 30, rarity: 1 },
-  { key: "heal-full", title: "Full Restore", desc: "Restore to full HP.", cost: 75, kind: "heal-full", rarity: 2 },
-  { key: "vitamin", title: "Vitamin", desc: "Random permanent stat boost.", cost: 120, kind: "vitamin", rarity: 2 },
-  { key: "xp-boost", title: "Rare Candy", desc: "Gain 1 level worth of XP.", cost: 100, kind: "xp", rarity: 1 },
+  { key: "heal-small", title: "Poção", desc: "Restaura 30 HP.", cost: 25, kind: "heal", amount: 30, rarity: 1 },
+  { key: "heal-full", title: "Restaurador", desc: "Restaura todo o HP.", cost: 75, kind: "heal-full", rarity: 2 },
+  { key: "vitamin", title: "Vitamina", desc: "Bônus permanente aleatório de atributo.", cost: 120, kind: "vitamin", rarity: 2 },
+  { key: "xp-boost", title: "Doce Raro", desc: "Ganha 1 nível de XP.", cost: 100, kind: "xp", rarity: 1 },
 ];
 
 // Events appear 12–24 units from the player: on a 360-unit arena a run used to go ten
@@ -129,18 +129,18 @@ export class WorldEvents {
     if (ev.kind === "chest") {
       const loot = (ev.loot ??= this.rollChestLoot()); // rolled once: leaving and coming back does not reroll
       body.append(
-        el("p", {}, "A dusty chest. What's inside?"),
+        el("p", {}, "Um baú empoeirado. O que tem dentro?"),
         el("div", { class: "event-loot-preview" }, this.lootText(loot)),
-        el("div", { class: "event-hint" }, "Press 1 to open, 2 to leave.")
+        el("div", { class: "event-hint" }, "Aperte 1 para abrir, 2 para sair.")
       );
       const openBtn = el("button", { class: "btn", onclick: () => {
         ev.interacted = true; // consumed
         this.giveChestLoot(run, loot);
-        this.opts.onBanner?.(`Chest opened: ${this.lootText(loot)}`);
+        this.opts.onBanner?.(`Baú aberto: ${this.lootText(loot)}`);
         this.opts.onSfx?.("pickup");
         close();
-      } }, "Open ", el("kbd", {}, "1"));
-      const leaveBtn = el("button", { class: "btn ghost", onclick: close }, "Leave ", el("kbd", {}, "2"));
+      } }, "Abrir ", el("kbd", {}, "1"));
+      const leaveBtn = el("button", { class: "btn ghost", onclick: close }, "Sair ", el("kbd", {}, "2"));
       footer.append(openBtn, leaveBtn);
 
       this._panelKey = (e) => {
@@ -151,13 +151,13 @@ export class WorldEvents {
     } else if (ev.kind === "shop") {
       const items = this.shopSelection();
       // The wallet is run.stats.gold (what the HUD shows); player.stats.gold is the coin multiplier.
-      const goldLine = () => "Wares for sale. Your gold: " + Math.floor(run.stats.gold) + "G";
+      const goldLine = () => "Mercadorias à venda. Seu ouro: " + Math.floor(run.stats.gold) + "G";
       const goldText = el("p", { class: "shop-gold" }, goldLine());
       body.append(goldText);
       const list = el("div", { class: "shop-list" });
       const buyButtons = [];
       items.forEach((it, i) => {
-        const btn = el("button", { class: "btn" }, "Buy ", el("kbd", {}, String(i + 1)));
+        const btn = el("button", { class: "btn" }, "Comprar ", el("kbd", {}, String(i + 1)));
         btn.onclick = (e) => {
           e.preventDefault();
           if (this.buy(run, it)) refresh();
@@ -175,8 +175,8 @@ export class WorldEvents {
         list.append(row);
       });
       body.append(list);
-      body.append(el("div", { class: "event-hint" }, "Press 1-3 to buy, 0 to leave."));
-      const leaveBtn = el("button", { class: "btn ghost", onclick: close }, "Leave ", el("kbd", {}, "0"));
+      body.append(el("div", { class: "event-hint" }, "Aperte 1-3 para comprar, 0 para sair."));
+      const leaveBtn = el("button", { class: "btn ghost", onclick: close }, "Sair ", el("kbd", {}, "0"));
       footer.append(leaveBtn);
       const refresh = () => {
         goldText.textContent = goldLine();
@@ -201,22 +201,22 @@ export class WorldEvents {
     } else if (ev.kind === "altar") {
       const missing = p.maxHp - p.hp;
       body.append(
-        el("p", {}, "An ancient altar hums with power."),
+        el("p", {}, "Um altar antigo vibra com poder."),
         missing > 0
-          ? el("p", {}, `Restore ${missing} HP to full?`)
-          : el("p", {}, "You are already at full HP.")
+          ? el("p", {}, `Restaurar ${missing} HP e ficar com a vida cheia?`)
+          : el("p", {}, "Você já está com o HP cheio.")
       );
       if (missing > 0) {
         const healBtn = el("button", { class: "btn", onclick: () => {
           ev.interacted = true; // consumed
           p.hp = p.maxHp;
-          this.opts.onBanner?.("Altar restored your HP.");
+          this.opts.onBanner?.("O altar restaurou seu HP.");
           this.opts.onSfx?.("levelUp");
           close();
-        } }, "Heal ", el("kbd", {}, "1"));
+        } }, "Curar ", el("kbd", {}, "1"));
         footer.append(healBtn);
       }
-      const leaveBtn = el("button", { class: "btn ghost", onclick: close }, "Leave ", el("kbd", {}, "2"));
+      const leaveBtn = el("button", { class: "btn ghost", onclick: close }, "Sair ", el("kbd", {}, "2"));
       footer.append(leaveBtn);
 
       this._panelKey = (e) => {
@@ -273,10 +273,10 @@ export class WorldEvents {
   }
 
   lootText(loot) {
-    if (loot.kind === "coins") return loot.amount + " gold";
-    if (loot.kind === "heal") return "Potion (" + loot.amount + " HP)";
-    if (loot.kind === "vitamin") return "Vitamin";
-    return loot.amount + " gold";
+    if (loot.kind === "coins") return loot.amount + " de ouro";
+    if (loot.kind === "heal") return "Poção (" + loot.amount + " HP)";
+    if (loot.kind === "vitamin") return "Vitamina";
+    return loot.amount + " de ouro";
   }
 
   giveChestLoot(run, loot) {
@@ -302,7 +302,7 @@ export class WorldEvents {
     if (run.stats.gold < it.cost || !this.canApply(run, it)) return false;
     if (!this.applyShopItem(run, it)) return false;
     run.stats.gold -= it.cost;
-    this.opts.onBanner?.(`Bought ${it.title} for ${it.cost}G.`);
+    this.opts.onBanner?.(`Comprou ${it.title} por ${it.cost}G.`);
     this.opts.onSfx?.("pickup");
     return true;
   }
@@ -389,7 +389,7 @@ export class WorldEvents {
         ctx.fillStyle = "rgba(20,16,40,0.85)";
         ctx.font = "700 11px system-ui, sans-serif";
         ctx.textAlign = "center";
-        const label = ev.kind === "chest" ? "Chest — E" : ev.kind === "shop" ? "Shop — E" : "Altar — E";
+        const label = ev.kind === "chest" ? "Baú — E" : ev.kind === "shop" ? "Loja — E" : "Altar — E";
         const labelY = sy - zoom * 2.2;
         ctx.fillText(label, sx, labelY);
         ctx.fillStyle = "#ffd166";
@@ -399,8 +399,8 @@ export class WorldEvents {
   }
 
   titleFor(ev) {
-    if (ev.kind === "chest") return "Treasure Chest";
-    if (ev.kind === "shop") return "Traveling Shop";
-    return "Ancient Altar";
+    if (ev.kind === "chest") return "Baú do Tesouro";
+    if (ev.kind === "shop") return "Loja Ambulante";
+    return "Altar Antigo";
   }
 }

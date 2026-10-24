@@ -7,6 +7,7 @@
 // wall-clock time.
 
 import { clamp } from "../core/math.js";
+import { towerFloorName } from "../core/i18n.js";
 
 export class Tower {
   constructor(run) {
@@ -54,8 +55,8 @@ export class Tower {
   }
 
   where() {
-    if (this.beyond) return `Beyond — Floor ${this.floor}`;
-    return `${this.floor}F — ${this.def.name}`;
+    if (this.beyond) return `Além — Andar ${this.floor}`;
+    return `${this.floor}F — ${towerFloorName(this.def.name)}`;
   }
 
   /** Enter a floor: announce it and reset the wave state. */
@@ -89,7 +90,7 @@ export class Tower {
           this.wave++;
           this.waveT = 0;
           this.waveCount = 0;
-          run.banner(`Wave ${this.wave}!`);
+          run.banner(`Onda ${this.wave}!`);
           this.spawnWave(run);
         }
       }
@@ -154,7 +155,7 @@ export class Tower {
       g.kind === "boss" ? "guardian" : g.kind,
       this.scale()
     );
-    if (e) run.banner(`The floor guardian awakens!`);
+    if (e) run.banner(`O guardião do andar desperta!`);
     return e;
   }
 

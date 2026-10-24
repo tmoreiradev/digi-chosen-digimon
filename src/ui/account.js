@@ -72,7 +72,7 @@ export const accounts = {
     }
     if (!this.current) {
       const id = guestKey();
-      store.guests[id] = store.guests[id] ?? newProfile("Guest");
+      store.guests[id] = store.guests[id] ?? newProfile("Convidado");
       this.current = store.guests[id];
       this.persist(store);
     }
@@ -101,8 +101,8 @@ export const accounts = {
   list() {
     const store = readStore();
     return [
-      ...Object.values(store.guests).map((p) => ({ ...p, kindLabel: "Guest" })),
-      ...Object.values(store.accounts).map((p) => ({ ...p, kindLabel: "Account" })),
+      ...Object.values(store.guests).map((p) => ({ ...p, kindLabel: "Convidado" })),
+      ...Object.values(store.accounts).map((p) => ({ ...p, kindLabel: "Conta" })),
     ];
   },
 
@@ -110,8 +110,8 @@ export const accounts = {
   create(name, passphrase, carryOver = true) {
     const store = readStore();
     const clean = String(name || "").trim().slice(0, 24);
-    if (!clean) return { ok: false, error: "Pick a name." };
-    if (store.accounts[clean]) return { ok: false, error: "That name is taken (on this device)." };
+    if (!clean) return { ok: false, error: "Escolha um nome." };
+    if (store.accounts[clean]) return { ok: false, error: "Esse nome já está em uso (neste aparelho)." };
     const previous = this.current;
     const profile = newProfile(clean, "account");
     profile.pass = String(passphrase || "");
@@ -127,9 +127,9 @@ export const accounts = {
   login(name, passphrase) {
     const store = readStore();
     const profile = store.accounts[String(name || "").trim()];
-    if (!profile) return { ok: false, error: "No such account on this device." };
+    if (!profile) return { ok: false, error: "Não existe essa conta neste aparelho." };
     if (profile.pass && profile.pass !== String(passphrase || "")) {
-      return { ok: false, error: "Wrong passphrase." };
+      return { ok: false, error: "Senha incorreta." };
     }
     normalizeProgress(profile.progress);
     this.current = profile;
@@ -140,7 +140,7 @@ export const accounts = {
   playAsGuest() {
     const store = readStore();
     const id = guestKey();
-    store.guests[id] = store.guests[id] ?? newProfile("Guest");
+    store.guests[id] = store.guests[id] ?? newProfile("Convidado");
     this.current = store.guests[id];
     normalizeProgress(this.current.progress);
     this.persist(store);

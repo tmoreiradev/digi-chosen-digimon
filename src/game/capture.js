@@ -35,7 +35,7 @@ export class Capture {
     e.vx = 0;
     e.vz = 0;
     e.captureReady = true;
-    this.run.banner(`${e.species.name} is weakened! Press E to throw a ball`);
+    this.run.banner(`${e.species.name} está enfraquecido! Aperte E para lançar a bola`);
     return true;
   }
 
@@ -84,8 +84,7 @@ export class Capture {
     if (run.eggs && !run.eggs.egg.active && (firstOfRun || Math.random() < 0.25)) {
       run.eggs.giveEgg(e.species.id, 200);
     }
-    const shinyTxt = e.shiny ? "A shiny " : "A ";
-    run.banner(`Gotcha! ${shinyTxt}${e.species.name} was caught!`);
+    run.banner(`Pegou! ${e.species.name}${e.shiny ? " shiny" : ""} foi capturado!`);
     run.burst(e.x, e.y + 1, e.z, e.shiny ? 0xffd700 : 0xffd166, e.shiny ? 40 : 26, "star");
     run.opts.onCaught?.(e.species.name);
   }
@@ -95,7 +94,7 @@ export class Capture {
     this.reset();
     e.captureReady = false;
     e.hp = Math.max(e.hp, e.maxHp * 0.3);
-    run.banner(`${e.species.name} broke free!`);
+    run.banner(`${e.species.name} se soltou!`);
   }
 
   reset() {
@@ -119,7 +118,7 @@ export class Capture {
         e.captureReady = false;
         e.hp = Math.max(e.hp, e.maxHp * 0.25);
         this.reset();
-        this.run.banner(`${e.species.name} recovered!`);
+        this.run.banner(`${e.species.name} se recuperou!`);
       }
     }
   }
@@ -173,7 +172,7 @@ export class Allies {
       nickname: null,
       heldItem: null,
     });
-    this.run.banner(`${species.name} joins your team!`);
+    this.run.banner(`${species.name} entrou para o time!`);
   }
 
   /** Ally attack power (upstream `power`). */

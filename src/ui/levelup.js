@@ -1,6 +1,7 @@
 // Level-up chooser: three upgrade cards plus reroll / skip / banish.
 
 import { el, clear, typeCss } from "./dom.js";
+import { typeName, RARITY_PT } from "../core/i18n.js";
 
 const RARITY_CSS = ["#c8d0dc", "#5ad87a", "#4aa8ff", "#c070ff", "#ffc83a"];
 const REROLLS_PER_RUN = 2;
@@ -40,11 +41,11 @@ export class LevelUpPanel {
         el("div", { class: "lu-key" }, String(i + 1)),
         el("div", { class: "lu-title" }, ch.title),
         ch.sub && !ch.kind ? el("div", { class: "lu-sub" }, ch.sub) : null,
-        ch.type ? el("div", { class: "lu-type" }, el("i", { style: { background: typeCss(ch.type) } }), ch.type) : null,
+        ch.type ? el("div", { class: "lu-type" }, el("i", { style: { background: typeCss(ch.type) } }), typeName(ch.type)) : null,
         ch.kind ? el("div", { class: isVit ? "lu-vit" : ch.kind === "fusion" ? "lu-fusion" : "lu-sub" },
-          isVit ? "VITAMIN" : ch.kind === "fusion" ? "FUSION" : ch.sub) : null,
+          isVit ? "VITAMINA" : ch.kind === "fusion" ? "FUSÃO" : ch.sub) : null,
         ...(ch.lines ?? []).map((l) => el("div", { class: "lu-line" }, l)),
-        el("div", { class: "lu-rarity" }, ["Common", "Uncommon", "Rare", "Epic", "Legendary"][rarity])
+        el("div", { class: "lu-rarity" }, RARITY_PT[rarity])
       );
       card.addEventListener("click", () => this.choose(i));
       cards.append(card);
@@ -53,17 +54,17 @@ export class LevelUpPanel {
     const actions = el(
       "div",
       { class: "levelup-actions" },
-      el("button", { class: "btn ghost", onclick: () => this.reroll() }, "Reroll ", el("kbd", {}, "F"), ` (${this.rollsLeft})`),
-      el("button", { class: "btn ghost", onclick: () => this.skip() }, "Skip ", el("kbd", {}, "X")),
-      el("button", { class: "btn ghost", onclick: () => this.banish() }, "Banish ", el("kbd", {}, "Z"))
+      el("button", { class: "btn ghost", onclick: () => this.reroll() }, "Re-sortear ", el("kbd", {}, "F"), ` (${this.rollsLeft})`),
+      el("button", { class: "btn ghost", onclick: () => this.skip() }, "Pular ", el("kbd", {}, "X")),
+      el("button", { class: "btn ghost", onclick: () => this.banish() }, "Banir ", el("kbd", {}, "Z"))
     );
 
     this.root.append(
       el(
         "div",
         { class: "levelup-inner" },
-        el("h2", {}, "Level up!"),
-        el("p", { class: "levelup-sub" }, "Choose an upgrade"),
+        el("h2", {}, "Subiu de nível!"),
+        el("p", { class: "levelup-sub" }, "Escolha um upgrade"),
         cards,
         actions
       )

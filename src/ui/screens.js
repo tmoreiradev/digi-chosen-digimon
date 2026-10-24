@@ -7,6 +7,7 @@ import { accounts, profile } from "./account.js";
 import { portraitStyle } from "../render/sprites.js";
 import { Pokedex } from "./pokedex.js";
 import { ACHIEVEMENTS, DEX_TASKS, progressSnapshot } from "../game/achievements.js";
+import { typeName, biomeName, biomeDesc, rankName } from "../core/i18n.js";
 
 export class Screens {
   constructor(root, data) {
@@ -41,16 +42,16 @@ export class Screens {
         { class: "screen title-screen" },
         el("div", { class: "title-wrap" },
           el("h1", { class: "game-title" }, "Digi", el("span", {}, "Chosen")),
-          el("p", { class: "tagline" }, "Survivor roguelite · Kanto · offline"),
+          el("p", { class: "tagline" }, "Roguelite survivor · Kanto · offline"),
           el("div", { class: "title-actions" },
-            el("button", { class: "btn big red", onclick: () => this.showAccountPicker() }, "▶ Play"),
-            el("button", { class: "btn big ghost", onclick: () => this.showHelp() }, "? How to play")
+            el("button", { class: "btn big red", onclick: () => this.showAccountPicker() }, "▶ Jogar"),
+            el("button", { class: "btn big ghost", onclick: () => this.showHelp() }, "? Como jogar")
           ),
           el("div", { class: "title-stats" },
-            el("span", {}, `Runs: ${profile.data.runs ?? 0}`),
-            el("span", {}, `Best: ${fmtTime(profile.data.best ?? 0)}`),
-            el("span", {}, `Caught: ${(profile.data.pokedex?.caught ?? []).length} / ${this.data.pokemon.length}`),
-            el("span", {}, `Partners: ${(profile.data.unlocked ?? []).length} / ${this.data.rules.roster.length}`)
+            el("span", {}, `Partidas: ${profile.data.runs ?? 0}`),
+            el("span", {}, `Melhor: ${fmtTime(profile.data.best ?? 0)}`),
+            el("span", {}, `Capturados: ${(profile.data.pokedex?.caught ?? []).length} / ${this.data.pokemon.length}`),
+            el("span", {}, `Parceiros: ${(profile.data.unlocked ?? []).length} / ${this.data.rules.roster.length}`)
           )
         )
       )
@@ -66,19 +67,19 @@ export class Screens {
         el(
           "div",
           { class: "card panel" },
-          el("h2", {}, "How to play"),
+          el("h2", {}, "Como jogar"),
           el("ul", { class: "help-list" },
-            el("li", {}, el("kbd", {}, "WASD"), " / arrows — move"),
-            el("li", {}, el("kbd", {}, "Space"), " — jump"),
-            el("li", {}, el("kbd", {}, "Shift"), " — dash (brief invulnerability)"),
-            el("li", {}, el("kbd", {}, "R"), " — ultimate, once charged"),
-            el("li", {}, el("kbd", {}, "P"), " — pause"),
-            el("li", {}, el("kbd", {}, "1"), el("kbd", {}, "2"), el("kbd", {}, "3"), " — pick an upgrade on level-up"),
-            el("li", {}, el("kbd", {}, "E"), " — throw a ball at a weakened alpha/boss (capture)"),
-            el("li", {}, el("kbd", {}, "F"), " reroll · ", el("kbd", {}, "X"), " skip · ", el("kbd", {}, "Z"), " banish")
+            el("li", {}, el("kbd", {}, "WASD"), " / setas — mover"),
+            el("li", {}, el("kbd", {}, "Espaço"), " — pular"),
+            el("li", {}, el("kbd", {}, "Shift"), " — dash (invulnerabilidade breve)"),
+            el("li", {}, el("kbd", {}, "R"), " — ultimate, quando carregado"),
+            el("li", {}, el("kbd", {}, "P"), " — pausar"),
+            el("li", {}, el("kbd", {}, "1"), el("kbd", {}, "2"), el("kbd", {}, "3"), " — escolher um upgrade ao subir de nível"),
+            el("li", {}, el("kbd", {}, "E"), " — abrir baú/loja/altar ou lançar a bola num alfa enfraquecido (captura)"),
+            el("li", {}, el("kbd", {}, "F"), " re-sortear · ", el("kbd", {}, "X"), " pular · ", el("kbd", {}, "Z"), " banir")
           ),
-          el("p", { class: "muted" }, "Your Pokémon attacks on its own. Collect blue XP orbs to level up, choose upgrades, and evolve before the horde overwhelms you."),
-          el("button", { class: "btn big red", onclick: () => this.showTitle() }, "Back")
+          el("p", { class: "muted" }, "Seu Pokémon ataca sozinho. Colete as orbes azuis de XP para subir de nível, escolha upgrades e evolua antes que a horda te engula."),
+          el("button", { class: "btn big red", onclick: () => this.showTitle() }, "Voltar")
         )
       )
     );
@@ -101,8 +102,8 @@ export class Screens {
             },
           },
           el("div", { class: "ac-name" }, prof.name),
-          el("div", { class: "ac-kind muted" }, prof.kindLabel + " · " + (prof.progress?.runs ?? 0) + " runs"),
-          el("div", { class: "ac-best muted" }, "Best: " + fmtTime(prof.progress?.best ?? 0))
+          el("div", { class: "ac-kind muted" }, prof.kindLabel + " · " + (prof.progress?.runs ?? 0) + " partidas"),
+          el("div", { class: "ac-best muted" }, "Melhor: " + fmtTime(prof.progress?.best ?? 0))
         )
       );
     }
@@ -113,11 +114,11 @@ export class Screens {
         el(
           "div",
           { class: "card panel" },
-          el("h2", {}, "Choose a profile"),
+          el("h2", {}, "Escolha um perfil"),
           list,
           el("div", { class: "result-actions", style: { marginTop: 16 } },
-            el("button", { class: "btn big ghost", onclick: () => this.showAccountManage() }, "+ Create / Log in"),
-            el("button", { class: "btn big red", onclick: () => { accounts.playAsGuest(); profile.save(); this.showPicker(); } }, "Play as Guest")
+            el("button", { class: "btn big ghost", onclick: () => this.showAccountManage() }, "+ Criar / Entrar"),
+            el("button", { class: "btn big red", onclick: () => { accounts.playAsGuest(); profile.save(); this.showPicker(); } }, "Jogar como convidado")
           )
         )
       )
@@ -127,8 +128,8 @@ export class Screens {
   showAccountManage() {
     this.screen = "account-manage";
     this.clear();
-    const nameIn = el("input", { type: "text", placeholder: "Name", class: "inp", value: "" });
-    const passIn = el("input", { type: "text", placeholder: "Passphrase (optional)", class: "inp", value: "" });
+    const nameIn = el("input", { type: "text", placeholder: "Nome", class: "inp", value: "" });
+    const passIn = el("input", { type: "text", placeholder: "Senha (opcional)", class: "inp", value: "" });
     const msg = el("div", { class: "muted" });
     this.root.append(
       el(
@@ -137,11 +138,11 @@ export class Screens {
         el(
           "div",
           { class: "card panel" },
-          el("h2", {}, "Create or log in"),
+          el("h2", {}, "Criar ou entrar"),
           el("div", { style: { display: "flex", flexDirection: "column", gap: 8 } },
-            el("label", {}, "Name"),
+            el("label", {}, "Nome"),
             nameIn,
-            el("label", {}, "Passphrase"),
+            el("label", {}, "Senha"),
             passIn,
             msg
           ),
@@ -151,14 +152,14 @@ export class Screens {
               if (!r.ok) { msg.textContent = r.error; return; }
               profile.save();
               this.showPicker();
-            } }, "Create & Play"),
+            } }, "Criar e jogar"),
             el("button", { class: "btn big ghost", onclick: () => {
               const r = accounts.login(nameIn.value, passIn.value);
               if (!r.ok) { msg.textContent = r.error; return; }
               profile.save();
               this.showPicker();
-            } }, "Log In"),
-            el("button", { class: "btn big ghost", onclick: () => this.showAccountPicker() }, "Back")
+            } }, "Entrar"),
+            el("button", { class: "btn big ghost", onclick: () => this.showAccountPicker() }, "Voltar")
           )
         )
       )
@@ -191,14 +192,14 @@ export class Screens {
         el("div", { class: "pc-sprite" }, el("div", { class: "pc-sprite-img", style: portraitStyle(entry.id, 56) ?? {} })),
         el("div", { class: "pc-name" }, species.name),
         el("div", { class: "pc-role" }, entry.role),
-        el("div", { class: "pc-types" }, ...species.types.map((t) => el("span", { class: "chip", style: { background: typeCss(t) } }, t))),
+        el("div", { class: "pc-types" }, ...species.types.map((t) => el("span", { class: "chip", style: { background: typeCss(t) } }, typeName(t)))),
         el("div", { class: "pc-passive" }, el("b", {}, this.data.abilities[String(species.abilities[0])]?.name ?? "—")),
         el("div", { class: "pc-stats" },
           ...["hp", "atk", "def", "spa", "spd", "spe"].map((k) =>
             el("span", { class: "pc-stat" }, el("i", {}, k.toUpperCase()), String(species.stats[k]))
           )
         ),
-        el("div", { class: "pc-rank " + entry.rank }, entry.rank)
+        el("div", { class: "pc-rank " + entry.rank }, rankName(entry.rank))
       );
       list.append(card);
     }
@@ -213,8 +214,8 @@ export class Screens {
         el(
           "div",
           { class: "picker-head" },
-          el("h1", {}, "Choose your partner"),
-          el("p", { class: "muted" }, "Unlocked partners grow as you complete challenges. Starters are always available.")
+          el("h1", {}, "Escolha seu parceiro"),
+          el("p", { class: "muted" }, "Parceiros são desbloqueados ao capturar espécies e completar desafios. Os iniciais estão sempre disponíveis.")
         ),
         list,
         el(
@@ -222,9 +223,9 @@ export class Screens {
           { class: "picker-foot" },
           el("div", { class: "picker-detail" },
             el("b", {}, species?.name ?? ""),
-            el("span", { class: "muted" }, entry ? ` · ${entry.role} · ${entry.rank}` : "")
+            el("span", { class: "muted" }, entry ? ` · ${entry.role} · ${rankName(entry.rank)}` : "")
           ),
-          el("button", { class: "btn big red", onclick: () => this.showSetup() }, "Continue")
+          el("button", { class: "btn big red", onclick: () => this.showSetup() }, "Continuar")
         )
       )
     );
@@ -245,9 +246,9 @@ export class Screens {
             this.showSetup();
           },
         },
-        el("h3", {}, b.name),
-        el("p", { class: "muted" }, b.desc),
-        el("div", { class: "pc-types" }, ...b.types.map((t) => el("span", { class: "chip", style: { background: typeCss(t) } }, t)))
+        el("h3", {}, biomeName(b)),
+        el("p", { class: "muted" }, biomeDesc(b)),
+        el("div", { class: "pc-types" }, ...b.types.map((t) => el("span", { class: "chip", style: { background: typeCss(t) } }, typeName(t))))
       );
       regionList.append(card);
     }
@@ -265,7 +266,7 @@ export class Screens {
             },
           },
           el("b", {}, d.name),
-          el("span", { class: "muted" }, d.id === "normal" ? "Enemies at base strength" : `Enemies +${Math.round((d.enemyHp - 1) * 100)}% HP, +${Math.round((d.enemyDamage - 1) * 100)}% damage`)
+          el("span", { class: "muted" }, d.id === "normal" ? "Inimigos na força base" : `Inimigos com +${Math.round((d.enemyHp - 1) * 100)}% de HP e +${Math.round((d.enemyDamage - 1) * 100)}% de dano`)
         )
       );
     }
@@ -274,11 +275,11 @@ export class Screens {
       "div",
       { class: "mode-list" },
       el("button", { class: "mode-card" + (this.mode === "classic" ? " on" : ""), onclick: () => { this.mode = "classic"; this.showSetup(); } },
-        el("b", {}, "Classic"), el("span", { class: "muted" }, "Zones, guardians and a sanctuary")),
+        el("b", {}, "Clássico"), el("span", { class: "muted" }, "Zonas, guardiões e um santuário")),
       el("button", { class: "mode-card" + (this.mode === "endless" ? " on" : ""), onclick: () => { this.mode = "endless"; this.showSetup(); } },
-        el("b", {}, "Endless"), el("span", { class: "muted" }, "Endless hordes and milestones")),
+        el("b", {}, "Infinito"), el("span", { class: "muted" }, "Hordas e marcos sem fim")),
       el("button", { class: "mode-card" + (this.mode === "tower" ? " on" : ""), onclick: () => { this.mode = "tower"; this.showSetup(); } },
-        el("b", {}, "Tower"), el("span", { class: "muted" }, "Themed floors, waves and guardians"))
+        el("b", {}, "Torre"), el("span", { class: "muted" }, "Andares temáticos, ondas e guardiões"))
     );
 
     this.root.append(
@@ -286,14 +287,14 @@ export class Screens {
         "div",
         { class: "screen setup-screen" },
         el("div", { class: "setup-grid" },
-          el("div", {}, el("h2", {}, "Region"), regionList),
-          el("div", {}, el("h2", {}, "Mode"), modeList, el("h2", {}, "Difficulty"), diffList)
+          el("div", {}, el("h2", {}, "Região"), regionList),
+          el("div", {}, el("h2", {}, "Modo"), modeList, el("h2", {}, "Dificuldade"), diffList)
         ),
         el(
           "div",
           { class: "setup-foot" },
-          el("button", { class: "btn big ghost", onclick: () => this.showPicker() }, "← Back"),
-          el("button", { class: "btn big red", onclick: () => this.onStart() }, "Start!")
+          el("button", { class: "btn big ghost", onclick: () => this.showPicker() }, "← Voltar"),
+          el("button", { class: "btn big red", onclick: () => this.onStart() }, "Começar!")
         )
       )
     );
@@ -318,21 +319,21 @@ export class Screens {
         el(
           "div",
           { class: "card panel" },
-          el("h2", {}, victory ? "Victory!" : "You fainted"),
-          el("p", { class: "muted" }, `${p.species.name} · ${run.biome.name} · ${run.difficulty.name}`),
+          el("h2", {}, victory ? "Vitória!" : "Você desmaiou"),
+          el("p", { class: "muted" }, `${p.species.name} · ${biomeName(run.biome)} · ${run.difficulty.name}`),
           el("div", { class: "result-grid" },
-            el("div", {}, el("b", {}, fmtTime(run.time)), el("span", {}, "survived")),
-            el("div", {}, el("b", {}, String(stats.kills)), el("span", {}, "kills")),
-            el("div", {}, el("b", {}, String(stats.levels)), el("span", {}, "levels")),
+            el("div", {}, el("b", {}, fmtTime(run.time)), el("span", {}, "sobrevividos")),
+            el("div", {}, el("b", {}, String(stats.kills)), el("span", {}, "abates")),
+            el("div", {}, el("b", {}, String(stats.levels)), el("span", {}, "níveis")),
             el("div", {}, el("b", {}, String(stats.items)), el("span", {}, "upgrades")),
-            el("div", {}, el("b", {}, String(stats.gold)), el("span", {}, "coins")),
-            el("div", {}, el("b", {}, String(Math.round(stats.damage))), el("span", {}, "damage"))
+            el("div", {}, el("b", {}, String(Math.floor(stats.gold))), el("span", {}, "moedas")),
+            el("div", {}, el("b", {}, String(Math.round(stats.damage))), el("span", {}, "dano"))
           ),
           el(
             "div",
             { class: "result-actions" },
-            el("button", { class: "btn big red", onclick: () => this.showSetup() }, "Play again"),
-            el("button", { class: "btn big ghost", onclick: () => this.showTitle() }, "Main menu")
+            el("button", { class: "btn big red", onclick: () => this.showSetup() }, "Jogar de novo"),
+            el("button", { class: "btn big ghost", onclick: () => this.showTitle() }, "Menu principal")
           )
         )
       )
@@ -365,17 +366,17 @@ export class Screens {
         el(
           "div",
           { class: "card panel" },
-          el("h2", {}, "Paused"),
+          el("h2", {}, "Pausado"),
           el("label", { class: "vol-row" }, el("span", {}, "Volume"), slider),
           el(
             "div",
             { class: "result-actions" },
-            el("button", { class: "btn big red", onclick: onResume }, "Resume"),
+            el("button", { class: "btn big red", onclick: onResume }, "Continuar"),
             el("button", { class: "btn big ghost", onclick: () => this.showPokedex() }, "Pokédex"),
             el("button", { class: "btn big ghost", onclick: () => this.showAchievements() }, "Conquistas"),
             el("button", { class: "btn big ghost", onclick: () => this.showNickname() }, "Apelido"),
-            el("button", { class: "btn big ghost", onclick: () => this.showHeldItem() }, "Item Seg. "),
-            el("button", { class: "btn big ghost", onclick: onQuit }, "Quit to menu")
+            el("button", { class: "btn big ghost", onclick: () => this.showHeldItem() }, "Item segurado"),
+            el("button", { class: "btn big ghost", onclick: onQuit }, "Sair para o menu")
           )
         )
       )

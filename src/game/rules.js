@@ -1,6 +1,7 @@
 // Gameplay formulas, ported from the analysed PokéBonk build (see README "Provenance").
 
 import { clamp, lerp } from "../core/math.js";
+import { typeName } from "../core/i18n.js";
 
 /* ------------------------------------------------------------------ types */
 
@@ -315,7 +316,7 @@ export function enemyXp(species, toughnessMult, tier) {
 
 /* --------------------------------------------------------------- rarities */
 
-const RARITY_NAMES = ["Common", "Uncommon", "Rare", "Epic", "Legendary"];
+const RARITY_NAMES = ["Comum", "Incomum", "Raro", "Épico", "Lendário"];
 
 /**
  * Roll an upgrade rarity.
@@ -346,49 +347,49 @@ export function rollRarity({ level, luck = 0, stage = 1, minRarity = 0, luckBonu
   return 0;
 }
 
-export const rarityName = (r) => RARITY_NAMES[r] ?? "Common";
+export const rarityName = (r) => RARITY_NAMES[r] ?? RARITY_NAMES[0];
 
 /* ----------------------------------------------------- upgrade text */
 
 const STAT_NAMES = {
-  damage: "damage",
-  maxHp: "max HP",
-  moveSpeed: "move speed",
-  evasion: "evasion",
-  gold: "coins",
-  critChance: "crit chance",
-  critDamage: "crit damage",
-  area: "area",
-  projSpeed: "projectile speed",
-  healing: "healing",
-  regen: "regeneration/s",
-  armor: "armor",
-  pickupRange: "pickup range",
-  eliteDamage: "damage to elites",
-  luck: "luck",
-  physical: "physical damage",
-  special: "special damage",
-  attackSpeed: "attack speed",
-  thorns: "thorns",
-  duration: "duration",
-  extraJumps: "extra jumps",
-  jumpHeight: "jump height",
-  statusChance: "status chance",
-  statusDamage: "status damage",
-  xpGain: "XP gain",
-  lifesteal: "lifesteal",
-  bounces: "bounces",
-  enemyAmount: "enemy count",
-  superEffective: "super-effective damage",
-  flinch: "flinch chance",
-  projectiles: "projectiles",
-  knockback: "knockback",
+  damage: "dano",
+  maxHp: "HP máximo",
+  moveSpeed: "velocidade de movimento",
+  evasion: "evasão",
+  gold: "moedas",
+  critChance: "chance de crítico",
+  critDamage: "dano crítico",
+  area: "área",
+  projSpeed: "velocidade dos projéteis",
+  healing: "cura",
+  regen: "regeneração/s",
+  armor: "armadura",
+  pickupRange: "alcance de coleta",
+  eliteDamage: "dano em elites",
+  luck: "sorte",
+  physical: "dano físico",
+  special: "dano especial",
+  attackSpeed: "velocidade de ataque",
+  thorns: "espinhos",
+  duration: "duração",
+  extraJumps: "pulos extras",
+  jumpHeight: "altura do pulo",
+  statusChance: "chance de status",
+  statusDamage: "dano de status",
+  xpGain: "ganho de XP",
+  lifesteal: "roubo de vida",
+  bounces: "ricochetes",
+  enemyAmount: "quantidade de inimigos",
+  superEffective: "dano super-efetivo",
+  flinch: "chance de recuo",
+  projectiles: "projéteis",
+  knockback: "repulsão",
   powerup: "power-ups",
-  eliteSpawn: "elite spawns",
-  slam: "slam damage",
-  shieldMax: "shield",
-  megaCrit: "mega-crit chance",
-  overheal: "overheal",
+  eliteSpawn: "aparição de elites",
+  slam: "dano de impacto",
+  shieldMax: "escudo",
+  megaCrit: "chance de megacrítico",
+  overheal: "sobrecura",
 };
 
 // Stats where a flat `add` is expressed as percentage points.
@@ -425,7 +426,7 @@ export function describeUpgrade(up) {
   const parts = (up.mods ?? []).map(describeMod).filter(Boolean);
   if (up.tags?.length) {
     for (const tag of up.tags) {
-      if (tag.startsWith("type:")) parts.push(`boosts ${tag.slice(5)} moves`);
+      if (tag.startsWith("type:")) parts.push(`fortalece golpes de ${typeName(tag.slice(5))}`);
     }
   }
   return parts.join(" · ") || up.desc || "";
@@ -453,6 +454,6 @@ export function evolutionPlan(data, speciesId, rng) {
 
 export const DIFFICULTIES = [
   { id: "normal", name: "Normal", enemyHp: 1, enemyDamage: 1, enemySpeed: 1, enemyAmount: 1, reward: 1, dust: 1 },
-  { id: "hard", name: "Hard", enemyHp: 1.7, enemyDamage: 1.35, enemySpeed: 1.05, enemyAmount: 1.25, reward: 1.75, dust: 1.75 },
-  { id: "nightmare", name: "Nightmare", enemyHp: 2.6, enemyDamage: 1.8, enemySpeed: 1.1, enemyAmount: 1.5, reward: 2.5, dust: 2.5 },
+  { id: "hard", name: "Difícil", enemyHp: 1.7, enemyDamage: 1.35, enemySpeed: 1.05, enemyAmount: 1.25, reward: 1.75, dust: 1.75 },
+  { id: "nightmare", name: "Pesadelo", enemyHp: 2.6, enemyDamage: 1.8, enemySpeed: 1.1, enemyAmount: 1.5, reward: 2.5, dust: 2.5 },
 ];
