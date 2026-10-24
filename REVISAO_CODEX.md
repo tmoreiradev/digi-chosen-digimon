@@ -621,3 +621,34 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   Scyther a 5 % + um acerto → "Scyther está enfraquecido! Aperte E para lançar a bola", `windup 0`/`active null`;
   tecla E com `Math.random` fixo em 0 → "Pegou! Scyther foi capturado!" + "Zona 1 limpa!", `stage 2`, boss morto,
   aliado `Scyther@1.5`, nenhum "foi derrotado". Bot (`playtest.test.mjs`) continua vencendo Clássico e Torre.
+
+## 21. Fase 10 — Stats do upstream sem efeito (BACKLOG 10) (24/10/2026)
+
+- **Inventário (fontes reais nos dados):** `shieldMax` ← Zinc; `thorns` ← Rocky Helmet (+25), Protector (+40),
+  Sticky Barb; `bounces` ← Smooth Rock; `flinch` ← King's Rock (+6 %); `powerup` ← Poké Radar; `eliteSpawn` ← Super
+  Lure; `enemyAmount` ← White Flute (×1,12), Repel (×0,92). **`knockback` e `slam` não têm nenhuma carta nem
+  vitamina que os altere** — saíram do `basePlayerStats` (nada os lia; `STAT_NAMES` mantém os rótulos para dados
+  futuros). Os sete restantes passaram a ter efeito, pela regra da 11.ª rodada: carta oferecida = efeito observável.
+- **Como cada um age (`run.js`, `director.js`):** *escudo* — com `shieldMax > 0`, `p.shield` recarrega até o teto em
+  ~6 s depois de 2,5 s sem levar dano (`p.lastHitT`), absorve antes do HP e aparece no HUD como "108 / 108 +20"; sem
+  `shieldMax`, o decaimento antigo de 0,6/s fica como estava. *Espinhos* — todo acerto que entra (não esquivado,
+  mesmo se o escudo absorveu tudo) devolve `thorns` de dano fixo ao `source`, passando pelo orçamento do boss
+  (`capDamage × hitMul`) e matando por `killEnemy` se zerar. *Ricochetes* — `effectiveDef` soma
+  `def.bounces + mods.bounce + stats.bounces` (antes `mods.bounce` sobrescrevia um `def.bounces` nativo).
+  *Recuo* — em `hitEnemy`, chance `flinch` de `statuses.flinch = 0,5 s`; o inimigo para (sem perseguir, sem contato),
+  bosses (`isBossTier`) são imunes. *Power-ups* — `roll / powerup` alarga as três faixas de drop (cura 5,5 %, moeda
+  3 %, ímã 1 %) e o doce raro de alfa/boss (40 %). *Elites* — a `elitewave` do director spawna
+  `round((4 + 2·zona) × eliteSpawn)`. *Quantidade* — o teto populacional virou `Director.popCap(eff)` e multiplica
+  também `player.stats.enemyAmount` (ondas da Torre não mudam: contagem fixa por andar, decisão).
+- **Testes** (`tests/stats.test.mjs`, 9; 8 falham no código antigo): escudo cheio aos 7 s, absorve, não recarrega
+  em 2,5 s, volta a recarregar; espinhos 100 → 75 e matam (`killEnemy` só inicia o `dying` — o `alive` cai no
+  frame seguinte, a 1.ª versão da asserção errou nisso); esquiva não reflete; ricochetes somam carta + stat;
+  recuo para o inimigo por 0,5 s e boss não recua (o teste zera `p.moves`: o auto-ataque re-atordoava o alvo em
+  50 % das rodadas — flake de 4/10 antes); `powerup` 3 transforma um roll 0,15 em cura; `eliteSpawn` 2 dobra a
+  onda; `popCap(0)` 10 → 11 (×1,12) → 9 (×0,92); bloco sem `knockback`/`slam`. Suíte **102 / 102**; build +
+  `check-bundle` OK.
+- **Navegador (`localhost:8080`, recarregado):** `shieldMax 20` → HUD "108 / 108 +20"; golpe de 10 → HP intacto,
+  escudo 11,7, HUD "+12"; `thorns 25` → inimigo 100 → 75; `flinch` → `statuses.flinch 0,3` após 12 frames e
+  deslocamento 0; `popCap(0)` 10 → 11 com `enemyAmount 1,12`.
+- ⚠ Balanceamento para o playtest: espinhos de 25/40 por acerto matam inimigos comuns no contato (HP de zona 1 na
+  faixa de 30–60); `flinch` 6 % com rajadas pode travar alvos frequentemente. Números são os do upstream.

@@ -197,7 +197,6 @@ export function basePlayerStats(species, level) {
     critDamage: 1.75,
     lifesteal: 0,
     thorns: 0,
-    knockback: 1,
     pickupRange: 6,
     xpGain: 1,
     gold: 1,
@@ -218,7 +217,6 @@ export function basePlayerStats(species, level) {
     overheal: 0,
     powerup: 1,
     eliteSpawn: 1,
-    slam: 1,
     typeBoost: {},
   };
 }

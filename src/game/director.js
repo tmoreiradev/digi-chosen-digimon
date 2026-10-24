@@ -128,14 +128,7 @@ export class Director {
 
     // Continuous pressure: the population cap grows through the stage.
     const eff = this.effTime();
-    const cap = Math.min(
-      240,
-      Math.round(
-        (10 + eff * 0.65 + (eff / 60) ** 2 * 4.5) *
-          (1 + (this.stage - 1) * 0.6) *
-          this.run.difficulty.enemyAmount
-      )
-    );
+    const cap = this.popCap(eff);
     this.spawnAccum += dt;
     const minutes = eff / 60;
     const interval = Math.max(0.22, 1 / (1.1 + minutes * 0.14));
@@ -143,6 +136,19 @@ export class Director {
       this.spawnAccum -= interval;
       if (run.enemies.length < cap) this.spawnNormal();
     }
+  }
+
+  /** Population cap at `eff` effective seconds; difficulty and the player's enemyAmount (White Flute, Repel) scale it. */
+  popCap(eff) {
+    return Math.min(
+      240,
+      Math.round(
+        (10 + eff * 0.65 + (eff / 60) ** 2 * 4.5) *
+          (1 + (this.stage - 1) * 0.6) *
+          this.run.difficulty.enemyAmount *
+          (this.run.player?.stats.enemyAmount ?? 1)
+      )
+    );
   }
 
   spawnNormal() {
@@ -188,7 +194,7 @@ export class Director {
         break;
       }
       case "elitewave": {
-        const n = Math.round(4 + this.stage * 2);
+        const n = Math.round((4 + this.stage * 2) * (run.player?.stats.eliteSpawn ?? 1)); // Super Lure: bigger waves
         for (let i = 0; i < n; i++) {
           const card = this.cards.length ? this.rng.pick(this.cards) : null;
           if (!card) break;

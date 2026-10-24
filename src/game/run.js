@@ -21,7 +21,7 @@ import {
 } from "./rules.js";
 import { Director } from "./director.js";
 import { Boss } from "./boss.js";
-import { Allies, Capture, CAPTURABLE_TIERS } from "./capture.js";
+import { Allies, Capture, CAPTURABLE_TIERS, isBossTier } from "./capture.js";
 import { Tower } from "./tower.js";
 import { WorldEvents } from "./events.js";
 import { AchievementTracker, EggSystem } from "./achievements.js";
@@ -183,6 +183,7 @@ export class Run {
       attackT: 0,
       ultPoseT: 0,
       hurtT: 0,
+      lastHitT: -1e9, // run time of the last hit that landed (shield regen waits on it)
       dead: false,
       lastEvoCheck: 1,
       evoPlan: null, // decided once per species (see tryEvolve); a re-roll per check used to move the target
@@ -454,8 +455,13 @@ export class Run {
       }
     }
 
-    // Shield decay
-    if (p.shield > 0) p.shield = Math.max(0, p.shield - dt * 0.6);
+    // Shield: with shieldMax (Zinc) it refills after 2.5 s without being hit, up to the cap in ~6 s;
+    // without it any leftover shield just decays.
+    if (p.stats.shieldMax > 0) {
+      if (this.time - p.lastHitT > 2.5 && p.shield < p.stats.shieldMax) {
+        p.shield = Math.min(p.stats.shieldMax, p.shield + (p.stats.shieldMax / 6) * dt);
+      }
+    } else if (p.shield > 0) p.shield = Math.max(0, p.shield - dt * 0.6);
 
     if (p.iframes > 0) p.iframes -= dt;
     if (p.flash > 0) p.flash = Math.max(0, p.flash - dt * 4);
@@ -527,13 +533,14 @@ export class Run {
   /** The move's definition with its card upgrades folded in: pierce, crit, status chance, bounces. */
   effectiveDef(mv) {
     const m = mv.mods;
-    if (!m.pierce && !m.crit && !m.bounce && m.status === 1) return mv.def;
+    const extraBounces = this.player.stats.bounces; // Smooth Rock: every projectile ricochets once more
+    if (!m.pierce && !m.crit && !m.bounce && m.status === 1 && !extraBounces) return mv.def;
     return {
       ...mv.def,
       pierce: (mv.def.pierce ?? 0) + m.pierce,
       critBonus: (mv.def.critBonus ?? 0) + m.crit,
       statusChance: (mv.def.statusChance ?? 0) * m.status,
-      bounces: m.bounce,
+      bounces: (mv.def.bounces ?? 0) + m.bounce + extraBounces,
     };
   }
 
@@ -1066,6 +1073,11 @@ export class Run {
       if (def.status === "poison") e.poisonDps = Math.max(e.poisonDps ?? 0, amount * 0.05);
     }
 
+    // Flinch (King's Rock): a chance to stop the target for half a second; bosses shrug it off.
+    if (s.flinch > 0 && e.hp > 0 && !isBossTier(e.tier) && Math.random() < s.flinch) {
+      e.statuses.flinch = Math.max(e.statuses.flinch ?? 0, 0.5);
+    }
+
     if (e.hp <= 0) this.killEnemy(e, def);
     // Weakening: an alpha/boss knocked below the threshold can be captured.
     if (e.hp > 0 && e.hp <= e.maxHp * this.rules.capture.weakenHpPct && CAPTURABLE_TIERS.has(e.tier)) {
@@ -1093,10 +1105,17 @@ export class Run {
       this.floater(p.x, p.y + 2, p.z, "errou", "#9ca3ff");
       return;
     }
+    p.lastHitT = this.time;
     if (p.shield > 0) {
       const absorbed = Math.min(p.shield, dmg);
       p.shield -= absorbed;
       dmg -= absorbed;
+    }
+    // Thorns (Rocky Helmet, Protector, Sticky Barb): flat damage back to the attacker, through the boss budget.
+    if (p.stats.thorns > 0 && source?.alive && source.hp > 0 && !(source.dying > 0)) {
+      const back = source.id === this.boss.index ? this.boss.capDamage(p.stats.thorns * this.boss.hitMul()) : p.stats.thorns;
+      source.hp -= back;
+      if (source.hp <= 0) this.killEnemy(source, { type: "normal", cls: "physical" });
     }
     if (dmg > 0) {
       p.hp -= dmg;
@@ -1160,6 +1179,14 @@ export class Run {
         e.vz *= 0.8;
       }
 
+      // Flinched: stopped in place, no chase and no contact damage until the timer runs out.
+      if (e.statuses.flinch > 0) {
+        e.vx *= 0.8;
+        e.vz *= 0.8;
+        if (e.atkCd > 0) e.atkCd -= dt;
+        continue;
+      }
+
       // A weakened (capturable) target stops fighting: no chase, no contact damage.
       if (e.captureReady) {
         e.x += e.vx * dt;
@@ -1216,8 +1243,8 @@ export class Run {
     const p = this.player;
     this.burst(e.x, e.y + 0.8, e.z, this.typeRgb(e.types[0]), 10, "star");
 
-    // Loot
-    const roll = Math.random();
+    // Loot (Poké Radar: `powerup` widens every drop bracket)
+    const roll = Math.random() / p.stats.powerup;
     if (e.tier === "elite" || e.tier === "alpha" || e.tier === "boss") {
       this.spawnPickup(e.x, e.z, "candy", 1);
       this.spawnPickup(e.x, e.z, "heal", 1);
@@ -1231,7 +1258,7 @@ export class Run {
     this.spawnPickup(e.x, e.z, "xp", e.xp);
 
     // Bosses and alphas can drop a rare candy
-    if ((e.tier === "alpha" || e.tier === "boss") && Math.random() < 0.4) {
+    if ((e.tier === "alpha" || e.tier === "boss") && Math.random() < 0.4 * p.stats.powerup) {
       this.spawnPickup(e.x, e.z, "candy", 1);
     }
   }
@@ -1704,7 +1731,7 @@ export class Run {
       dying: 0,
       flash: 0,
       animT: Math.random() * 6,
-      statuses: { burn: 0, poison: 0, para: 0, freeze: 0, sleep: 0, root: 0 },
+      statuses: { burn: 0, poison: 0, para: 0, freeze: 0, sleep: 0, root: 0, flinch: 0 },
       burnDps: 0,
       poisonDps: 0,
       atkCd: 0,
