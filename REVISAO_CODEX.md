@@ -416,13 +416,22 @@ filtragem das cartas. Regra registrada: **toda carta de golpe oferecida tem efei
 não consegue honrar não aparece na carta.**
 
 **Décima segunda rodada** (`94acc78..05a7932`, `reviews/codex-2026-10-23-23-46-94acc78..HEAD.md`): **Aprovado
-com ressalvas**, 2 achados, ambos aceitos — e a última rodada desta série: doze rodadas, as três últimas só
-com refinamentos do mesmo subsistema (cartas de golpe). Novas rodadas: `npm run review:codex -- <range>`.
+com ressalvas**, 2 achados, ambos aceitos — e a última rodada da série inicial: doze rodadas, as três últimas só
+com refinamentos do mesmo subsistema (cartas de golpe). Cada fase nova ganha a sua rodada por `npm run review:codex -- <range>`
+(a 13.ª, da fase 8, está abaixo).
 
 | Achado | Decisão |
 |---|---|
 | `random` (Metronome) recebia `+area`/`+dur` mas disparava com `radius: 0.4` e `life: 1.5` fixos (P2) | Projétil usa `0,4 × mods.area × stats.area` e `1,5 s × dur`; teste com o disparo real. |
 | `+status` era oferecido a golpes sem status (ex.: Dragon Pulse), onde multiplicar a chance não faz nada; o helper de teste injetava `burn` e escondia isso (P2) | `rollMoveUps` não oferece `status` quando `def.status` é nulo; teste com um golpe real sem status; o helper só injeta status quando o teste pede e diz. |
+
+**Décima terceira rodada** (fase 8, `4177152..76ce28d`, `reviews/codex-2026-10-24-00-42-4177152..HEAD.md`):
+**Aprovado com ressalvas**, 1 achado (P3), aceito, e uma afirmação da §19 contestada com razão:
+
+| Achado | Decisão |
+|---|---|
+| Pausa → Item segurado mostrava as descrições de Leftovers e Choice Band em inglês, direto do `items.json` (P3) | Corrigido: `HELD_ITEM_DESC_PT` em `src/core/i18n.js` descreve **o efeito que este engine implementa** ("Recupera cerca de 1/16 do HP máximo por segundo.", "+50% de dano em todos os golpes."), não o texto dos jogos (que falava em "só permite um golpe", algo que não existe aqui). `heldItemDesc(key, def)` cai no `desc` dos dados para um item sem tabela. Teste em `tests/helditem.test.mjs` (falha no código antigo). Verificado no navegador. |
+| "§19 diz que *todos* os textos foram traduzidos; as descrições dos itens segurados não foram" | Verdadeiro; fechado pela correção acima. Os únicos textos em inglês que restam na tela são nomes próprios dos dados (espécies, golpes, itens, habilidades, papéis do roster, ultimates), por decisão. |
 
 ---
 
@@ -579,3 +588,7 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   tem dentro?", "16 de ouro", Abrir 1 / Sair 2), loja ("Loja Ambulante", "Mercadorias à venda. Seu ouro: 300G", Poção /
   Restaurador / Doce Raro com descrições, Comprar 1-3, Sair 0) e altar ("Altar Antigo", "Um altar antigo vibra com poder.",
   "Você já está com o HP cheio.", Sair 2); "Sair para o menu" na pausa encerra a partida.
+- **Codex (13.ª rodada, §14):** Aprovado com ressalvas — 1 achado P3: as descrições dos itens segurados (pausa → Item
+  segurado) ainda vinham do `items.json` em inglês. Fechado com `HELD_ITEM_DESC_PT` (descreve o efeito implementado) +
+  teste; a frase "todos os textos que o jogador lê" acima passou a valer com essa correção — o que resta em inglês
+  são só os nomes próprios dos dados.

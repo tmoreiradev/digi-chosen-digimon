@@ -77,3 +77,17 @@ test("Fechar returns to the pause menu without resuming", () => {
   assert.ok(root.all().some((n) => n.tagName === "h2" && n.textContent === "Pausado"));
   assert.equal(resumed, 0);
 });
+
+test("the held-item descriptions describe the engine's effect, in pt-BR (not the items.json flavour text)", async () => {
+  const { HELD_ITEM_DESC_PT } = await import("../src/core/i18n.js");
+  const { root, screens } = setup();
+  screens.showHeldItem();
+  const descs = Object.fromEntries(
+    findButtons(root, / — /).map((b) => {
+      const [name, rest] = b.textContent.split(" — ");
+      return [name, rest.replace(/ ✓$/, "")];
+    })
+  );
+  assert.deepEqual(descs, { Leftovers: HELD_ITEM_DESC_PT.leftovers, "Choice Band": HELD_ITEM_DESC_PT["choice-band"] });
+  for (const d of Object.values(descs)) assert.doesNotMatch(d, /held by a Pokémon/);
+});

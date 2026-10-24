@@ -112,3 +112,11 @@ export const TOWER_FLOOR_PT = {
 export const towerFloorName = (name) => TOWER_FLOOR_PT[name] ?? name;
 
 export const THREAT_PT = ["CALMO", "INQUIETO", "ALERTA", "PERIGO", "CERCADO"];
+
+// Held items: items.json carries the games' flavour text; these describe what THIS engine does
+// (run.js: Leftovers regen, Choice Band damage multiplier).
+export const HELD_ITEM_DESC_PT = {
+  leftovers: "Recupera cerca de 1/16 do HP máximo por segundo.",
+  "choice-band": "+50% de dano em todos os golpes.",
+};
+export const heldItemDesc = (key, def) => HELD_ITEM_DESC_PT[key] ?? def?.desc ?? "";

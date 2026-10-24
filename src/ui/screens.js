@@ -7,7 +7,7 @@ import { accounts, profile } from "./account.js";
 import { portraitStyle } from "../render/sprites.js";
 import { Pokedex } from "./pokedex.js";
 import { ACHIEVEMENTS, DEX_TASKS, progressSnapshot } from "../game/achievements.js";
-import { typeName, biomeName, biomeDesc, rankName } from "../core/i18n.js";
+import { typeName, biomeName, biomeDesc, rankName, heldItemDesc } from "../core/i18n.js";
 
 export class Screens {
   constructor(root, data) {
@@ -511,7 +511,7 @@ export class Screens {
           el("button", {
             class: "btn " + (isCur ? "red" : "ghost"),
             onclick: () => { if (player) { player.heldItem = key; profile.data.heldItem = key; profile.save(); } refresh(); },
-          }, it.name + " — " + it.desc + (isCur ? " ✓" : ""))
+          }, it.name + " — " + heldItemDesc(key, it) + (isCur ? " ✓" : ""))
         );
       }
     };
