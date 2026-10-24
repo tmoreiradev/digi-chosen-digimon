@@ -478,3 +478,35 @@ capturar Pidgeot → "Novo parceiro: Pidgey (captura)", `unlocked [1,4,7,16]`, r
 O bot (`_bot.mjs`) ganhou memória de eventos visitados — sem isso ele reabria a mesma loja a cada decisão
 (1543 aberturas em 10 min numa semente) e morreu mais no guardião por andar atrás de lojas que não podia
 pagar.
+
+---
+
+## 17. Fase 6 — Torre: director em repouso e escala pela curva do andar (23/10/2026)
+
+BACKLOG 4 e 21. O que estava errado, confirmado por leitura e por teste:
+
+- `Run.update` zerava `this.spawnAccum` (propriedade inexistente): o director continuava spawnando e
+  disparando a timeline (alfas, enxames) durante os andares, e **qualquer** morte contava para a onda.
+- `spawnWave` multiplicava o HP e o dano dos inimigos pela curva viva **de novo** (já aplicada em `spawnEnemy`),
+  com a dificuldade também em dobro — escala ao quadrado e presa ao tempo de parede do andar 1 (`run.stage`
+  nunca avança na Torre). Os getters `vmin`/`curveStage`, feitos para isso, não eram usados.
+- Os guardiões vinham da curva viva com tier `boss` em todos os andares; os multiplicadores de totem/summoner
+  do `boss` config não cabem na fórmula de HP deste engine (floor 1 daria ~80 000 HP).
+
+**Agora:** o director não roda na Torre (nem no santuário). `Director.hpMultAt/dmgMultAt(stage, minutos)` expõem
+as curvas para um estágio/minuto arbitrário; `Tower.scale()` devolve `{ hpMult, dmgMult, effSeconds }` da curva
+do andar em seus minutos virtuais (`curve.min + onda × step`, + progresso), e `spawnEnemy` aceita essa escala
+(inclusive para o falloff de toughness). Ondas e guardiões usam a mesma escala. Guardiões: tier próprio
+(`totem`/`summoner` nos andares 1–4, `boss` nos 5–7) e HP = `clamp(orçamento de DPS × duração, curva/4, curva)` —
+na Torre a curva é **teto** e o orçamento o alvo (no Clássico continua: curva como piso, orçamento pode subir
+até 4×). Sem isso o guardião do cume teria ~300 000 HP para um jogador baixo.
+
+Testes (`classic.test.mjs`): `director.elapsed` fica 0 na Torre; HP de onda independe do tempo de parede e é
+`base × curva do andar` uma vez só; tiers dos guardiões por andar e HP dentro de `[curva/4, curva]`.
+
+Bot: Torre em god mode vence em **531 s** (antes 331 s, com director ajudando a matar). **Torre honesta
+(5 sementes, 600 s): o bot chega ao nível 50 no andar 3–4 e morre em todos os casos nos andares 5–7**
+(316–580 s). Sobrevive sempre os 2 primeiros minutos e passa dos 3 primeiros andares — é o que o teste exige.
+⚠ Sinal de balanceamento para o playtest humano: os andares 5–7 usam a curva da zona 3 (`hpMult` 48–129)
+contra um jogador já no teto de nível; se um humano também travar ali, o ajuste natural é `curve.min` /
+`curve.stage` desses andares em `rules.json` (não mexi: dado do jogo original).

@@ -57,7 +57,7 @@ export class Boss {
    * Spawn a boss. `kind` is 'guardian' (zone boss), 'legendary' (sanctuary) or
    * 'totem' / 'summoner' (tower floor guardians).
    */
-  spawn(speciesId, x, z, kind = "guardian") {
+  spawn(speciesId, x, z, kind = "guardian", scale = null) {
     const run = this.run;
     const cfg = this.cfg;
     const stage = run.stage;
@@ -66,10 +66,12 @@ export class Boss {
     // Tower floors 5–7 awaken a "guardian" kind too, so the mode, not the kind, says where we are.
     const inTower = !!run.tower;
 
+    // Classic bosses: the boss curve (zoneHp, guardianCurveMinutes, legendaryHpMul).
+    // The data's tower multipliers (totem 2.2 / summoner 1.4 over the zone-4 curve) do not fit
+    // this engine's HP formula; tower guardians use their floor's curve via `scale` instead.
     const minutes = isLegendary ? 0 : cfg.guardianCurveMinutes;
-    let hpMult = enemyHpCurve(isTower ? 4 : stage, minutes) * (isLegendary ? cfg.legendaryHpMul : 1);
-    if (!isTower) hpMult *= cfg.zoneHp[stage - 1] ?? 0.5;
-    if (isTower) hpMult *= kind === "totem" ? 2.2 : 1.4;
+    let hpMult = enemyHpCurve(stage, minutes) * (isLegendary ? cfg.legendaryHpMul : 1);
+    hpMult *= cfg.zoneHp[stage - 1] ?? 0.5;
 
     const secs = isTower
       ? kind === "totem"
@@ -82,7 +84,9 @@ export class Boss {
     const tier = run.difficulty;
     const tierIndex = { normal: 0, hard: 1, nightmare: 2 }[tier.id] ?? 0;
 
-    const e = run.spawnEnemy(speciesId, x, z, "boss");
+    // Totems and summoners are their own tiers (lighter than a boss); floor guardians and
+    // classic bosses are "boss".
+    const e = run.spawnEnemy(speciesId, x, z, isTower ? kind : "boss", scale);
     if (!e) return null;
 
     // Classic bosses take their HP from the boss curve (zoneHp, guardianCurveMinutes,
@@ -94,9 +98,14 @@ export class Boss {
       if (live > 0) e.hp = e.maxHp = (e.maxHp / live) * hpMult * run.difficulty.enemyHp;
     }
 
-    // Resize the boss so the expected fight duration is realistic.
+    // Resize the boss so the expected fight duration is realistic. Classic: the curve is a
+    // floor and the budget can raise it (up to 4x). Tower: the floor curve is a CEILING and the
+    // fight budget the target (never below a quarter of the curve), so a summit guardian
+    // whose curve HP is in the hundreds of thousands still dies in about its fight time.
     const budget = run.playerExpectedDps(secs) * secs * (1 + 0.15 * tierIndex);
-    const targetHp = Math.min(e.maxHp * 4, Math.max(e.maxHp, budget));
+    const targetHp = inTower
+      ? Math.min(e.maxHp, Math.max(budget, e.maxHp * 0.25))
+      : Math.min(e.maxHp * 4, Math.max(e.maxHp, budget));
     e.hp = e.maxHp = targetHp;
 
     // Burst cap: capRate damage per second, banked up to three seconds.

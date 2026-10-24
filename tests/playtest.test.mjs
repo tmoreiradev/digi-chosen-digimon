@@ -47,6 +47,20 @@ test("classic mode can be won through play: three guardians, the sanctuary, the 
   assert.ok(calls.banners.some((b) => /the legendary!/.test(b)));
 });
 
+test("an honest bot plays five tower runs: no invariant breaks, never dies in the first two minutes", () => {
+  const results = [];
+  for (let seed = 31; seed <= 35; seed++) {
+    const { run, input, calls } = makeRun({ mode: "tower" });
+    const s = playRun({ run, input, calls, seed, maxSeconds: 600 });
+    results.push(s);
+    log(`tower seed ${seed}: ${s.state} at ${Math.round(s.time)}s, level ${s.level}, ${s.kills} kills, floor ${run.tower.floor}, ${s.allies} allies`);
+    assert.deepEqual(s.invariantFailures, [], `seed ${seed}`);
+    assert.ok(s.time > 120, `seed ${seed}: survives the first two minutes (died at ${Math.round(s.time)}s)`);
+    assert.ok(run.tower.floor >= 4, `seed ${seed}: clears the first three floors on its own (reached floor ${run.tower.floor})`);
+  }
+  log(`tower survivors (600 s or victory): ${results.filter((s) => s.state !== "dead").length} / ${results.length}`);
+});
+
 test("the tower can be climbed through play: seven floors, waves and guardians", () => {
   const { run, input, calls } = makeRun({ mode: "tower" });
   const s = playRun({ run, input, calls, seed: 42, maxSeconds: 30 * 60, godMode: true, log });

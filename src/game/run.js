@@ -251,7 +251,9 @@ export class Run {
     this.updateEnemies(dt);
     this.updatePickups(dt);
     this.updateEffects(dt);
-    if (!this.sanctuary) this.director.update(dt);
+    // The director (free spawns + timeline) rests in the sanctuary and in the tower, whose
+    // floors are fought in waves only.
+    if (!this.sanctuary && !this.tower) this.director.update(dt);
 
     // Encounter systems
     this.capture.update(dt);
@@ -260,8 +262,6 @@ export class Run {
     this.events.update(dt);
     if (this.tower) {
       this.tower.update(dt);
-      // Tower mode drives its own spawn pacing; suppress director's free-form spawns.
-      if (this.tower.beyond || this.tower.floor >= 1) this.spawnAccum = 0;
     } else if (this.mode === "classic") {
       this.updateClassic();
     } else if (this.stageTime >= STAGE_SECS) this.advanceStage();
@@ -1662,7 +1662,8 @@ export class Run {
     return (c[0] << 16) | (c[1] << 8) | c[2];
   }
 
-  spawnEnemy(speciesId, x, z, tier = "normal") {
+  /** `scale` overrides the live zone curve ({ hpMult, dmgMult, effSeconds }); the tower passes its floor's. */
+  spawnEnemy(speciesId, x, z, tier = "normal", scale = null) {
     // Dead entries stay in the list until it is compacted; compact before refusing,
     // otherwise spawning stopped for good after the 260th enemy of the run.
     if (this.enemies.length >= ENEMY_CAP) this.enemies = this.enemies.filter((e) => e.alive);
@@ -1671,9 +1672,9 @@ export class Run {
     if (!species) return null;
     this.markSeen(species.id);
     const t = ENEMY_TIER[tier] ?? ENEMY_TIER.normal;
-    const hpMult = this.director.hpMult();
-    const dmgMult = this.director.dmgMult();
-    const tough = t.tough ? toughness(this.director.effTime()) : 1;
+    const hpMult = scale?.hpMult ?? this.director.hpMult();
+    const dmgMult = scale?.dmgMult ?? this.director.dmgMult();
+    const tough = t.tough ? toughness(scale?.effSeconds ?? this.director.effTime()) : 1;
 
     const baseHp = (12 + species.bst * 0.055) * hpMult * t.hpScale * tough * t.hpMul;
     const e = {

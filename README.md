@@ -91,8 +91,9 @@ hits and the horde scales through the stage. The level cap is 50.
   the horde fades and the biome's **legendary** arrives. Defeat it to win. Boss damage is capped to
   the fight budget and ramps up if a fight stalls.
 - **Endless** — hordes and milestones that never stop.
-- **Tower** ("The Night of Lavender Tower") — 7 themed floors, each with waves closed by a
-  guardian; floor 7's bell summons the lord of the tower.
+- **Tower** ("The Night of Lavender Tower") — 7 themed floors fought in waves only (no free
+  spawns), each closed by a guardian; enemies and guardians scale by the floor's own curve, and
+  floor 7's bell summons the lord of the tower.
 
 **Capture & allies** — Weaken an alpha below 10% HP; it stops fighting and you can press `E` to
 throw a ball. Caught Pokémon join your team (up to 3, oldest leaves first) as allies that orbit

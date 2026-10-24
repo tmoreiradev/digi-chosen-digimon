@@ -2,6 +2,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { makeRun } from "./_helpers.mjs";
+import { toughness } from "../src/game/rules.js";
 
 const frames = (run, n) => {
   for (let i = 0; i < n; i++) run.update(1 / 60);
@@ -119,17 +120,54 @@ for (const status of ["burn", "poison"]) {
   });
 }
 
-test("tower guardians of every kind keep the live zone curve (floors 5-7 awaken a 'guardian' kind)", () => {
-  const hpAt = (stageTime) => {
+test("tower: the director rests; waves and guardians scale by the floor's virtual minutes, not wall time", () => {
+  const { run } = makeRun({ mode: "tower" });
+  run.player.iframes = 1e9;
+  frames(run, 60);
+  assert.equal(run.director.elapsed, 0, "director.update never runs in the tower");
+  const waveEnemy = (stageTime) => {
+    const r = makeRun({ mode: "tower" }).run;
+    r.stageTime = stageTime;
+    r.enemies.length = 0;
+    r.tower.wave = 2;
+    r.tower.spawnWave(r);
+    return r.enemies.find((e) => e.tier === "normal");
+  };
+  const early = waveEnemy(0);
+  const late = waveEnemy(600);
+  assert.equal(early.maxHp, late.maxHp, "ten minutes of wall time change nothing on the same floor and wave");
+  const { run: r2 } = makeRun({ mode: "tower" });
+  const expected = r2.director.hpMultAt(r2.tower.curveStage, r2.tower.vmin);
+  r2.enemies.length = 0;
+  r2.tower.spawnWave(r2);
+  const e = r2.enemies.find((x) => x.tier === "normal");
+  const base = (12 + e.species.bst * 0.055) * toughness(r2.tower.vmin * 60); // toughness follows the floor's minutes too
+  assert.ok(Math.abs(e.maxHp / base - expected) < 1e-6, `HP = base x floor curve once (got x${(e.maxHp / base).toFixed(2)}, curve ${expected.toFixed(2)})`);
+});
+
+test("tower guardians: own tiers for totem/summoner, boss for floors 5-7, HP capped by the floor curve and sized by the fight budget", () => {
+  const guardianAt = (floor) => {
     const { run } = makeRun({ mode: "tower" });
     run.player.iframes = 1e9;
-    run.tower.floor = 7; // lord of the tower: rules give kind "boss", awakenGuardian maps it to "guardian"
-    run.stageTime = stageTime;
-    run.tower.awakenGuardian();
-    assert.equal(run.boss.kind, "guardian");
-    return run.boss.enemy.maxHp;
+    run.tower.floor = floor;
+    for (const e of run.enemies) e.alive = false;
+    run.update(1 / 60);
+    const e = run.tower.awakenGuardian();
+    return { e, run };
   };
-  assert.notEqual(hpAt(0), hpAt(299), "the live curve grows with the zone minute; the classic resize would make them equal");
+  const f1 = guardianAt(1);
+  assert.equal(f1.e.tier, "totem");
+  assert.equal(f1.run.boss.kind, "totem");
+  const f2 = guardianAt(2);
+  assert.equal(f2.e.tier, "summoner");
+  const f7 = guardianAt(7);
+  assert.equal(f7.e.tier, "boss");
+  assert.equal(f7.run.boss.kind, "guardian");
+  // Sized by the budget within [curve/4, curve]: a level-1 player's budget is tiny, so the floor is the quarter-curve.
+  const curveHp = (12 + f7.e.species.bst * 0.055) * f7.run.director.hpMultAt(f7.run.tower.curveStage, f7.run.tower.vmin) * 70;
+  assert.ok(f7.e.maxHp <= curveHp + 1e-6, "never above the floor curve");
+  assert.ok(f7.e.maxHp >= curveHp * 0.25 - 1e-6, "never below a quarter of it");
+  assert.ok(f7.e.maxHp < 200000, `the summit guardian is not a 300k-HP wall for a low-level player (got ${Math.round(f7.e.maxHp)})`);
 });
 
 test("classic boss HP follows the boss curve, not the minute the zone happens to be at", () => {

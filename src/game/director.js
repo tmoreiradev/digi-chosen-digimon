@@ -39,13 +39,20 @@ export class Director {
 
   /** Enemy HP multiplier for the current stage and time. */
   hpMult(t = 0) {
-    return enemyHpCurve(this.stage, Math.max(t, this.effTime() / 60)) * this.run.difficulty.enemyHp;
+    return this.hpMultAt(this.stage, Math.max(t, this.effTime() / 60));
   }
 
   /** Enemy damage multiplier for the current stage and time. */
   dmgMult(t = 0) {
-    const minutes = Math.max(t, this.effTime() / 60);
-    const stage = this.stage;
+    return this.dmgMultAt(this.stage, Math.max(t, this.effTime() / 60));
+  }
+
+  /** The same curves for an arbitrary stage and minute (the tower feeds its floors' virtual minutes). */
+  hpMultAt(stage, minutes) {
+    return enemyHpCurve(stage, minutes) * this.run.difficulty.enemyHp;
+  }
+
+  dmgMultAt(stage, minutes) {
     const stageMul = STAGE_DAMAGE[stage - 1] ?? STAGE_DAMAGE[3];
     return (1 + minutes * 0.13) * stageMul;
   }

@@ -46,6 +46,13 @@ export class Tower {
     return this.beyond ? 4 : this.def.curve.stage;
   }
 
+  /** Enemy scaling for this floor and wave: the floor's curve at its virtual minutes, not wall time. */
+  scale() {
+    const d = this.run.director;
+    // effSeconds feeds the early-stage toughness falloff, so it follows the floor too.
+    return { hpMult: d.hpMultAt(this.curveStage, this.vmin), dmgMult: d.dmgMultAt(this.curveStage, this.vmin), effSeconds: this.vmin * 60 };
+  }
+
   where() {
     if (this.beyond) return `Beyond — Floor ${this.floor}`;
     return `${this.floor}F — ${this.def.name}`;
@@ -108,14 +115,11 @@ export class Tower {
     this.waveCount++;
   }
 
-  /** Spawn the enemies for the current wave, scaled by floor and tier. */
+  /** Spawn the enemies for the current wave, scaled by the floor's curve (difficulty is inside hpMult). */
   spawnWave(run) {
     const def = this.def;
     const target = def.waves[Math.min(this.wave - 1, def.waves.length - 1)];
-    const stage = this.curveStage;
-    const tierIndex = { normal: 0, hard: 1, nightmare: 2 }[run.difficulty.id] ?? 0;
-    const hpMult = run.director.hpMult(this.waveT / 60) * (1 + tierIndex * 0.4);
-    const dmgMult = run.director.dmgMult(this.waveT / 60) * (1 + tierIndex * 0.25);
+    const scale = this.scale();
     const pool = def.pool;
     const count = Math.min(target, Math.max(6, Math.round(target * 1.4)));
     for (let i = 0; i < count; i++) {
@@ -129,12 +133,7 @@ export class Tower {
       let z = p.z + Math.sin(angle) * r;
       x = clamp(x, -half, half);
       z = clamp(z, -half, half);
-      const e = run.spawnEnemy(speciesId, x, z, tier);
-      if (e) {
-        e.hp = (e.hp ?? e.maxHp) * hpMult;
-        e.maxHp = e.hp;
-        e.dmg = e.dmg * dmgMult;
-      }
+      run.spawnEnemy(speciesId, x, z, tier, scale);
     }
     this.waveCount = 0;
   }
@@ -152,7 +151,8 @@ export class Tower {
       g.id,
       clamp(x, -half + 3, half - 3),
       clamp(z, -half + 3, half - 3),
-      g.kind === "boss" ? "guardian" : g.kind
+      g.kind === "boss" ? "guardian" : g.kind,
+      this.scale()
     );
     if (e) run.banner(`The floor guardian awakens!`);
     return e;
