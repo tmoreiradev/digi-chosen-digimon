@@ -112,14 +112,17 @@ test("Metronome's estimate matches what it actually deals (simulated, determinis
   }
 });
 
-test("trap and trail: the estimate counts their ticks and +dur", () => {
-  for (const name of ["Spikes", "Flame Wheel"]) {
-    for (const dur of [1, 2]) {
+test("trap and trail: the estimate counts their ticks, +dur, +count and the real tick multipliers", () => {
+  for (const [name, dur, extra, crit] of [["Spikes", 1, 0, 0], ["Spikes", 2, 0, 0], ["Spikes", 1, 1, 0], ["Spikes", 1, 3, 0], ["Flame Wheel", 1, 0, 0], ["Flame Wheel", 2, 0, 0], ["Flame Wheel", 1, 0, 0.5]]) {
+    {
       const { run } = makeRun();
       run.director.update = () => {};
       run.player.iframes = 1e9;
       const mv = withDef(run, name);
       mv.mods.dur = dur;
+      mv.mods.count += extra;
+      mv.mods.crit += crit; // a card crit does not reach the zone ticks
+      run.player.stats.physical *= 3; // nor does the physical bonus: ticks are special hits
       const est = run.playerExpectedDps();
       const e = run.spawnEnemy(16, run.player.x + 2, run.player.z, "boss"); // in contact, as a chasing boss is
       e.hp = e.maxHp = 1e9;
@@ -128,7 +131,7 @@ test("trap and trail: the estimate counts their ticks and +dur", () => {
       const d0 = run.stats.damage;
       for (let i = 0; i < 3600; i++) run.update(1 / 60);
       const ratio = (run.stats.damage - d0) / 60 / est;
-      assert.ok(ratio > 0.75 && ratio < 1.25, name + " dur " + dur + ": measured/estimate = " + ratio.toFixed(2));
+      assert.ok(ratio > 0.75 && ratio < 1.25, name + " dur " + dur + " +" + extra + " crit " + crit + ": measured/estimate = " + ratio.toFixed(2));
     }
   }
 });

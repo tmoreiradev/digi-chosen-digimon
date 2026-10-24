@@ -901,4 +901,12 @@ a central fica sob o boss). Spikes 0,97/0,89×, Flame Wheel 1,08/0,99×, Steel R
 `hitT` de cada esfera e exige que nenhum par esfera/inimigo seja reatingido antes de 0,5 s. (P3) o teste do Metronome
 não usa mais `castDamage`: simula 290 s com aleatório determinístico (mulberry32) e compara o dano no alvo com a
 estimativa (o primeiro rascunho media `stats.damage` por 600 s e contava o guardião da zona, que nasce aos 300 s).
-Suíte **151 / 151**; build + `check-bundle` OK.
+Suíte **150 / 150** (o texto dizia 151 por engano — apontado na 26.ª rodada); build + `check-bundle` OK.
+
+**Vigésima sexta rodada** (`9a40bfc..7a55da3`, `reviews/codex-2026-10-24-07-02-9a40bfc..HEAD.md`): **Aprovado com ressalvas**,
+2 achados (P2), aceitos: (1) os tiques de zona entram como golpe **especial** e sem o crítico das cartas (o tique em
+`updateProjectiles` não usa `def.cls` nem `critBonus`); a estimativa agora usa `expectedHitMul("special", tipo, 0)`. (2) Com
+`+count`, armadilhas do anel também ficam sob o boss: a estimativa reproduz a geometria do `fireMove` (central no jogador,
+as demais a 2,5 u em `i/count` de volta) e conta cada uma cujo raio alcança o boss encostado a 2 u. Teste cobre Spikes
+com +0/+1/+3 e dur 1/2, Flame Wheel com dur 1/2 e com crítico de carta, sempre com bônus físico ×3 que não pode vazar
+para os tiques. Corrigida também a contagem da 25.ª rodada (150, não 151). Suíte **150 / 150**; build + `check-bundle` OK.

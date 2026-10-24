@@ -1903,12 +1903,24 @@ export class Run {
     // An orbit orb passes a boss beside it about 0.6 times a second (measured) for the whole duration.
     const orbitSecs = def.arch === "orbit" ? Math.max(1, 0.6 * def.dur * m.mods.dur * s.duration) : 1;
     const count = (def.arch === "chain" ? 1 : def.arch === "orb" ? 2 * landing : landing) * orbitSecs;
-    // Ground zones tick every 0.4 s for their life: a trail (0.4 x damage, 3 s) under a boss in contact
-    // is 3 x dur hits; of a trap ring (0.35 x damage, 6 s) only the central trap sits under it, 5.25 x dur.
+    // Ground zones tick every 0.4 s for their life, as special hits with no card crit (the zone tick in
+    // updateProjectiles). A trail (0.4 x damage, 3 s) under a boss in contact (2 u) is 3 x dur hits; a trap
+    // (0.35 x damage, 6 s) is 5.25 x dur per trap whose radius reaches the boss: the central one, and the
+    // ring traps (2.5 u out, at i/count of a turn) that land close enough, as fireMove places them.
     const durScale = m.mods.dur * s.duration;
     if (def.arch === "trail" || def.arch === "trap") {
-      const zoneHits = (def.arch === "trail" ? 3 : 5.25) * durScale;
-      return this.moveDamage({ ...m, def }) * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * zoneHits;
+      let zones = 1;
+      if (def.arch === "trap") {
+        const r = 1.4 + def.area * m.mods.area * s.area;
+        zones = 0;
+        for (let i = 0; i < projectiles; i++) {
+          const a = (i / projectiles) * TAU;
+          const off = i === 0 ? 0 : 2.5;
+          if (Math.hypot(Math.cos(a) * off - 2, Math.sin(a) * off) <= r) zones++;
+        }
+      }
+      const zoneHits = (def.arch === "trail" ? 3 : 5.25 * zones) * durScale;
+      return this.moveDamage({ ...m, def }) * this.expectedHitMul("special", def.type, 0) * zoneHits;
     }
     const share = def.arch === "vortex" ? 0.35 : 1; // a vortex pull deals 35 % of the move damage
     const base = this.moveDamage({ ...m, def });
