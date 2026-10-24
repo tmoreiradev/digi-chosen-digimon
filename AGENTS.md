@@ -12,6 +12,7 @@ continuar funcionando offline, inclusive `dist/digi-chosen.html` aberto por `fil
 | `npm test` | `node --test tests/*.test.mjs` — dados reais de `src/data`, DOM mínimo em `tests/_dom.mjs`; inclui o playtest (`tests/_bot.mjs` joga runs inteiras, Clássico e Torre até a vitória) |
 | `npm run build` | gera `dist/digi-chosen.html` e copia `dist/pmd`, `dist/front` (`dist/` não é versionado) |
 | `npm run check:bundle` | confere que o bundle parseia e bate com fontes, dados e CSS |
+| `npm run e2e` | abre `dist/digi-chosen.html` por `file://` num Edge/Chrome headless (DevTools Protocol, sem dependências) e joga: título → parceiro → setup → run → carta → pausa → item → sair; falha com qualquer erro da página (`CHROME_PATH` escolhe o navegador) |
 | `npm run review:codex -- <range>` | revisão externa pelo Codex CLI num worktree limpo; relatório em `reviews/` |
 
 ## Regras do repositório

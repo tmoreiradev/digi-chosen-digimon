@@ -988,3 +988,15 @@ teste novo prova que **cada** item oferecido muda algo observável (atributos, d
 1 P2 + 1 P3, aceitos: a regeneração (e o Leftovers) ainda somava HP direto — agora os pontos inteiros acumulados passam
 por `healPlayer`, que vira de fato o único caminho de cura. Teste novo pelos caminhos reais: regeneração em 2 s e dreno
 de um golpe, ambos ×1,3 com Big Root (a regeneração falha no código anterior). Suíte **173 / 173**; build + `check-bundle` OK.
+
+## 30. Fase 19 — Teste de ponta a ponta do bundle offline (24/10/2026)
+
+- **Por quê:** o requisito "funciona offline por `file://`" só tinha sido conferido à mão (Edge `--dump-dom` uma vez; os
+  navegadores de automação desta sessão bloqueiam `file://`).
+- **O que é:** `scripts/e2e-bundle.mjs` (`npm run e2e`) sobe um Edge/Chrome headless com `--remote-debugging-port` e
+  conversa pelo DevTools Protocol usando `fetch` e `WebSocket` nativos do Node (nenhuma dependência). Abre o bundle por
+  `file://` e, dentro da página, verifica: `lang=pt-BR`, dados embutidos, seletor de parceiro, setup com biomas em pt-BR,
+  run começando e avançando, canvas, cartas de level-up, escolha por tecla, pausa, lista de itens segurados e saída para
+  o menu. Qualquer `exception` ou `console.error` da página reprova.
+- **Verificado:** passa no bundle atual; com um erro injetado no bundle (`setTimeout(() => { throw … })`) reprova com a
+  mensagem e a linha. Fica fora do `npm test` porque depende de um navegador local; está em `AGENTS.md` e no README.
