@@ -1819,15 +1819,28 @@ export class Run {
   }
 
   /** Player's average damage per second, used to size boss HP. */
-  playerExpectedDps(secs) {
+  /**
+   * Damage per second the player is expected to deal right now: for each move, the real hit damage
+   * (moveDamage x damage x physical/special x STAB x type item x average crit x projectiles) over its
+   * cooldown, plus the allies. Sizes the boss HP budget. It used to keep only the move base, count
+   * attack speed twice and ignore the allies.
+   */
+  playerExpectedDps() {
     const p = this.player;
-    const atk = p.stats.damage;
-    const cd = p.stats.attackSpeed;
-    const dps = p.moves.reduce((sum, m) => {
-      const cdSecs = Math.max(0.12, m.def.cd * m.mods.cd / p.stats.attackSpeed);
-      return sum + (m.def.dmg * m.mods.dmg * 1.3 * (1 + (m.level - 1) * 0.04)) / cdSecs;
-    }, 0);
-    return dps * cd;
+    const s = p.stats;
+    let dps = 0;
+    for (const m of p.moves) {
+      const def = m.def;
+      const cls = def.cls === "physical" ? s.physical : s.special;
+      const stab = p.types.includes(def.type) ? 1.25 : 1;
+      const crit = Math.min(1, s.critChance + s.megaCrit + m.mods.crit + (def.critBonus ?? 0));
+      const count = Math.max(1, Math.floor(def.count + m.mods.count + (def.arch === "barrage" ? s.projectiles : 0)));
+      const cdSecs = Math.max(0.12, (def.cd * m.mods.cd) / s.attackSpeed);
+      const hit = this.moveDamage(m) * s.damage * cls * stab * (s.typeBoost?.[def.type] ?? 1) * (1 + crit * (s.critDamage - 1));
+      dps += (hit * count) / cdSecs;
+    }
+    for (const a of this.allies.list) dps += (this.allies.power(a) * s.damage) / this.allies.cooldown(a);
+    return dps;
   }
 
   /** Fire a hostile projectile from an enemy (boss attacks). */

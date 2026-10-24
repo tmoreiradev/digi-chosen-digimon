@@ -108,7 +108,7 @@ export class Boss {
     // floor and the budget can raise it (up to 4x). Tower: the floor curve is a CEILING and the
     // fight budget the target (never below a quarter of the curve), so a summit guardian
     // whose curve HP is in the hundreds of thousands still dies in about its fight time.
-    const budget = run.playerExpectedDps(secs) * secs * (1 + 0.15 * tierIndex);
+    const budget = run.playerExpectedDps() * secs * (1 + 0.15 * tierIndex);
     const targetHp = inTower
       ? Math.min(e.maxHp, Math.max(budget, e.maxHp * 0.25))
       : Math.min(e.maxHp * 4, Math.max(e.maxHp, budget));

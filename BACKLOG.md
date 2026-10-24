@@ -22,7 +22,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 | 12 | ~~Música de batalha nunca ativa~~ | `main.js` `loop` | **Feito na fase 12 (24/10):** o loop chama `music.setTheme(tema, run.boss.alive)` a cada frame (idempotente); tema de batalha enquanto guardião/lendário/guardião da Torre luta. |
 | 21 | ~~Torre: HP dos guardiões ignora a curva de boss~~ | `boss.js` `spawn` | **Feito na fase 6:** guardiões usam a curva do andar com tier próprio (totem/summoner/boss) e HP = `clamp(orçamento, curva/4, curva)`. Os multiplicadores `totem ×2.2`/`summoner ×1.4` do `boss` config seguem sem uso: não cabem na fórmula de HP deste engine (floor 1 daria ~80k HP). |
 | 22 | ~~Barra de HP do boss no HUD~~ | `hud.js` | **Feito na fase 4 (23/10):** `.hud-boss` sob o bloco de região com nome, tipo (Guardian/Legendary), fase e HP. |
-| 23 | **`playerExpectedDps` subestima o jogador** | `run.js` | Ignora crítico, aliados, bônus de tipo e itens; o orçamento de HP do boss sai baixo e a luta fica na curva — validar em jogo. |
+| 23 | ~~`playerExpectedDps` subestima o jogador~~ | `run.js` | **Feito na fase 15 (24/10):** estimativa por golpe com `moveDamage × damage × físico/especial × STAB × item de tipo × crítico médio × projéteis ÷ recarga`, mais aliados; velocidade de ataque contada uma vez. Medido contra alvo único parado: erro de 2–5,6× → 0,74–1,32×. Guardião da zona 1 (nv 7) 4115 → 4815 HP. |
 
 ## 2. Qualidade / robustez
 

@@ -785,3 +785,16 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   teste automatizado (`main.js` não é importado); revisado por leitura.
 - **Navegador:** campos da conta `text,password`; pausa → Item segurado lista e grava `leftovers` na run viva pelo
   `getRun`; nenhuma conta com `pass` em texto puro. Suíte **136 / 136**; build + `check-bundle` OK.
+
+## 26. Fase 15 — Estimativa de DPS do jogador (BACKLOG 23) (24/10/2026)
+
+- **O que era:** `playerExpectedDps` (orçamento de HP do boss) usava só `def.dmg × mods × 1,3 × nível ÷ recarga`, sem
+  `damage`, físico/especial, STAB, item de tipo, crítico, projéteis extras nem aliados, e multiplicava a velocidade
+  de ataque duas vezes (dividia a recarga e multiplicava o total). O argumento `secs` não era usado.
+- **Agora:** por golpe `moveDamage(m) × damage × (físico|especial) × STAB 1,25 × typeBoost × (1 + crit × (critDamage − 1))
+  × projéteis ÷ recarga`, mais `power ÷ cooldown × damage` de cada aliado. Alvo único, como numa luta de boss.
+- **Medição** (nível 9, um alvo parado com 1e9 HP, 30 s): Bulbasaur 1,32×, Charmander 0,77×, Squirtle 0,99×,
+  Pikachu 1,10×, Haunter 0,74× (medido ÷ estimado); a fórmula antiga dava 5,62×, 1,96×, 3,44×, 4,52×, 2,63×.
+  `tests/dps.test.mjs` exige a faixa 1/1,5–1,5 nos cinco e velocidade de ataque contada uma vez; aliado aumenta.
+- **Efeito:** cedo a curva de zona ainda é o piso — guardião da zona 1 no nível 7: 4115 → 4815 HP, teto de dano
+  103 → 120/s. Bots do playtest seguem vencendo Clássico e Torre. Suíte **138 / 138**; build + `check-bundle` OK.
