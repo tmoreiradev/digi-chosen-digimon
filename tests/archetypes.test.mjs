@@ -112,8 +112,8 @@ test("Metronome's estimate matches what it actually deals (simulated, determinis
   }
 });
 
-test("trap and trail: the estimate counts their ticks, +dur, +count and the real tick multipliers", () => {
-  for (const [name, dur, extra, crit] of [["Spikes", 1, 0, 0], ["Spikes", 2, 0, 0], ["Spikes", 1, 1, 0], ["Spikes", 1, 3, 0], ["Flame Wheel", 1, 0, 0], ["Flame Wheel", 2, 0, 0], ["Flame Wheel", 1, 0, 0.5]]) {
+test("trail: the estimate counts its ticks, +dur and the real tick multipliers", () => {
+  for (const [name, dur, extra, crit] of [["Flame Wheel", 1, 0, 0], ["Flame Wheel", 2, 0, 0], ["Flame Wheel", 1, 0, 0.5]]) {
     {
       const { run } = makeRun();
       run.director.update = () => {};
@@ -133,5 +133,31 @@ test("trap and trail: the estimate counts their ticks, +dur, +count and the real
       const ratio = (run.stats.damage - d0) / 60 / est;
       assert.ok(ratio > 0.75 && ratio < 1.25, name + " dur " + dur + " +" + extra + " crit " + crit + ": measured/estimate = " + ratio.toFixed(2));
     }
+  }
+});
+
+test("trap ring: the estimate holds on average over the side the boss stands on (+dur too)", () => {
+  for (const [extra, dur] of [[0, 1], [0, 2], [1, 1], [2, 1], [3, 1]]) {
+    let measured = 0;
+    let est = 0;
+    const bearings = 8;
+    for (let k = 0; k < bearings; k++) {
+      const { run } = makeRun();
+      run.director.update = () => {};
+      run.player.iframes = 1e9;
+      const mv = withDef(run, "Spikes");
+      mv.mods.count += extra;
+      mv.mods.dur = dur;
+      est = run.playerExpectedDps();
+      const a = ((k + 0.5) / bearings) * Math.PI * 2;
+      const e = run.spawnEnemy(16, run.player.x + Math.cos(a) * 2, run.player.z + Math.sin(a) * 2, "boss");
+      e.hp = e.maxHp = 1e9;
+      e.speed = 0;
+      e.types = [];
+      for (let i = 0; i < 1800; i++) run.update(1 / 60);
+      measured += (e.maxHp - e.hp) / 30 / bearings;
+    }
+    const ratio = measured / est;
+    assert.ok(ratio > 0.75 && ratio < 1.25, "Spikes +" + extra + " dur " + dur + ", mean over bearings: measured/estimate = " + ratio.toFixed(2));
   }
 });

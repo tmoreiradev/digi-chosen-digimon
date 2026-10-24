@@ -910,3 +910,10 @@ Suíte **150 / 150** (o texto dizia 151 por engano — apontado na 26.ª rodada)
 as demais a 2,5 u em `i/count` de volta) e conta cada uma cujo raio alcança o boss encostado a 2 u. Teste cobre Spikes
 com +0/+1/+3 e dur 1/2, Flame Wheel com dur 1/2 e com crítico de carta, sempre com bônus físico ×3 que não pode vazar
 para os tiques. Corrigida também a contagem da 25.ª rodada (150, não 151). Suíte **150 / 150**; build + `check-bundle` OK.
+
+**Vigésima sétima rodada** (`7a55da3..7c26f4b`, `reviews/codex-2026-10-24-07-03-7a55da3..HEAD.md`): **Aprovado com ressalvas**,
+1 achado (P2), aceito: o anel de armadilhas tem orientação fixa no mundo e a conta supunha o boss sempre a leste. A
+cobertura agora é a média sobre 16 direções do boss encostado. Spikes já nasce com 2 armadilhas, então todo caso dele foi
+para um teste que mede a média de 8 direções (+0 dur 1/2, +1, +2, +3: 0,89–0,94×); o teste de rastro ficou só com
+Flame Wheel. O teste novo também passa com a fórmula anterior (0,84–1,01× — a média por direção não se afastava muito); fica
+como guarda. Suíte **151 / 151**; build + `check-bundle` OK.

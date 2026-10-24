@@ -1912,11 +1912,16 @@ export class Run {
       let zones = 1;
       if (def.arch === "trap") {
         const r = 1.4 + def.area * m.mods.area * s.area;
+        // The ring has a fixed world orientation and the boss can stand on any side: average over 16 bearings.
         zones = 0;
-        for (let i = 0; i < projectiles; i++) {
-          const a = (i / projectiles) * TAU;
-          const off = i === 0 ? 0 : 2.5;
-          if (Math.hypot(Math.cos(a) * off - 2, Math.sin(a) * off) <= r) zones++;
+        for (let k = 0; k < 16; k++) {
+          const bx = Math.cos((k / 16) * TAU) * 2;
+          const bz = Math.sin((k / 16) * TAU) * 2;
+          for (let i = 0; i < projectiles; i++) {
+            const a = (i / projectiles) * TAU;
+            const off = i === 0 ? 0 : 2.5;
+            if (Math.hypot(Math.cos(a) * off - bx, Math.sin(a) * off - bz) <= r) zones += 1 / 16;
+          }
         }
       }
       const zoneHits = (def.arch === "trail" ? 3 : 5.25 * zones) * durScale;
