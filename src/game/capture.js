@@ -42,6 +42,9 @@ export class Capture {
     e.vx = 0;
     e.vz = 0;
     e.captureReady = true;
+    // A boss's attacks in flight die right here, not at the next Boss.update: projectiles and zones
+    // tick before the controller inside a step.
+    if (this.run.boss && this.run.boss.index === e.id) this.run.boss.cancelAttacks();
     this.run.banner(`${e.species.name} está enfraquecido! Aperte E para lançar a bola`);
     return true;
   }

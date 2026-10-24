@@ -20,6 +20,9 @@ const BOSS_MOVE_NAMES = {
   pools: "Poças Perigosas",
 };
 
+/** Statuses that stop an enemy in updateEnemies; the controller stops with them (no charge, no telegraph). */
+const BOSS_STOPPED = ["freeze", "sleep", "root", "flinch"];
+
 export class Boss {
   constructor(run) {
     this.run = run;
@@ -184,6 +187,14 @@ export class Boss {
       return;
     }
     this.downCancelled = false;
+    // Frozen, asleep, rooted or flinching: the controller stops too — a charge in progress ends,
+    // no telegraph, no new pattern until the status wears off.
+    if (BOSS_STOPPED.some((k) => e.statuses[k] > 0)) {
+      this.windup = 0;
+      this.active = null;
+      this.nextMove = null;
+      return;
+    }
     this.fightT += dt;
 
     // Phases advance on HP thresholds.
@@ -415,8 +426,10 @@ export class Boss {
     this.windup = 0;
     this.active = null;
     this.nextMove = null;
+    // Flag rather than splice: this can run from inside the projectile or zone loop (a hit that
+    // weakens the boss); the loops drop flagged entries before they can collide or tick.
     const run = this.run;
-    for (let i = run.zones.length - 1; i >= 0; i--) if (run.zones[i].hostile && run.zones[i].owner === ownerId) run.zones.splice(i, 1);
-    for (let i = run.projectiles.length - 1; i >= 0; i--) if (run.projectiles[i].hostile && run.projectiles[i].owner === ownerId) run.projectiles.splice(i, 1);
+    for (const z of run.zones) if (z.hostile && z.owner === ownerId) z.cancelled = true;
+    for (const pr of run.projectiles) if (pr.hostile && pr.owner === ownerId) pr.cancelled = true;
   }
 }

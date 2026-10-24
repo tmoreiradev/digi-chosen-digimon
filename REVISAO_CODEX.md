@@ -441,12 +441,23 @@ com refinamentos do mesmo subsistema (cartas de golpe). Cada fase nova ganha a s
 | Poké Doll tem `mods: []` e nenhuma tag: escolhê-lo não recalculava os stats, a passiva ×1,5 só valia no próximo recálculo (P2) | `applyChoice` recomputa em **todo** item (é barato). Teste: aliado recrutado, pegar o Poké Doll muda `player.stats.damage` de `1 + 0,04` para `1 + 0,06` na hora. |
 | Grip Claw e Awakening aplicam root/sleep, mas `updateEnemies` só amortecia a velocidade e voltava a perseguir: dormindo/congelado/enraizado andava a ~36 % e mordia (P2) | Pré-existente e verdadeiro para freeze/sleep/root de qualquer golpe. Os quatro estados (com `flinch`) agora param o inimigo: sem perseguição e sem dano de contato até o timer acabar. Teste com inimigo encostado: 30 frames sem mover nem morder, volta a morder depois. |
 | Fire Stone/Leaf Stone (`hitAround`) podiam deixar alfa/boss abaixo de 10 % sem `capture.weaken` — e o mesmo valia para burn/poison e espinhos (P2) | `Run.maybeWeaken(e)` é o único ponto da checagem; chamado por `hitEnemy`, `hitAround`, os ticks de DoT e os espinhos. Teste cobre os três caminhos novos. |
-| Enfraquecer o boss zerava `windup`/`active`, mas os meteoros já agendados (`run.later`) continuavam chamando `hitPlayer`, inclusive depois de capturar o guardião e avançar a zona (P2) | `Boss.cancelAttacks()`: incrementa `attackGen` (cada meteoro agendado guarda a geração e não cai se ela mudou), remove as poças e os projéteis hostis com `owner` igual ao boss (campo novo em `zonesHostile`/`spawnHostileProjectile`), zera telegraph e padrão. Chamado ao enfraquecer (uma vez por janela), em `onCaptured` e em `onDefeat`. Testes: controle (meteoros caem no boss ativo), enfraquecido (nenhum cai, poças somem), capturado (zona 2 começa limpa). |
+| Enfraquecer o boss zerava `windup`/`active`, mas os meteoros já agendados (`run.later`) continuavam chamando `hitPlayer`, inclusive depois de capturar o guardião e avançar a zona (P2) | `Boss.cancelAttacks()`: incrementa `attackGen` (cada meteoro agendado guarda a geração e não cai se ela mudou), remove as poças e os projéteis hostis com `owner` igual ao boss (campo novo em `zonesHostile`/`spawnHostileProjectile`), zera telegraph e padrão. Chamado ao enfraquecer (uma vez por janela), em `onCaptured` e em `onDefeat`. **15.ª rodada:** a chamada ao enfraquecer saiu de `Boss.update` para `Capture.weaken` (no instante do golpe) e passou a marcar `cancelled` em vez de remover. Testes: controle (meteoros caem no boss ativo), enfraquecido (nenhum cai, poças somem), capturado (zona 2 começa limpa). |
 | O teste do Poké Doll só olhava `Allies.mods()` (P3) | Substituído pelo teste de `player.stats.damage` acima. |
 
 Afirmações corrigidas: §20 "boss down não luta" agora inclui os ataques em voo; §22 Poké Doll vale na hora; o teste
 dos 16 itens fora do pool cobre os 16 (`tests/review14.test.mjs`), não quatro. Suíte **122 / 122**; build +
 `check-bundle` OK.
+
+**Décima quinta rodada** (correção da 14.ª, `e7907de..93cfe58`, `reviews/codex-2026-10-24-04-00-e7907de..HEAD.md`):
+**Reprovado**, 2 achados, ambos aceitos:
+
+| Achado | Decisão |
+|---|---|
+| O cancelamento ao enfraquecer esperava `Boss.update`, mas projéteis e poças rodam **antes** dele no passo (`updateProjectiles` → `updateEnemies` → … → `boss.update`): o golpe que deixa o boss capturável podia ver os ataques dele ainda acertarem no mesmo passo (P2) | `Capture.weaken` chama `boss.cancelAttacks()` na hora em que aceita um boss; o ramo em `Boss.update` ficou como reserva. E `cancelAttacks` passou a **marcar** (`cancelled`) em vez de remover: ele pode rodar de dentro do laço de projéteis ou de zonas (um acerto que enfraquece), e um `splice` ali faria o laço reprocessar o item atual; os laços descartam os marcados no topo, antes de colidir ou tiquetear. Testes: controle (projétil hostil a 1,4 u acerta em 5 frames); enfraquecer com projétil e poças no ar → tudo marcado no instante, nada acerta em 10 frames, laços limpam. |
+| Freeze/sleep/root paravam só `updateEnemies`; uma investida ativa (`tickActive`, `charge`) seguia movendo o boss e acertando o jogador (P2) | `Boss.update` para junto: com freeze/sleep/root/flinch no inimigo, zera `windup`/`active`/`nextMove` e não avança `fightT`/`moveT`; retoma quando o status acaba. Testes: controle (investida move > 1 u e acerta em 30 frames); nos quatro estados a investida é abortada, o boss não se move nem acerta, e o controlador volta a andar depois. |
+
+Afirmações corrigidas: §20 e 14.ª rodada agora dizem "no instante do enfraquecimento" com razão (`Capture.weaken`), e a
+parada por status cobre o controlador do boss. Suíte **126 / 126**; build + `check-bundle` OK.
 
 ---
 
@@ -618,8 +629,9 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
   `e.captureReady`; o inimigo já não perseguia nem dava dano de contato (`updateEnemies`). Se a bola falha
   (`breakFree`, HP volta a 30 %) ou a janela de 8 s fecha (`recovered`, 25 %), a IA retoma de onde parou.
   **14.ª rodada:** `cancelAttacks()` derruba também o que já estava no ar — meteoros agendados (contador
-  `attackGen`), poças e projéteis do boss — ao enfraquecer, capturar ou morrer; antes os meteoros caíam até depois
-  da zona avançar.
+  `attackGen`), poças e projéteis do boss — no instante do enfraquecimento (`Capture.weaken`, 15.ª rodada), ao capturar
+  ou morrer; antes os meteoros caíam até depois da zona avançar. Com freeze/sleep/root/flinch o controlador também
+  para (investida abortada).
 - **Captura = derrota para a progressão:** `Capture.caught` marca `e.captured` e chama `Boss.onCaptured()` na hora
   (não espera `Boss.update` ver `!alive`, que depende de a compactação dos mortos rodar antes ou depois): `dead`,
   `index = -1`, `opts.onBossDown` (sfx) e `run.onBossDefeated(kind)` — zona limpa / santuário / vitória / próximo

@@ -912,6 +912,10 @@ export class Run {
     const list = this.projectiles;
     for (let i = list.length - 1; i >= 0; i--) {
       const pr = list[i];
+      if (pr.cancelled) {
+        list.splice(i, 1); // a boss attack cancelled by Boss.cancelAttacks(): never collides
+        continue;
+      }
       pr.age += dt;
       pr.life -= dt;
 
@@ -998,6 +1002,10 @@ export class Run {
     // Ground zones
     for (let i = this.zones.length - 1; i >= 0; i--) {
       const z = this.zones[i];
+      if (z.cancelled) {
+        this.zones.splice(i, 1); // a boss pool cancelled by Boss.cancelAttacks(): never ticks again
+        continue;
+      }
       z.life -= dt;
       z.tick -= dt;
       if (z.tick <= 0) {
