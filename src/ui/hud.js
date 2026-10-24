@@ -115,7 +115,8 @@ export class Hud {
       this.shinyBadge.style.display = p.shiny ? "inline" : "none";
       clear(this.types);
       for (const t of p.types) this.types.append(el("span", { class: "chip", style: { background: typeCss(t) } }, t));
-      this.evoHint.textContent = "";
+      // The evolution plan is fixed per species, so the hint can promise a target and a level.
+      this.evoHint.textContent = p.evoPlan ? `→ ${p.evoPlan.to.name} at Nv ${p.evoPlan.level}` : "";
       this.portraitReady = false;
     }
     // The sheet loads asynchronously, so keep retrying until the real portrait

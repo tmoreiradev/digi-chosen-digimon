@@ -237,6 +237,11 @@ function onKeyDown(e) {
     e.stopImmediatePropagation();
     return;
   }
+  // The cards already hold the game still; a pause menu would only hide behind them.
+  if (state.levelup.active && (e.code === "KeyP" || e.code === "Escape")) {
+    e.preventDefault();
+    return;
+  }
 
   if (state.mode === "game") {
     // A world-event panel (chest/shop/altar) owns the keyboard: Esc closes it, P is ignored;

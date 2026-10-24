@@ -444,9 +444,10 @@ da arena, ≤ 260 inimigos e nenhum morto na lista, aliados ≤ cap, boss vivo c
 
 | Cenário | Resultado (semente fixa) |
 |---|---|
-| Bot honesto, Clássico, 600 s, sementes 11–20 | **5 / 10 sobrevivem** os 600 s (todos esses passam da zona 1: guardião derrotado por conta própria, nível 25–30, 843–945 kills, 1–4 lojas e 1–4 baús usados); as 5 mortes acontecem entre 317 e 334 s, na luta contra o guardião da zona 1. Nenhuma morte antes dos 4 min; zero falhas de invariante. O teste exige exatamente isso (≥ 3 sobreviventes, nenhuma morte antes de 240 s) — é a linha de base de balanceamento (números após a fase 5). |
-| Clássico até o fim (god mode: só imunidade a dano) | **vitória em 1179 s**: 3 guardiões, santuário, lendário; nível 50, 1844 kills |
-| Torre até o fim (god mode) | **vitória em 331 s**: 7 andares pelas ondas reais |
+| Bot honesto, Clássico, 600 s, sementes 11–20 | Até a fase 6: **5 / 10 sobreviviam** (mortes entre 317 e 334 s, no guardião da zona 1). Desde a fase 7 (§18 — empurrão de contato preso ao acerto): **10 / 10 sobrevivem**, todos passam da zona 1, nível 26–30, 887–952 kills, 0–3 lojas e 0–4 baús usados. Nenhuma morte antes dos 4 min; zero falhas de invariante. O teste exige ≥ 3 sobreviventes e nenhuma morte antes de 240 s — linha de base de balanceamento. |
+| Bot honesto, Torre, 600 s, sementes 31–35 | Fase 6: 0 / 5 (nível 50, mortes nos andares 5–7). Fase 7: **5 / 5** — 2 vitórias (547 e 556 s) e 3 runs vivas no 7.º andar aos 600 s. O teste exige sobreviver 2 min e passar dos 3 primeiros andares. |
+| Clássico até o fim (god mode: só imunidade a dano) | **vitória em 1167 s**: 3 guardiões, santuário, lendário; nível 50, 1826 kills |
+| Torre até o fim (god mode) | **vitória em 592 s**: 7 andares pelas ondas reais (sem o director) |
 
 O bot achou um bug na primeira execução: o empurrão de contato (`p.x -= dx/d·0.4` em `updateEnemies`)
 acontecia **depois** do clamp da arena, e o jogador encurralado na parede saía do mapa (`x = -180.4`).
@@ -510,3 +511,29 @@ Bot: Torre em god mode vence em **531 s** (antes 331 s, com director ajudando a 
 ⚠ Sinal de balanceamento para o playtest humano: os andares 5–7 usam a curva da zona 3 (`hpMult` 48–129)
 contra um jogador já no teto de nível; se um humano também travar ali, o ajuste natural é `curve.min` /
 `curve.stage` desses andares em `rules.json` (não mexi: dado do jogo original).
+**Atualização (fase 7, §18):** as mortes nos andares 5–7 eram, na verdade, o empurrão de contato por frame
+prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honesto passou a 5 / 5 na Torre
+(2 vitórias). O alerta sobre as curvas fica, mas rebaixado: validar em jogo.
+
+---
+
+## 18. Fase 7 — Plano de evolução fixo, pausa durante as cartas e o empurrão de contato (23/10/2026)
+
+- **Evolução (BACKLOG 7):** `tryEvolve` re-sorteava o alvo a cada verificação (`evolutionPlan` com rng), então
+  linhas com várias evoluções (Eevee: 8; Poliwhirl, Gloom, Slowpoke: 2) mudavam de alvo e de nível-limiar entre
+  níveis. Agora `player.evoPlan` é decidido ao definir a espécie (`createPlayer`) e recalculado após cada
+  evolução (`null` no fim da linha); o HUD mostra "→ Ivysaur at Nv 24". Testes em `tests/evolution.test.mjs`:
+  Eevee mantém um único alvo/limiar em todas as checagens e evolui exatamente nele; Bulbasaur planeja Ivysaur e
+  depois Venusaur; mesma semente, mesmo plano.
+- **Pausa com cartas abertas (BACKLOG 9):** P/Esc eram repassados a `togglePause` e a tela de pausa (z 30)
+  ficava atrás das cartas (z 70), com a música parada. Agora as cartas engolem P/Esc (já param o jogo) e a
+  pausa volta assim que a carta é escolhida. Navegador: P/Esc com cartas → nada; depois → "Paused"; P → retoma.
+- **Empurrão de contato (achado do bot):** ao re-rodar a linha de base depois da mudança de evolução (que
+  desloca a sequência do `rng`), a semente 15 morreu aos 19 s e a 31 (Torre) aos 15 s. O rastro mostrou o
+  jogador parado em (19, −6) com 3–5 inimigos colados: o empurrão de contato (`p.x -= dx/d·0,4`) rodava **a cada
+  frame** enquanto houvesse toque — 24 u/s por inimigo encostado, bem acima dos 4,6 u/s de andar — e dois
+  inimigos em lados opostos **pregavam** o jogador no lugar até a morte. O empurrão passou a acompanhar o
+  acerto (a cada 0,4 s, 0,6 u), como o comentário "discrete hits" do próprio código pedia. Efeito na linha de
+  base: Clássico honesto 5 / 10 → **10 / 10** sobreviventes; Torre honesta 0 / 5 → **5 / 5** (2 vitórias).
+  ⚠ É uma mudança grande de sensação de jogo — o contato deixa de "vibrar" o jogador para longe; o playtest
+  humano decide se o dano de contato (inalterado) basta como punição.

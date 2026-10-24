@@ -184,6 +184,7 @@ export class Run {
       hurtT: 0,
       dead: false,
       lastEvoCheck: 1,
+      evoPlan: null, // decided once per species (see tryEvolve); a re-roll per check used to move the target
       moveSpeedNow: 1,
       shiny: Math.random() < SHINY_RATE,
       steps: 0,
@@ -193,6 +194,7 @@ export class Run {
     this.recompute(p);
     p.hp = p.maxHp;
     this.learnKitMoves(p);
+    p.evoPlan = evolutionPlan(this.data, speciesId, this.rng);
     return p;
   }
 
@@ -1179,17 +1181,16 @@ export class Run {
       e.x = clamp(e.x, -half, half);
       e.z = clamp(e.z, -half, half);
 
-      // Contact damage lands as discrete hits, upstream style.
+      // Contact damage lands as discrete hits, upstream style. The shove comes with the hit:
+      // shoving 0.4 units on every frame (24 units/s per touching enemy) pinned the player
+      // between two enemies with no way to walk out — the bot died that way at 19 s.
       const touch = e.radius + p.radius;
-      if (d < touch) {
-        if (e.atkCd <= 0) {
-          e.atkCd = 0.4;
-          this.hitPlayer(e.dmg * this.difficulty.enemyDamage, e);
-        }
-        // push the player away a bit, but never out of the arena (the playtest bot found
-        // itself at x = -180.4 after being shoved against the wall)
-        p.x = clamp(p.x - (dx / d) * 0.4, -half, half);
-        p.z = clamp(p.z - (dz / d) * 0.4, -half, half);
+      if (d < touch && e.atkCd <= 0) {
+        e.atkCd = 0.4;
+        this.hitPlayer(e.dmg * this.difficulty.enemyDamage, e);
+        // push the player away a bit, never out of the arena
+        p.x = clamp(p.x - (dx / d) * 0.6, -half, half);
+        p.z = clamp(p.z - (dz / d) * 0.6, -half, half);
       }
       if (e.atkCd > 0) e.atkCd -= dt;
     }
@@ -1614,7 +1615,9 @@ export class Run {
 
   tryEvolve() {
     const p = this.player;
-    const plan = evolutionPlan(this.data, p.speciesId, this.rng);
+    // The plan (which evolution, at which level) is fixed when the species is set; lines with
+    // several branches (Eevee, Poliwhirl) no longer change target and threshold between checks.
+    const plan = (p.evoPlan ??= evolutionPlan(this.data, p.speciesId, this.rng));
     if (!plan || p.level < plan.level) return false;
     p.speciesId = plan.to.id;
     p.species = plan.to;
@@ -1629,6 +1632,7 @@ export class Run {
     this.burst(p.x, p.y + 1, p.z, 0xff9ae0, 26, "star");
     this.shake(0.2);
     this.learnKitMoves(p);
+    p.evoPlan = evolutionPlan(this.data, p.speciesId, this.rng); // next stage, or null at the end of the line
     return true;
   }
 
