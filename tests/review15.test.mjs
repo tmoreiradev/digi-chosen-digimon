@@ -101,3 +101,13 @@ test("a frozen, asleep, rooted or flinching boss aborts its charge and waits the
     assert.ok(boss.moveT < moveT || boss.windup > 0 || boss.active !== null, `${status}: the controller resumed`);
   }
 });
+
+test("the fight clock keeps running while the boss is held by a status (anti-stall still ramps)", () => {
+  const { run } = setup();
+  const { boss, g } = guardianAt(run, 8);
+  g.statuses.sleep = 1e9;
+  const t0 = boss.fightT;
+  frames(run, 120);
+  assert.ok(boss.fightT - t0 > 1.9, `fightT advanced ${boss.fightT - t0}`);
+  assert.equal(boss.active, null, "still not attacking");
+});

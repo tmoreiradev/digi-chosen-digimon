@@ -189,13 +189,15 @@ export class Boss {
     this.downCancelled = false;
     // Frozen, asleep, rooted or flinching: the controller stops too — a charge in progress ends,
     // no telegraph, no new pattern until the status wears off.
+    // The fight clock keeps running while it is stopped: it drives the anti-stall exhaust, and a boss
+    // kept asleep by Sleep Powder used to freeze it and never tire.
+    this.fightT += dt;
     if (BOSS_STOPPED.some((k) => e.statuses[k] > 0)) {
       this.windup = 0;
       this.active = null;
       this.nextMove = null;
       return;
     }
-    this.fightT += dt;
 
     // Phases advance on HP thresholds.
     const pct = e.hp / e.maxHp;

@@ -824,3 +824,12 @@ tentativa. 3 falham no código anterior. Suíte **140 / 140**; build + `check-bu
 
 Testes: `dps.test.mjs` usa alvo-boss; novo teste mede `orb`/`boomerang` antes e depois de `+1` (estimativa e dano
 medido sobem > 1,5×; no código anterior o medido ia a 0). Suíte **141 / 141**; build + `check-bundle` OK.
+
+**Regressão pega pelo bot depois da 19.ª rodada.** O commit `c69537d` entrou com **um teste vermelho** (o playtest da
+Torre): o encadeamento do comando não barrou o commit. Causa, achada com rastreio do bot: desde a 15.ª rodada o
+`Boss.update` parava o relógio da luta (`fightT`) enquanto o boss estava dormindo/enraizado; com Sleep Powder e Grip
+Claw o guardião passava a maior parte do tempo assim, o anti-stall (`exhaust`, depois de 2× a duração) nunca disparava
+e as lutas dos andares 5–7 (115k–179k HP, com o orçamento de DPS agora fiel) passavam de 5 minutos — o bot não
+chegava ao topo em 30 min. Agora o relógio anda mesmo com o boss parado; o bot vence a Torre em 1023 s. Teste novo em
+`tests/review15.test.mjs` (falha no código anterior). Suíte **142 / 142**; build + `check-bundle` OK. A partir daqui
+o commit só roda depois de `npm test` com exit 0 verificado no mesmo comando.
