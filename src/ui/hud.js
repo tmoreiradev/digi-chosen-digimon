@@ -158,34 +158,45 @@ export class Hud {
     this.dust.textContent = `✦ ${run.stats.dust}`;
     this.kills.textContent = `☠ ${run.stats.kills}`;
 
-    // Move slots
-    clear(this.slots);
-    p.moves.forEach((mv, i) => {
-      const ready = mv.timer <= 0;
-      this.slots.append(
-        el(
+    // Move slots: rebuilt only when the loadout changes; per frame just the ready class and cooldown bar.
+    const slotsKey = p.moves.map((mv) => mv.def.name + "|" + mv.def.type).join(",") + "#" + p.moveSlots;
+    if (slotsKey !== this.slotsKey) {
+      this.slotsKey = slotsKey;
+      clear(this.slots);
+      this.slotEls = p.moves.map((mv, i) => {
+        const cd = el("i", { class: "slot-cd" });
+        const div = el(
           "div",
-          { class: "slot" + (ready ? " ready" : "") },
+          { class: "slot" },
           el("span", { class: "slot-key" }, String(i + 1)),
           el("span", { class: "slot-name" }, mv.def.name),
           el("i", { class: "slot-type", style: { background: typeCss(mv.def.type) } }),
-          el("i", { class: "slot-cd", style: { width: `${clamp(mv.timer / Math.max(0.2, mv.def.cd), 0, 1) * 100}%` } })
-        )
-      );
-    });
-    for (let i = p.moves.length; i < p.moveSlots; i++) {
-      this.slots.append(el("div", { class: "slot empty" }, el("span", { class: "slot-key" }, String(i + 1))));
+          cd
+        );
+        this.slots.append(div);
+        return { div, cd };
+      });
+      for (let i = p.moves.length; i < p.moveSlots; i++) {
+        this.slots.append(el("div", { class: "slot empty" }, el("span", { class: "slot-key" }, String(i + 1))));
+      }
     }
+    p.moves.forEach((mv, i) => {
+      const { div, cd } = this.slotEls[i];
+      div.className = "slot" + (mv.timer <= 0 ? " ready" : "");
+      cd.style.width = `${clamp(mv.timer / Math.max(0.2, mv.def.cd), 0, 1) * 100}%`;
+    });
 
-    // Ultimate
+    // Ultimate: rebuilt only when its name changes (evolution); the fill moves every frame.
     const charge = p.ultCharge;
+    const ultName = run.ultimateName();
+    if (ultName !== this.ultName) {
+      this.ultName = ultName;
+      this.ult.innerHTML = "";
+      this.ultFill = el("i", { class: "ult-fill" });
+      this.ult.append(el("span", { class: "ult-key" }, "R"), el("span", { class: "ult-name" }, ultName), this.ultFill);
+    }
     this.ult.className = "hud-ult" + (charge >= 1 ? " ready" : "");
-    this.ult.innerHTML = "";
-    this.ult.append(
-      el("span", { class: "ult-key" }, "R"),
-      el("span", { class: "ult-name" }, run.ultimateName()),
-      el("i", { class: "ult-fill", style: { width: `${charge * 100}%` } })
-    );
+    this.ultFill.style.width = `${charge * 100}%`;
 
     // Bars
     const hpPct = clamp(p.hp / p.maxHp, 0, 1);

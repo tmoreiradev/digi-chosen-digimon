@@ -28,7 +28,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 
 | # | Item | Onde |
 |---|------|------|
-| 13 | HUD reconstrói slots e ult a cada frame (DOM churn) | `hud.js` `update` |
+| 13 | ~~HUD reconstrói slots e ult a cada frame (DOM churn)~~ | `hud.js` `update` | **Feito na fase 13 (24/10):** slots reconstruídos só quando golpes/vagas mudam, ult só quando o nome muda; por frame só classe `ready` e largura das barras. |
 | 14 | ~~UI mista inglês/português, `lang="en"`, sem i18n~~ | **Feito na fase 8 (23/10):** `src/core/i18n.js` + literais traduzidos em todos os módulos de UI/jogo; `lang="pt-BR"`. Nomes próprios dos dados seguem em inglês. |
 | 15 | Passphrase das contas em texto puro no `localStorage` (local, mas vale aviso) | `account.js` |
 | 16 | `screens.js` acessa `globalThis.__PB__.run` para apelido/item (acoplamento com `main.js`) | `screens.js` |

@@ -41,3 +41,34 @@ test("the legendary is labelled as such", () => {
   hud.update(run);
   assert.equal(root.querySelector(".hud-boss-name").textContent, "Mew · Lendário");
 });
+
+test("slots and ultimate are rebuilt only when the loadout changes; bars still move every frame", () => {
+  const root = document.createElement("div");
+  const hud = new Hud(root);
+  const { run } = makeRun();
+  const p = run.player;
+  hud.update(run);
+  const slot = root.querySelector(".slot");
+  const fill = root.querySelector(".ult-fill");
+  assert.ok(slot && fill);
+
+  p.moves[0].timer = p.moves[0].def.cd; // on cooldown
+  p.ultCharge = 0.5;
+  hud.update(run);
+  assert.equal(root.querySelector(".slot"), slot, "same slot element: no rebuild");
+  assert.equal(root.querySelector(".ult-fill"), fill, "same ult element: no rebuild");
+  assert.equal(slot.className, "slot");
+  assert.equal(root.querySelector(".slot-cd").style.width, "100%");
+  assert.equal(fill.style.width, "50%");
+
+  p.moves[0].timer = 0;
+  p.ultCharge = 1;
+  hud.update(run);
+  assert.equal(slot.className, "slot ready");
+  assert.ok(root.querySelector(".hud-ult").className.includes("ready"));
+
+  p.moveSlots += 1; // a new slot changes the loadout
+  hud.update(run);
+  assert.notEqual(root.querySelector(".slot"), slot, "rebuilt on a loadout change");
+  assert.equal(root.querySelectorAll(".slot").length, p.moveSlots, "one more slot");
+});

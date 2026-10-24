@@ -755,3 +755,15 @@ prendendo o jogador entre inimigos; com o empurrão preso ao acerto o bot honest
 - **Verificação:** sem teste automatizado (o `loop` de `main.js` não é importado pelos testes). Navegador
   (`localhost:8080`): zona 1 com o timer no fim → guardião vivo, `music.battle === true`; guardião derrotado →
   `false`, zona 2. Suíte 127 / 127; build + `check-bundle` OK. O som em si não foi ouvido.
+
+## 24. Fase 13 — HUD sem reconstrução por frame (BACKLOG 13) (24/10/2026)
+
+- **O que era:** `Hud.update` fazia `clear(this.slots)` e `ult.innerHTML = ""` e recriava todos os elementos a cada
+  frame (60×/s).
+- **Mudança:** chave da composição (`nome|tipo` de cada golpe + `moveSlots`) e nome do ultimate; só reconstrói quando
+  mudam (golpe novo, vaga, fusão, evolução). A cada frame atualiza apenas a classe `ready` e a largura das barras de
+  recarga e de carga do ult, guardando referências aos elementos.
+- **Verificação:** teste em `tests/hud.test.mjs` (falha no código antigo): mesmo elemento de slot e de ult entre
+  frames, barra de recarga 100 % e ult 50 %, classe `ready` liga, e uma vaga nova reconstrói (3 → 4 slots).
+  Navegador: 30 frames reais com o mesmo elemento de slot e de ult, ult avançando (1,75 %). Suíte 128 / 128;
+  build + `check-bundle` OK.
