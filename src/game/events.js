@@ -284,7 +284,7 @@ export class WorldEvents {
     if (loot.kind === "coins") {
       run.stats.gold += loot.amount;
     } else if (loot.kind === "heal") {
-      p.hp = Math.min(p.maxHp, p.hp + loot.amount);
+      run.healPlayer(loot.amount);
       this.opts.onSfx?.("pickup");
     } else if (loot.kind === "vitamin") {
       this.applyShopItem(run, { kind: "vitamin" });
@@ -317,7 +317,7 @@ export class WorldEvents {
   applyShopItem(run, it) {
     const p = run.player;
     if (it.kind === "heal") {
-      p.hp = Math.min(p.maxHp, p.hp + it.amount);
+      run.healPlayer(it.amount);
       return true;
     } else if (it.kind === "heal-full") {
       p.hp = p.maxHp;

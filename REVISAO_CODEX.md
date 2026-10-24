@@ -974,3 +974,12 @@ derivada do golpe já cortado. Teste: golpe de 1000 com o teto quase vazio guard
   descrições pt-BR, Scope Lens vale na hora, persiste na próxima run e sai ao escolher "Nenhum", Life Orb ×1,3 e 2 %
   por lançamento sem matar. Navegador: 13 itens + "Nenhum", Scope Lens +0,1 de crítico na hora. Suíte **169 / 169**;
   build + `check-bundle` OK.
+
+**Trigésima primeira rodada** (fase 18, `67df2fd..bc02e7a`, `reviews/codex-2026-10-24-07-16-67df2fd..HEAD.md`): **Aprovado com
+ressalvas**, 2 P2 + 1 P3, aceitos: (1) `healing` (Big Root, habilidades) só valia em alguns caminhos — dreno e três itens
+multiplicavam, mas coleta, ult, roubo de vida e poções não. Agora `healPlayer` aplica `healing` uma vez e é o único
+caminho de cura (poção e loot do baú passaram a usá-lo; os chamadores perderam suas multiplicações). Efeito: a poção cura
+30 × `healing` (37,5 para o Bulbasaur, que tem 1,25) — o teste da carteira da loja foi ajustado para isso. (2) Life Orb
+com HP entre 0 e 1 subia para 1; agora nunca aumenta o HP. (3) O teste da lista comparava a tela com a própria lista; o
+teste novo prova que **cada** item oferecido muda algo observável (atributos, dano de um golpe ou HP após 1 s). Suíte
+**172 / 172**; build + `check-bundle` OK.

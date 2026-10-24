@@ -89,7 +89,7 @@ test("the shop wallet is run.stats.gold, not the coin multiplier player.stats.go
   assert.equal(run.events.buy(run, potion), true);
   assert.equal(run.stats.gold, 100 - potion.cost);
   assert.equal(p.stats.gold, 1, "the multiplier stat is untouched");
-  assert.equal(p.hp, p.maxHp - 50 + potion.amount);
+  assert.equal(p.hp, p.maxHp - 50 + potion.amount * p.stats.healing); // every heal goes through healPlayer
 
   run.events.giveChestLoot(run, { kind: "coins", amount: 30 });
   assert.equal(run.stats.gold, 100 - potion.cost + 30, "chest coins land in the wallet");

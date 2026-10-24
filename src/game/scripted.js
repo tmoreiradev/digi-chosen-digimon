@@ -175,7 +175,7 @@ export function itemOnHit(run, e, amount) {
     }
   }
   const bell = itemCount(run, "shell-bell");
-  if (bell) run.healPlayer(amount * 0.008 * bell * p.stats.healing);
+  if (bell) run.healPlayer(amount * 0.008 * bell);
   if (e.hp <= 0) return;
   const claw = itemCount(run, "grip-claw");
   if (claw && Math.random() < 0.04 * claw) e.statuses.root = Math.max(e.statuses.root, 2);
@@ -190,7 +190,7 @@ export function itemOnHit(run, e, amount) {
 export function itemOnKill(run, e) {
   const p = run.player;
   const juice = itemCount(run, "berry-juice");
-  if (juice && Math.random() < 0.05 * juice) run.healPlayer(p.maxHp * 0.02 * p.stats.healing);
+  if (juice && Math.random() < 0.05 * juice) run.healPlayer(p.maxHp * 0.02);
   const fire = itemCount(run, "fire-stone");
   if (fire && e.statuses.burn > 0) {
     run.burst(e.x, e.y + 0.8, e.z, 0xff7a3c, 18, "star");
@@ -208,7 +208,7 @@ export function itemOnKill(run, e) {
   if (leaf && Math.random() < 0.1 * leaf) {
     run.burst(e.x, e.y + 0.8, e.z, 0x7ad37a, 14, "star");
     run.hitAround(e.x, e.z, 3, e.maxHp * 0.3, { type: "grass", cls: "special" }, e.id);
-    run.healPlayer(p.maxHp * 0.01 * p.stats.healing);
+    run.healPlayer(p.maxHp * 0.01);
   }
 }
 

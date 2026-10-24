@@ -537,7 +537,7 @@ export class Run {
       }
       this.fireMove(mv);
       // Life Orb: each cast costs 2 % of max HP, never the last point.
-      if (p.heldItem === "life-orb") p.hp = Math.max(1, p.hp - p.maxHp * 0.02);
+      if (p.heldItem === "life-orb") p.hp = Math.min(p.hp, Math.max(1, p.hp - p.maxHp * 0.02)); // never heals below 1 HP
       mv.timer = cd;
       p.attackT = 0.22;
       this.opts.onShoot?.(def);
@@ -1173,7 +1173,7 @@ export class Run {
     this.stats.damage += amount;
     this.opts.onHit?.();
 
-    if (def?.drain) this.healPlayer(amount * def.drain * s.healing);
+    if (def?.drain) this.healPlayer(amount * def.drain);
     if (s.lifesteal > 0 && Math.random() < 0.2) this.healPlayer(amount * s.lifesteal);
     itemOnHit(this, e, amount);
 
@@ -1255,9 +1255,10 @@ export class Run {
     }
   }
 
+  /** Every heal goes through here, so the healing stat (Big Root, abilities) applies exactly once. */
   healPlayer(amount) {
     const p = this.player;
-    p.hp = Math.min(p.maxHp, p.hp + amount);
+    p.hp = Math.min(p.maxHp, p.hp + amount * p.stats.healing);
   }
 
   /** Flat area damage for item effects: no player multipliers, through the boss budget, kills handled. */

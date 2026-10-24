@@ -141,3 +141,62 @@ test("Life Orb: x1.3 damage, 2 % of max HP per cast, never the last point", () =
   run.update(1 / 60);
   assert.equal(p.hp, 1, "never below 1");
 });
+
+test("every offered held item has an observable effect", async () => {
+  const { HELD_ITEMS } = await import("../src/game/scripted.js");
+  const NORMAL = { type: "normal", cls: "special" };
+  const probe = (key) => {
+    const { run } = makeRun();
+    run.director.update = () => {};
+    const p = run.player;
+    p.heldItem = key;
+    run.recompute(p);
+    const e = run.spawnEnemy(16, p.x + 3, p.z, "normal");
+    e.hp = e.maxHp = 1e9;
+    const orig = Math.random;
+    Math.random = () => 0.999;
+    try {
+      run.hitEnemy(e, 100, NORMAL, true);
+    } finally {
+      Math.random = orig;
+    }
+    p.hp = p.maxHp / 2;
+    p.iframes = 1e9;
+    p.moves.length = 0;
+    for (let i = 0; i < 60; i++) run.update(1 / 60);
+    return JSON.stringify({ stats: p.stats, dealt: e.maxHp - e.hp, hp: p.hp });
+  };
+  const none = probe(null);
+  const silent = HELD_ITEMS.filter((k) => probe(k) === none);
+  assert.deepEqual(silent, [], "items offered but with no effect");
+});
+
+test("Big Root boosts every heal exactly once, potions included", () => {
+  const { run } = makeRun();
+  const p = run.player;
+  p.hp = 10;
+  run.healPlayer(10);
+  const plain = p.hp - 10;
+  p.heldItem = "big-root";
+  run.recompute(p);
+  p.hp = 10;
+  run.healPlayer(10);
+  assert.ok(Math.abs((p.hp - 10) / plain - 1.3) < 1e-9, "x1.3");
+  p.hp = 10;
+  run.events.applyShopItem(run, { kind: "heal", amount: 20 });
+  assert.ok(Math.abs(p.hp - 10 - 20 * p.stats.healing) < 1e-9, "the shop potion goes through it too");
+});
+
+test("Life Orb never raises HP that is below 1", () => {
+  const { run } = makeRun();
+  run.director.update = () => {};
+  const p = run.player;
+  p.heldItem = "life-orb";
+  p.iframes = 1e9;
+  const e = run.spawnEnemy(16, p.x + 3, p.z, "normal");
+  e.hp = e.maxHp = 1e9;
+  p.hp = 0.4;
+  p.moves[0].timer = 0;
+  run.update(1 / 60);
+  assert.ok(p.hp <= 0.4 + p.stats.regen / 60 + 1e-9, "not lifted to 1: " + p.hp);
+});
