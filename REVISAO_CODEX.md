@@ -1041,3 +1041,10 @@ script agora espera o navegador sair antes de apagar o perfil e trata a limpeza 
 **Trigésima sexta rodada** (`4db5b6c..957f65c`, `reviews/codex-2026-10-24-07-30-4db5b6c..HEAD.md`): **Aprovado com ressalvas**, 1 P3
 aceito: o temporizador de 5 s da espera pelo navegador segurava o Node aberto mesmo quando o navegador já tinha saído; agora
 é `unref()`. `npm run e2e` OK.
+
+**Trigésima sétima rodada** (`957f65c..2bc5512`, `reviews/codex-2026-10-24-07-31-957f65c..HEAD.md`): **Aprovado com ressalvas**, 1 P3
+**não aceito, por decisão**: pede teste de regressão em `tests/` para o `unref()` do temporizador. O código é do script de
+e2e, que depende de um navegador instalado e por isso fica fora do `npm test`; um teste de subprocesso simulando o
+navegador custaria mais que a linha que protege. Evidência registrada: a execução completa do e2e termina em 4 s (sem o
+`unref`, o Node esperaria os 5 s do temporizador após o fim). A regra do `AGENTS.md` (correção com teste) vale para o jogo;
+scripts de ferramenta são verificados por execução.
