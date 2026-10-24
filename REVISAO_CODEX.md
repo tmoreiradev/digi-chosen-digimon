@@ -1095,3 +1095,16 @@ aceitos, e um registro meu corrigido:
   dano base; nas mesmas 20 repetições o máximo caiu para 1,11×. Não é bug do jogo.
 - A varredura de idioma passou a ler o HUD e **cada painel que o bot abre** durante as runs, antes de ele agir, além dos
   estados finais. Suíte **182 / 182**; build, `check-bundle` e `npm run e2e` OK (saídas com código de saída conferido).
+
+## 34. Fase 23 — Secret Key e Dowsing Machine, adaptados (24/10/2026)
+
+- **Por que adaptados:** no original eles mexem com altares Unown e com o estoque de Poké Balls, sistemas que este jogo não
+  tem (a captura não gasta bolas). Em vez de deixá-los fora para sempre, agem sobre o que existe, e as descrições dizem
+  exatamente isso (pt-BR e inglês):
+  - **Secret Key:** o Altar Antigo, depois de curar, recarrega em vez de sumir — 45 s, 30 % mais rápido por cópia extra
+    (; durante a recarga o altar não aparece para  e a vida do evento é estendida).
+  - **Dowsing Machine:** a partir da próxima zona (Clássico/Infinito) ou andar (Torre), cada um traz 1 altar e 2 baús por
+    perto, por cópia (, chamado em  e em  do 2.º andar em diante).
+- Com isso **os 38 itens scriptados do original estão no pool**. Testes em  (recarga, 2 cópias, zona nova,
+  andar novo; os dois falham no código anterior);  e  passam a exigir todos no pool.
+  Suíte **184 / 184**; build,  e  OK.

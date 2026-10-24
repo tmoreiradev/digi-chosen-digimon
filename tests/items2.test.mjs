@@ -1,8 +1,11 @@
-// Phase 17: the second wave of upstream scripted items (14 of the 16 left out in phase 11).
-// Secret Key and Dowsing Machine stay out: they need Unown altars / Poké Balls, absent here.
+// Phase 17: the second wave of upstream scripted items (14 of the 16 left out in phase 11); phase 23
+// adds Secret Key and Dowsing Machine, adapted to the Ancient Altar and chests (no Unown altars here).
 import test from "node:test";
 import assert from "node:assert/strict";
-import { makeRun, withRandom } from "./_helpers.mjs";
+import { installFakeDom } from "./_dom.mjs";
+
+installFakeDom().register("ui");
+const { makeRun, withRandom } = await import("./_helpers.mjs");
 
 function setup(opts) {
   const made = makeRun(opts);
@@ -299,4 +302,45 @@ test("a capped hit on a marked boss still stores the full, unmarked burn", () =>
   const plain = stored(false);
   assert.ok(plain > 1, "the burn comes from the uncapped hit: " + plain);
   assert.ok(Math.abs(stored(true) - plain) < 1e-9, "marked or not, the same base burn");
+});
+
+test("Secret Key: the altar recharges instead of crumbling (45 s, 30 % faster per extra copy)", () => {
+  const { run } = setup();
+  const p = run.player;
+  run.events.events.length = 0;
+  run.events.spawn("altar", p.x + 1, p.z);
+  const ev = run.events.events[0];
+  give(run, "secret-key");
+  p.hp = 10;
+  run.events.openPanel(ev);
+  document.getElementById("ui").all().find((n) => n.tagName === "button" && /^Curar/.test(n.textContent)).click();
+  assert.equal(p.hp, p.maxHp);
+  assert.equal(ev.interacted, false, "not consumed");
+  assert.equal(ev.rechargeT, 45);
+  assert.equal(run.events.findNear(ev.x, ev.z), null, "not usable while recharging");
+  ev.rechargeT = 0.01;
+  run.events.update(0.02);
+  assert.equal(run.events.findNear(ev.x, ev.z), ev, "usable again");
+  give(run, "secret-key");
+  p.hp = 10;
+  run.events.openPanel(ev);
+  document.getElementById("ui").all().find((n) => n.tagName === "button" && /^Curar/.test(n.textContent)).click();
+  assert.ok(Math.abs(ev.rechargeT - 31.5) < 1e-9, "two copies: 30 % faster");
+});
+
+test("Dowsing Machine: each new zone and tower floor brings 1 altar and 2 chests per copy", () => {
+  const { run } = setup();
+  run.events.events.length = 0;
+  run.advanceStage();
+  assert.equal(run.events.events.length, 0, "nothing without the item");
+  give(run, "dowsing-machine");
+  run.advanceStage();
+  const kinds = run.events.events.map((e) => e.kind).sort();
+  assert.deepEqual(kinds, ["altar", "chest", "chest"]);
+  const { run: tower } = setup({ mode: "tower" });
+  give(tower, "dowsing-machine", 2);
+  tower.events.events.length = 0;
+  tower.tower.floor = 2;
+  tower.tower.enterFloor();
+  assert.equal(tower.events.events.length, 6, "two copies on a new floor");
 });

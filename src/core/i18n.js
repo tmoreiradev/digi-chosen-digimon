@@ -199,6 +199,8 @@ export const ITEM_DESC_PT = {
   "max-ether": "Suas vitaminas podem subir mais 2 níveis (até o 12).",
   "tm-case": "Seus golpes podem subir mais 2 níveis (até o 10).",
   "poke-flute": "O ultimate carrega 25% mais rápido; ao usá-lo, todos os golpes recarregam e a velocidade de ataque sobe 30% por 6 s.",
+  "secret-key": "Altares Antigos recarregam em vez de sumir depois de curar (45 s; 30% mais rápido por cópia extra).",
+  "dowsing-machine": "A partir da próxima zona ou andar, cada um traz 1 altar e 2 baús a mais por perto (por cópia).",
 };
 export const ITEM_DESC_EN = {
   "grip-claw": "Each hit has a 4% chance to root the enemy for 2 s.",
@@ -237,5 +239,7 @@ export const ITEM_DESC_EN = {
   "max-ether": "Your vitamins can go 2 levels higher (up to 12).",
   "tm-case": "Your moves can go 2 levels higher (up to 10).",
   "poke-flute": "Your ultimate charges 25% faster; using it recharges every move and gives +30% attack speed for 6 s.",
+  "secret-key": "Ancient Altars recharge instead of crumbling after a heal (45 s; 30% faster per extra copy).",
+  "dowsing-machine": "From the next zone or floor on, each one brings 1 altar and 2 chests nearby (per copy).",
 };
 export const itemDesc = (key, def) => (en() ? ITEM_DESC_EN : ITEM_DESC_PT)[key] ?? def?.desc ?? "";

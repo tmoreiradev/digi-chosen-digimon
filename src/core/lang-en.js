@@ -169,6 +169,7 @@ export const EN = {
   "Um altar antigo vibra com poder.": "An ancient altar hums with power.",
   "Você já está com o HP cheio.": "You are already at full HP.",
   "O altar restaurou seu HP.": "The altar restored your HP.",
+  "O altar restaurou seu HP e vai recarregar.": "The altar restored your HP and will recharge.",
   "Poção": "Potion",
   "Restaurador": "Full Restore",
   "Vitamina": "Vitamin",

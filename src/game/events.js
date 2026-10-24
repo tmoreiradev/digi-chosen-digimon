@@ -12,6 +12,7 @@ import { el } from "../ui/dom.js";
 import { tr } from "../core/lang.js";
 import { applyVitaminPick } from "./vitamins.js";
 import { MAX_LEVEL } from "./rules.js";
+import { itemCount } from "./scripted.js";
 
 export const SHOP_ITEMS = [
   { key: "heal-small", title: "Poção", desc: "Restaura 30 HP.", cost: 25, kind: "heal", amount: 30, rarity: 1 },
@@ -78,8 +79,19 @@ export class WorldEvents {
     // Despawn old or already-interacted events.
     for (let i = this.events.length - 1; i >= 0; i--) {
       const ev = this.events[i];
+      if (ev.rechargeT > 0) ev.rechargeT -= dt; // Secret Key altar
       ev.life -= dt;
       if (ev.life <= 0 || ev.interacted) this.events.splice(i, 1);
+    }
+  }
+
+  /** A new zone or tower floor: Dowsing Machine finds 1 altar and 2 chests per copy nearby. */
+  onNewZone() {
+    const dowsing = itemCount(this.run, "dowsing-machine");
+    for (let i = 0; i < dowsing; i++) {
+      this.spawn("altar");
+      this.spawn("chest");
+      this.spawn("chest");
     }
   }
 
@@ -90,7 +102,7 @@ export class WorldEvents {
     let best = null;
     let bestD = range;
     for (const ev of this.events) {
-      if (ev.interacted) continue;
+      if (ev.interacted || ev.rechargeT > 0) continue;
       const d = dist(ev.x, ev.z, x, z);
       if (d < bestD) { bestD = d; best = ev; }
     }
@@ -224,9 +236,14 @@ export class WorldEvents {
       );
       if (missing > 0) {
         const healBtn = el("button", { class: "btn", onclick: () => {
-          ev.interacted = true; // consumed
+          // Secret Key: the altar recharges (45 s, 30 % faster per extra copy) instead of crumbling.
+          const keys = itemCount(run, "secret-key");
+          if (keys) {
+            ev.rechargeT = 45 * 0.7 ** (keys - 1);
+            ev.life = Math.max(ev.life, ev.rechargeT + 30);
+          } else ev.interacted = true; // consumed
           p.hp = p.maxHp;
-          this.opts.onBanner?.("O altar restaurou seu HP.");
+          this.opts.onBanner?.(keys ? "O altar restaurou seu HP e vai recarregar." : "O altar restaurou seu HP.");
           this.opts.onSfx?.("levelUp");
           close();
         } }, "Curar ", el("kbd", {}, "1"));

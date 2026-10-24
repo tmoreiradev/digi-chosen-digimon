@@ -14,6 +14,8 @@ export const SCRIPTED = new Set([
   // second wave (phase 17)
   "soda-pop", "adrenaline-orb", "metal-powder", "ice-heal", "old-rod", "eviolite", "shed-shell", "cell-battery",
   "griseous-orb", "electirizer", "silph-scope", "max-ether", "tm-case", "poke-flute",
+  // adapted (phase 23): the game has no Unown altars or Poké Ball stock, so they act on the Ancient Altar and chests
+  "secret-key", "dowsing-machine",
 ]);
 
 /** Flat damage of item-made attacks (lightning, Magikarp, bubbles, shadows): grows with level and the damage stat. */

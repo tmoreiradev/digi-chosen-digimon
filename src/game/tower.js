@@ -62,6 +62,7 @@ export class Tower {
   /** Enter a floor: announce it and reset the wave state. */
   enterFloor() {
     const run = this.run;
+    if (this.floor > 1) run.events.onNewZone(); // Dowsing Machine
     this.wave = 1;
     this.waveT = 0;
     this.waveCount = 0;

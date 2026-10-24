@@ -333,6 +333,7 @@ export class Run {
     this.stageTime = 0;
     this.zoneBossSpawned = false;
     this.director.onStage(this.stage);
+    this.events.onNewZone();
     this.banner(`Zona ${this.stage} — inimigos mais fortes`);
   }
 

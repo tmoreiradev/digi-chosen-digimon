@@ -15,13 +15,13 @@ function setup(opts) {
   made.run.player.stats.evasion = 0;
   return made;
 }
-const UNIMPLEMENTED = ["secret-key", "dowsing-machine"]; // need Unown altars / Poké Balls, which this game does not have
+const UNIMPLEMENTED = []; // since phase 23 every scripted item is offered (Secret Key and Dowsing Machine adapted)
 
 test("the scripted items without an implementation all exist in the data and none is offered", () => {
   const { run } = setup();
   const pool = new Set(run.itemPool().map((u) => u.key));
   const noMods = run.rules.upgrades.filter((u) => !(u.mods ?? []).length).map((u) => u.key);
-  assert.equal(noMods.length, SCRIPTED.size + UNIMPLEMENTED.length, "38 scripted items: implemented + excluded");
+  assert.equal(noMods.length, SCRIPTED.size + UNIMPLEMENTED.length, "all 38 scripted items are implemented");
   for (const k of UNIMPLEMENTED) {
     assert.ok(noMods.includes(k), `${k} is a scripted item in rules.json`);
     assert.ok(!SCRIPTED.has(k) && !pool.has(k), `${k} is not offered`);
