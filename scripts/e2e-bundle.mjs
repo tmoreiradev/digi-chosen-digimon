@@ -72,7 +72,7 @@ async function main() {
     // until then); a leftover temp folder is only worth a warning, never a failed check.
     const exited = new Promise((r) => (browser.exitCode !== null ? r() : browser.once("exit", r)));
     browser.kill();
-    await Promise.race([exited, new Promise((r) => setTimeout(r, 5000))]);
+    await Promise.race([exited, new Promise((r) => setTimeout(r, 5000).unref())]); // unref: never keeps Node alive
     try {
       fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
     } catch (e) {

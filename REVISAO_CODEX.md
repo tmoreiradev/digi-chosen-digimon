@@ -1037,3 +1037,7 @@ string, mesmo hash (`passHash("Ash", "pikachu123")` = `f1:1tifgc5` antes e depoi
 `check-bundle` OK. ⚠ Correção deste registro: `npm run e2e` **falhou** nesta rodada, na limpeza (EPERM ao apagar o perfil
 temporário do navegador ainda aberto), e o encadeamento do meu comando não barrou porque a saída passava por `tail`. O
 script agora espera o navegador sair antes de apagar o perfil e trata a limpeza como aviso; três execuções seguidas OK.
+
+**Trigésima sexta rodada** (`4db5b6c..957f65c`, `reviews/codex-2026-10-24-07-30-4db5b6c..HEAD.md`): **Aprovado com ressalvas**, 1 P3
+aceito: o temporizador de 5 s da espera pelo navegador segurava o Node aberto mesmo quando o navegador já tinha saído; agora
+é `unref()`. `npm run e2e` OK.
