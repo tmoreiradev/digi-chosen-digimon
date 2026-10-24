@@ -1017,3 +1017,7 @@ escolha da carta é só pela tecla `1`, e o teste exige que o painel feche e que
 - **Teste** (`events.test.mjs`, falha no código anterior em "same stock on every visit"): 6 visitas com o mesmo estoque,
   renovação cobra 20, reabre com `ev.stock`, próxima custa 35, sem ouro o botão desabilita. Suíte **174 / 174**; build,
   `check-bundle` e `npm run e2e` OK.
+
+**Trigésima quarta rodada** (fase 20, `459923e..3612bd6`, `reviews/codex-2026-10-24-07-25-459923e..HEAD.md`): **Aprovado com
+ressalvas**, 1 P3 aceito: o teste da renovação só comparava a tela com o próprio `ev.stock`. Agora `shopSelection` é
+substituído por um estoque conhecido e o teste exige exatamente um sorteio e esses títulos na tela reaberta.

@@ -100,7 +100,7 @@ test("an altar is consumed by healing, not by leaving at full HP", () => {
   assert.equal(run.events.events.length, 0, "healed: consumed");
 });
 
-test("a shop keeps its stock between visits; a paid renewal rerolls it and costs more each time", () => {
+test("a shop keeps its stock between visits; a paid renewal rerolls it and costs more each time", async () => {
   const { run } = makeRun();
   const p = run.player;
   run.stats.gold = 1000;
@@ -119,7 +119,15 @@ test("a shop keeps its stock between visits; a paid renewal rerolls it and costs
   open(run);
   const price = run.events.renewPrice(run, ev);
   assert.equal(price, 20);
+  const { SHOP_ITEMS } = await import("../src/game/events.js");
+  const fresh = [SHOP_ITEMS[3], SHOP_ITEMS[2], SHOP_ITEMS[1]];
+  const orig = run.events.shopSelection.bind(run.events);
+  let rolls = 0;
+  run.events.shopSelection = () => (rolls++, fresh); // a known, different stock
   click(/^Renovar/);
+  run.events.shopSelection = orig;
+  assert.equal(rolls, 1, "the renewal rolls a new stock");
+  assert.deepEqual(titles(), fresh.map((it) => it.title), "and the reopened panel shows it");
   assert.equal(run.stats.gold, 1000 - 20, "renewal charged");
   assert.equal(ev.renewals, 1);
   assert.ok(run.events.panel, "the shop panel is open again with the new stock");
