@@ -107,7 +107,8 @@ test("the fight clock keeps running while the boss is held by a status (anti-sta
   const { boss, g } = guardianAt(run, 8);
   g.statuses.sleep = 1e9;
   const t0 = boss.fightT;
-  frames(run, 120);
-  assert.ok(boss.fightT - t0 > 1.9, `fightT advanced ${boss.fightT - t0}`);
+  frames(run, Math.ceil((boss.fightSecs * 2 + 25) * 60)); // past the stall limit, asleep the whole time
+  assert.ok(boss.fightT - t0 > boss.fightSecs * 2 + 20, `fightT advanced ${boss.fightT - t0}`);
+  assert.ok(boss.exhaust() > 2, `exhaust ramps: ${boss.exhaust()}`);
   assert.equal(boss.active, null, "still not attacking");
 });

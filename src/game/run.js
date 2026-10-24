@@ -49,6 +49,9 @@ const SHINY_XP_BONUS = 0.5; // +50% de XP/dust ao derrotar um shiny
  * `tough` is false for the flags that skip the stage toughness multiplier
  * upstream (Alpha/Boss/Totem/Summoner/Capture/Shiny/Ranged).
  */
+/** Angle step between fanned projectiles (fireMove), for the DPS estimate. Keep in step with fireMove. */
+const FAN_STEP = { orb: 0.45, lob: 0.45, meteor: 0.45, boomerang: 0.45, drain: 0.45, random: 0.3 };
+
 export const ENEMY_TIER = {
   normal: { flag: 0, hpMul: 1, hpScale: 1, dmgMul: 1, scale: 1, xpMul: 1, speedMul: 1, tough: true },
   swarm: { flag: 512, hpMul: 1, hpScale: 0.6, dmgMul: 1, scale: 1, xpMul: 1, speedMul: 1, tough: true },
@@ -1837,7 +1840,12 @@ export class Run {
       // Hits per cast on a boss-sized target at close range, measured: a chain hits it once whatever its
       // jumps; each orb hits and then explodes on it (two hits); everything else, once per projectile.
       const projectiles = Math.max(1, Math.floor(def.count + m.mods.count + (def.arch === "barrage" ? s.projectiles : 0)));
-      const count = def.arch === "chain" ? 1 : def.arch === "orb" ? 2 * projectiles : projectiles;
+      // Fanned archetypes: projectile i flies ceil(i/2) steps off the aimed line; past ~0.7 rad it passes
+      // beside a boss-sized target at 3 u, so only the inner ones count.
+      const step = FAN_STEP[def.arch];
+      let landing = projectiles;
+      if (step) for (landing = 0; landing < projectiles && Math.ceil(landing / 2) * step <= 0.7; landing++);
+      const count = def.arch === "chain" ? 1 : def.arch === "orb" ? 2 * landing : landing;
       const cdSecs = Math.max(0.12, (def.cd * m.mods.cd) / s.attackSpeed);
       const share = def.arch === "vortex" ? 0.35 : 1; // a vortex pull deals 35 % of the move damage
       dps += (this.moveDamage(m) * this.expectedHitMul(def.cls, def.type, m.mods.crit + (def.critBonus ?? 0)) * count * share) / cdSecs;

@@ -83,5 +83,10 @@ test("orb and boomerang: +count raises the estimate as much as the measured dama
     assert.ok(b.meas > a.meas * 1.5, arch + ": and the measured damage (the fan no longer misses with an even count)");
     const r = b.meas / b.est;
     assert.ok(r > 0.75 && r < 1.25, arch + " +1: measured/estimate = " + r.toFixed(2));
+    for (const extra of [3, 5]) {
+      const c = measure(extra); // wide fans: the outer projectiles pass beside the boss
+      const rc = c.meas / c.est;
+      assert.ok(rc > 0.75 && rc < 1.25, arch + " +" + extra + ": measured/estimate = " + rc.toFixed(2));
+    }
   }
 });

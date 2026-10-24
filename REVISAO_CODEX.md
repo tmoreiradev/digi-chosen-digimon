@@ -833,3 +833,9 @@ e as lutas dos andares 5–7 (115k–179k HP, com o orçamento de DPS agora fiel
 chegava ao topo em 30 min. Agora o relógio anda mesmo com o boss parado; o bot vence a Torre em 1023 s. Teste novo em
 `tests/review15.test.mjs` (falha no código anterior). Suíte **142 / 142**; build + `check-bundle` OK. A partir daqui
 o commit só roda depois de `npm test` com exit 0 verificado no mesmo comando.
+
+**Vigésima rodada** (`4803caa..feda03a`, `reviews/codex-2026-10-24-06-39-4803caa..HEAD.md`): **Aprovado com ressalvas**, 2 achados,
+aceitos: (P2) com o leque progressivo, o 4.º projétil sai a 0,9 rad e passa ao lado do boss a 3 u — a estimativa conta
+agora só os projéteis do leque com desvio ≤ 0,7 rad (`FAN_STEP` em `run.js`, mesmo passo do `fireMove`); teste mede
+`orb`/`boomerang` com +3 e +5 dentro de ±25 %. (P3) o teste do anti-stall atravessa `2 × fightSecs + 25 s` com o boss
+dormindo e exige `exhaust() > 2`. Suíte **142 / 142**; build + `check-bundle` OK.
