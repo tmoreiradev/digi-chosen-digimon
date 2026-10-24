@@ -502,7 +502,7 @@ export class Run {
       if (p.regenAcc >= 1) {
         const whole = Math.floor(p.regenAcc);
         p.regenAcc -= whole;
-        p.hp = Math.min(p.maxHp, p.hp + whole);
+        this.healPlayer(whole); // through the healing stat like every other heal
       }
     }
 

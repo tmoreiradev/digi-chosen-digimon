@@ -200,3 +200,38 @@ test("Life Orb never raises HP that is below 1", () => {
   run.update(1 / 60);
   assert.ok(p.hp <= 0.4 + p.stats.regen / 60 + 1e-9, "not lifted to 1: " + p.hp);
 });
+
+test("Big Root also reaches regeneration and drain moves", () => {
+  const regen = (held) => {
+    const { run } = makeRun();
+    run.director.update = () => {};
+    const p = run.player;
+    p.heldItem = held;
+    run.recompute(p);
+    p.moves.length = 0;
+    p.iframes = 1e9;
+    p.stats.regen = 20;
+    p.hp = 10;
+    for (let i = 0; i < 120; i++) run.update(1 / 60);
+    return p.hp - 10;
+  };
+  assert.ok(Math.abs(regen("big-root") / regen(null) - 1.3) < 0.05, "regeneration x1.3");
+  const drain = (held) => {
+    const { run } = makeRun();
+    const p = run.player;
+    p.heldItem = held;
+    run.recompute(p);
+    const e = run.spawnEnemy(16, p.x + 3, p.z, "normal");
+    e.hp = e.maxHp = 1e9;
+    p.hp = 10;
+    const orig = Math.random;
+    Math.random = () => 0.999;
+    try {
+      run.hitEnemy(e, 100, { type: "grass", cls: "special", drain: 0.5 }, true);
+    } finally {
+      Math.random = orig;
+    }
+    return p.hp - 10;
+  };
+  assert.ok(Math.abs(drain("big-root") / drain(null) - 1.3) < 1e-9, "drain x1.3");
+});

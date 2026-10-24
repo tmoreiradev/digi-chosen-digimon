@@ -983,3 +983,8 @@ caminho de cura (poção e loot do baú passaram a usá-lo; os chamadores perder
 com HP entre 0 e 1 subia para 1; agora nunca aumenta o HP. (3) O teste da lista comparava a tela com a própria lista; o
 teste novo prova que **cada** item oferecido muda algo observável (atributos, dano de um golpe ou HP após 1 s). Suíte
 **172 / 172**; build + `check-bundle` OK.
+
+**Trigésima segunda rodada** (`bc02e7a..af6e08f`, `reviews/codex-2026-10-24-07-18-bc02e7a..HEAD.md`): **Aprovado com ressalvas**,
+1 P2 + 1 P3, aceitos: a regeneração (e o Leftovers) ainda somava HP direto — agora os pontos inteiros acumulados passam
+por `healPlayer`, que vira de fato o único caminho de cura. Teste novo pelos caminhos reais: regeneração em 2 s e dreno
+de um golpe, ambos ×1,3 com Big Root (a regeneração falha no código anterior). Suíte **173 / 173**; build + `check-bundle` OK.
