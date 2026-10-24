@@ -1102,9 +1102,11 @@ aceitos, e um registro meu corrigido:
   tem (a captura não gasta bolas). Em vez de deixá-los fora para sempre, agem sobre o que existe, e as descrições dizem
   exatamente isso (pt-BR e inglês):
   - **Secret Key:** o Altar Antigo, depois de curar, recarrega em vez de sumir — 45 s, 30 % mais rápido por cópia extra
-    (; durante a recarga o altar não aparece para  e a vida do evento é estendida).
+    (`ev.rechargeT`; durante a recarga o altar não aparece para `findNear` e a vida do evento é estendida).
   - **Dowsing Machine:** a partir da próxima zona (Clássico/Infinito) ou andar (Torre), cada um traz 1 altar e 2 baús por
-    perto, por cópia (, chamado em  e em  do 2.º andar em diante).
-- Com isso **os 38 itens scriptados do original estão no pool**. Testes em  (recarga, 2 cópias, zona nova,
-  andar novo; os dois falham no código anterior);  e  passam a exigir todos no pool.
-  Suíte **184 / 184**; build,  e  OK.
+    perto, por cópia (`WorldEvents.onNewZone`, chamado em `advanceStage` e em `Tower.enterFloor` do 2.º andar em diante).
+- Com isso **os 38 itens scriptados do original estão no pool**. Testes em `items2.test.mjs` (recarga, 2 cópias, zona nova,
+  andar novo; os dois falham no código anterior); `items.test.mjs` e `review14.test.mjs` passam a exigir todos no pool.
+  Suíte **184 / 184**; build, `check-bundle` e `npm run e2e` OK.
+- ⚠ O primeiro registro desta seção perdeu os trechos de código: um heredoc sem aspas fez o shell tratar os acentos
+  graves como comandos (nenhum efeito além de erros "No such file" e um `npm run` inexistente). Reescrito por script.
