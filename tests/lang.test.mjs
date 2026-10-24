@@ -12,10 +12,22 @@ const { getLang, setLang, tr, LANG_KEY } = await import("../src/core/lang.js");
 
 // Portuguese tell-tales: accents (except in Pokémon names) and common short words.
 const PT = /[ãõçáíóúâêôà]|\b(de|do|da|dos|das|para|com|seu|sua|não|uma|ao|no|na|em|por|mais|golpes?|inimigos|ouro|nível|aperte|sair|vença|veja)\b/i;
-const NAMES = /Pokémon|Pokédex|Flabébé|🌐 Português/g; // names, and the switch label that names Portuguese on purpose
+const NAMES = /Pokémon|Pokédex|Flabébé|🌐 Português|🌐 Español/g; // names, and the switch label that names Portuguese on purpose
+
+// Portuguese that Spanish does not share (Spanish also has á, í, ó, ú, "de", "no", "en", "para"...).
+const PT_NOT_ES = /[ãõçâêô]|(?<!\p{L})(não|você|seu|sua|uma|ao|em|dos|das|ouro|nível|aperte|sair|vença|veja|inimigos|mais|nenhum|abates|fechar|voltar)(?!\p{L})/iu; // "golpe" is Spanish too; letter-aware boundaries (\b breaks on accents)
+
+test("in Spanish, nothing Portuguese reaches the screen either", async () => {
+  const { missing, rendered, bot } = await collectMissing("es");
+  const pt = (list) => list.filter((s) => PT_NOT_ES.test(s.replace(NAMES, "")));
+  assert.deepEqual(pt(missing), [], "untranslated text that went through tr()");
+  assert.deepEqual(pt(rendered), [], "text actually on screen");
+  assert.ok(bot.some((s) => (s.chestsOpened ?? 0) > 0), "a chest was opened in Spanish");
+  setLang("pt-BR");
+});
 
 test("in English, nothing Portuguese reaches the screen across screens, cards, events and full runs", async () => {
-  const { missing, rendered, bot } = await collectMissing();
+  const { missing, rendered, bot } = await collectMissing("en");
   const pt = (list) => list.filter((s) => PT.test(s.replace(NAMES, "")));
   assert.deepEqual(pt(missing), [], "untranslated text that went through tr()");
   assert.deepEqual(pt(rendered), [], "text actually on screen (text nodes, direct textContent writes included)");
@@ -53,6 +65,11 @@ test("spot checks: fixed text, patterns, nested parts and composites", () => {
   assert.equal(tr("Scyther: Saraivada!"), "Scyther: Volley!");
   assert.equal(tr("Brock · Bulbasaur · Green Forest · Difícil"), "Brock · Bulbasaur · Green Forest · Hard");
   assert.equal(tr("Leftovers"), "Leftovers", "proper names pass through");
+  setLang("es");
+  assert.equal(tr("Pausado"), "En pausa");
+  assert.equal(tr("Zona 2 limpa!"), "¡Zona 2 despejada!");
+  assert.equal(tr("+12% quantidade de inimigos · +10% ganho de XP"), "+12% cantidad de enemigos · +10% experiencia obtenida");
+  setLang("en");
 });
 
 test("the choice persists under its own key and pt-BR is untouched text", () => {
@@ -78,6 +95,10 @@ test("the title screen switch flips the language and redraws in it", async () =>
   btn().click();
   assert.equal(getLang(), "en");
   assert.ok(root.all().some((n) => n.tagName === "button" && n.textContent === "▶ Play"));
+  assert.equal(btn().textContent, "🌐 Español", "the next language, named in itself");
+  btn().click();
+  assert.equal(getLang(), "es");
+  assert.ok(root.all().some((n) => n.tagName === "button" && n.textContent === "▶ Jugar"));
   assert.equal(btn().textContent, "🌐 Português");
   btn().click();
   assert.equal(getLang(), "pt-BR");

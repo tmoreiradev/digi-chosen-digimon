@@ -143,10 +143,10 @@ all of them with progress, reward and pending gold. During a boss fight the HUD 
 
 ## Language
 
-The interface is in Brazilian Portuguese by default, with English one click away ("🌐 English" on the title
-screen; the choice is saved under `pokebonk-clone.lang.v1`, separate from the save data). The pt-BR text is the key:
+The interface is in Brazilian Portuguese by default; the title-screen button cycles through English and Spanish (the
+choice is saved under `pokebonk-clone.lang.v1`, separate from the save data). The pt-BR text is the key:
 `src/core/lang.js` translates it where it reaches the screen (`el()`, the HUD, banners, canvas labels) using the
-exact strings and patterns in `src/core/lang-en.js`; data-derived labels (types, biomes, archetypes, vitamins, tower
+exact strings and patterns in `src/core/lang-en.js` and `src/core/lang-es.js`; data-derived labels (types, biomes, archetypes, vitamins, tower
 floors, item descriptions) come from `src/core/i18n.js` in the current language. Proper names from the data — species,
 moves, items, abilities, roster roles and ultimate names — stay as they are. `node scripts/collect-strings.mjs` lists
 any text that reached the screen in English mode without a translation; `tests/lang.test.mjs` fails if any of it is

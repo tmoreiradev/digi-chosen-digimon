@@ -268,6 +268,7 @@ export const EN_PATTERNS = [
   [/^Onda (\d+)!$/, (n) => `Wave ${n}!`],
   [/^Além — Andar (\d+)$/, (n) => `Beyond — Floor ${n}`],
   [/^(\d+)F — (.+)$/, (n, name) => `${n}F — ${name}`],
+  [/^Altar — (\d+) s$/, (n) => `Altar — ${n} s`],
   [/^Partidas: (\d+)$/, (n) => `Runs: ${n}`],
   [/^Melhor: (.+)$/, (s) => `Best: ${s}`],
   [/^Capturados: (\d+) \/ (\d+)$/, (a, b) => `Caught: ${a} / ${b}`],

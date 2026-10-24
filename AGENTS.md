@@ -19,7 +19,7 @@ continuar funcionando offline, inclusive `dist/digi-chosen.html` aberto por `fil
 
 - `src/data/*.json` são as tabelas do jogo e **são versionadas**; só `/data/` na raiz (cópia de trabalho da
   extração) fica fora do Git. Não reintroduza uma regra `data/` sem âncora no `.gitignore`.
-- Texto novo na interface: escreva em pt-BR e acrescente o inglês em `src/core/lang-en.js` (exato em `EN`, com números/nomes em `EN_PATTERNS`); `tests/lang.test.mjs` reprova texto em português que chegue à tela no modo inglês.
+- Texto novo na interface: escreva em pt-BR e acrescente o inglês em `src/core/lang-en.js` e o espanhol em `src/core/lang-es.js` (exato em `EN`/`ES`, com números/nomes em `EN_PATTERNS`/`ES_PATTERNS`); `tests/lang.test.mjs` reprova texto em português que chegue à tela no modo inglês.
 - Não mude as chaves do `localStorage` (`pokebonk-clone.*`) nem o global `__POKEBONK_DATA__` sem migração;
   saves antigos têm de continuar carregando (`normalizeProgress` em `src/ui/account.js`).
 - Não troque personagens, sprites ou nomes por outra franquia; preserve os créditos e a licença das sheets

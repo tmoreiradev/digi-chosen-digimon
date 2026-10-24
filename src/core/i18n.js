@@ -1,7 +1,10 @@
 import { getLang } from "./lang.js";
 
 const en = () => getLang() === "en";
+const es = () => getLang() === "es";
 const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+/** The table for the active language: pt-BR, English or Spanish. */
+const pick = (pt, enT, esT) => (es() ? esT : en() ? enT : pt);
 
 // pt-BR labels for the data-driven strings (the extracted tables carry Spanish archetype labels
 // and English biome, vitamin and tower names) and for shared UI words. Species, moves, items,
@@ -27,7 +30,12 @@ export const TYPE_PT = {
   dark: "Sombrio",
   fairy: "Fada",
 };
-export const typeName = (t) => (en() ? cap(t) : TYPE_PT[t] ?? t);
+const TYPE_ES = {
+  normal: "Normal", fighting: "Lucha", flying: "Volador", poison: "Veneno", ground: "Tierra", rock: "Roca", bug: "Bicho",
+  ghost: "Fantasma", steel: "Acero", fire: "Fuego", water: "Agua", grass: "Planta", electric: "Eléctrico", psychic: "Psíquico",
+  ice: "Hielo", dragon: "Dragón", dark: "Siniestro", fairy: "Hada",
+};
+export const typeName = (t) => (en() ? cap(t) : pick(TYPE_PT, null, TYPE_ES)[t] ?? t);
 
 export const ARCH_PT = {
   bolt: "Projétil",
@@ -63,8 +71,13 @@ const ARCH_EN = {
   meteor: "Meteor", boomerang: "Boomerang", trap: "Trap", vortex: "Vortex", wave: "Wave", trail: "Trail",
   drain: "Drain", spin: "Spin", weather: "Weather", buff: "Buff", random: "Random", fusion: "Fusion",
 };
-export const archLabel = (arch, rules) =>
-  (en() ? ARCH_EN[arch] : ARCH_PT[arch]) ?? rules?.archetypes?.[arch]?.label ?? arch;
+const ARCH_ES = {
+  bolt: "Proyectil", orb: "Esfera explosiva", lob: "Bomba", barrage: "Ráfaga", homing: "Teledirigido", beam: "Rayo",
+  cone: "Cono", nova: "Onda expansiva", aura: "Aura", orbit: "Órbita", strike: "Golpe", dash: "Embestida", chain: "Cadena",
+  smite: "Impacto celeste", meteor: "Meteoro", boomerang: "Bumerán", trap: "Trampa", vortex: "Vórtice", wave: "Ola",
+  trail: "Estela", drain: "Drenaje", spin: "Giro", weather: "Clima", buff: "Potenciador", random: "Aleatorio", fusion: "Fusión",
+};
+export const archLabel = (arch, rules) => pick(ARCH_PT, ARCH_EN, ARCH_ES)[arch] ?? rules?.archetypes?.[arch]?.label ?? arch;
 
 export const BIOME_PT = {
   forest: { name: "Floresta Verde", desc: "Uma floresta frondosa cheia de vida — e de Pokémon que preferem ficar com ela só para si." },
@@ -75,14 +88,23 @@ export const BIOME_PT = {
   volcano: { name: "Ilha do Vulcão", desc: "Rios de lava e cinzas. Só os mais fortes sobrevivem ao calor." },
 };
 // English: the data's own name and description.
-export const biomeName = (b) => (en() ? b?.name : BIOME_PT[b?.id]?.name ?? b?.name) ?? "";
-export const biomeDesc = (b) => (en() ? b?.desc : BIOME_PT[b?.id]?.desc ?? b?.desc) ?? "";
+const BIOME_ES = {
+  forest: { name: "Bosque Verde", desc: "Un bosque frondoso lleno de vida — y de Pokémon que prefieren tenerlo para ellos solos." },
+  desert: { name: "Desierto Rocoso", desc: "Arena abrasadora, cañones de roca y tormentas cegadoras." },
+  coast: { name: "Costa Tormentosa", desc: "Playas, arrecifes y tormentas eléctricas sobre el mar. Cuidado con la marea." },
+  glacier: { name: "Glaciar Celeste", desc: "Hielo eterno bajo auroras. Los lagos helados resbalan y el frío muerde hasta tus ataques." },
+  graveyard: { name: "Torre Lavanda", desc: "Niebla, lápidas y susurros. Aquí los fantasmas nunca descansan." },
+  volcano: { name: "Isla Volcán", desc: "Ríos de lava y ceniza. Solo los más fuertes sobreviven al calor." },
+};
+export const biomeName = (b) => (en() ? b?.name : pick(BIOME_PT, null, BIOME_ES)[b?.id]?.name ?? b?.name) ?? "";
+export const biomeDesc = (b) => (en() ? b?.desc : pick(BIOME_PT, null, BIOME_ES)[b?.id]?.desc ?? b?.desc) ?? "";
 
 export const MODE_PT = { classic: "Clássico", endless: "Infinito", tower: "Torre" };
 
 export const RARITY_PT = ["Comum", "Incomum", "Raro", "Épico", "Lendário"];
 export const RANK_PT = { common: "Comum", uncommon: "Incomum", rare: "Raro", epic: "Épico", legendary: "Lendário" };
-export const rankName = (rank) => (en() ? cap(rank) : RANK_PT[rank] ?? rank);
+const RANK_ES = { common: "Común", uncommon: "Poco común", rare: "Raro", epic: "Épico", legendary: "Legendario" };
+export const rankName = (rank) => (en() ? cap(rank) : pick(RANK_PT, null, RANK_ES)[rank] ?? rank);
 
 export const VITAMIN_DESC_PT = {
   protein: "Dano físico",
@@ -111,7 +133,15 @@ export const VITAMIN_DESC_PT = {
   "poke-radar": "Power-ups",
   "loaded-dice": "Um atributo aleatório",
 };
-export const vitaminDesc = (def) => (en() ? def.desc : VITAMIN_DESC_PT[def.key] ?? def.desc);
+const VITAMIN_DESC_ES = {
+  protein: "Daño físico", calcium: "Daño especial", iron: "Armadura", zinc: "Escudo regenerativo", carbos: "Velocidad de movimiento",
+  "hp-up": "PS máximos", "pp-up": "Proyectiles", ether: "Velocidad de ataque", "dire-hit": "Probabilidad de crítico",
+  "x-speed": "Velocidad de los proyectiles", "x-defense": "Evasión", "x-attack": "Probabilidad de estado", stardust: "Área de efecto",
+  elixir: "Duración", "super-potion": "Regeneración de PS", nugget: "Monedas", "exp-candy": "Experiencia", "star-piece": "Suerte",
+  "max-potion": "Robo de vida", "escape-rope": "Radio de recogida", "sticky-barb": "Espinas", "enigma-berry": "Sobrecuración",
+  "super-lure": "Aparición de élites", "poke-radar": "Potenciadores", "loaded-dice": "Una estadística al azar",
+};
+export const vitaminDesc = (def) => (en() ? def.desc : pick(VITAMIN_DESC_PT, null, VITAMIN_DESC_ES)[def.key] ?? def.desc);
 
 export const TOWER_FLOOR_PT = {
   Vestibule: "Vestíbulo",
@@ -122,7 +152,11 @@ export const TOWER_FLOOR_PT = {
   "Marowak's Shadow": "Sombra de Marowak",
   "The Summit": "O Cume",
 };
-export const towerFloorName = (name) => (en() ? name : TOWER_FLOOR_PT[name] ?? name);
+const TOWER_FLOOR_ES = {
+  Vestibule: "Vestíbulo", "Hall of Headstones": "Sala de las Lápidas", "Mist Room": "Sala de la Niebla",
+  "Candles Out": "Velas Apagadas", "Purified Zone": "Zona Purificada", "Marowak's Shadow": "La Sombra de Marowak", "The Summit": "La Cima",
+};
+export const towerFloorName = (name) => (en() ? name : pick(TOWER_FLOOR_PT, null, TOWER_FLOOR_ES)[name] ?? name);
 
 export const THREAT_PT = ["CALMO", "INQUIETO", "ALERTA", "PERIGO", "CERCADO"];
 
@@ -158,7 +192,22 @@ const HELD_ITEM_DESC_EN = {
   "lucky-egg": "+30% experience.",
   "amulet-coin": "+50% coins.",
 };
-export const heldItemDesc = (key, def) => (en() ? HELD_ITEM_DESC_EN : HELD_ITEM_DESC_PT)[key] ?? def?.desc ?? "";
+const HELD_ITEM_DESC_ES = {
+  leftovers: "Recupera cerca de 1/16 de los PS máximos por segundo.",
+  "choice-band": "+50% de daño en todos los movimientos.",
+  "life-orb": "+30% de daño; cada movimiento lanzado cuesta el 2% de los PS máximos.",
+  "scope-lens": "+10% de probabilidad de crítico.",
+  "muscle-band": "+15% de daño físico.",
+  "wise-glasses": "+15% de daño especial.",
+  "expert-belt": "+25% de daño supereficaz.",
+  "quick-claw": "+10% de velocidad de ataque.",
+  "bright-powder": "+8% de evasión.",
+  "rocky-helmet": "Quien te golpee recibe 20 de daño.",
+  "big-root": "+30% de curación recibida.",
+  "lucky-egg": "+30% de experiencia.",
+  "amulet-coin": "+50% de monedas.",
+};
+export const heldItemDesc = (key, def) => pick(HELD_ITEM_DESC_PT, HELD_ITEM_DESC_EN, HELD_ITEM_DESC_ES)[key] ?? def?.desc ?? "";
 
 // Scripted upgrades (src/game/scripted.js): rules.json carries the upstream Spanish text; these
 // describe what THIS engine does. An item without an entry falls back to the data description.
@@ -242,4 +291,44 @@ export const ITEM_DESC_EN = {
   "secret-key": "Ancient Altars recharge instead of crumbling after a heal (45 s; 30% faster per extra copy).",
   "dowsing-machine": "From the next zone or floor on, each one brings 1 altar and 2 chests nearby (per copy).",
 };
-export const itemDesc = (key, def) => (en() ? ITEM_DESC_EN : ITEM_DESC_PT)[key] ?? def?.desc ?? "";
+const ITEM_DESC_ES = {
+  "grip-claw": "Cada golpe tiene un 4% de probabilidad de enraizar al enemigo durante 2 s.",
+  "berry-juice": "Cada derrota tiene un 5% de probabilidad de curar el 2% de los PS máximos.",
+  "shell-bell": "Recuperas el 0,8% del daño que infliges.",
+  metronome: "+2% de daño por segundo sin recibir golpes (hasta +40%).",
+  "binding-band": "+20% de daño a enemigos paralizados, enraizados, congelados, dormidos o retrocediendo.",
+  awakening: "Cada golpe tiene un 2,5% de probabilidad de dormir al enemigo durante 3 s.",
+  lemonade: "Tus aliados hacen un 25% más de daño y atacan un 15% más rápido.",
+  "poke-doll": "Las pasivas de tus aliados valen un 50% más.",
+  stick: "3% de probabilidad de que un golpe haga x8 de daño: ¡Bonk!",
+  "razor-fang": "Remata al instante a enemigos comunes por debajo del 8% de PS (+4% por copia). Ni alfas ni jefes.",
+  "focus-band": "15% de probabilidad de sobrevivir a un golpe letal con 1 PS (una vez cada 20 s).",
+  "full-heal": "+6% de daño por cada estado distinto del enemigo (hasta +30%).",
+  "guard-spec": "Cada 14 s bloquea por completo el siguiente golpe.",
+  "gold-teeth": "La tienda cobra un 8% menos (hasta -24%).",
+  "focus-sash": "Sobrevives a un golpe letal una vez por zona.",
+  revive: "Revives una vez con el 35% de PS.",
+  "reaper-cloth": "+1% de daño por cada 100 derrotas en la partida (hasta +30%).",
+  "thick-club": "Daño físico +1% por cada 2 de armadura (hasta +50%).",
+  "fire-stone": "Los enemigos quemados explotan al morir (40% de sus PS, en 3 u).",
+  "leaf-stone": "Cada derrota tiene un 10% de probabilidad de soltar un remolino de hojas que corta a los cercanos y cura el 1% de PS.",
+  "ss-ticket": "+1 hueco para aliados en esta partida.",
+  "max-revive": "Revives una vez con el 60% de PS.",
+  "soda-pop": "Tu deslizamiento suelta una ola de burbujas que daña a los enemigos cercanos.",
+  "adrenaline-orb": "Al recibir un golpe: +20% de velocidad y +12% de velocidad de ataque durante 3 s.",
+  "metal-powder": "Quieto medio segundo: +30% de armadura y +8% de velocidad de ataque hasta que te muevas.",
+  "ice-heal": "Golpear a un enemigo congelado rompe el hielo: +60% de daño y esquirlas que paralizan a sus vecinos.",
+  "old-rod": "Cada 9 s un Magikarp salta sobre un enemigo. A veces pica un Gyarados...",
+  eviolite: "Mientras aún puedas evolucionar: +50% de armadura y +25% de PS máximos.",
+  "shed-shell": "Deslizamiento con invulnerabilidad más larga y recarga un 10% más rápida.",
+  "cell-battery": "+1,5% de velocidad de ataque cada 10 derrotas sin recibir golpes (hasta +25%).",
+  "griseous-orb": "Cada derrota tiene un 12% de probabilidad de dejar una sombra que estalla y maldice a los vecinos.",
+  electirizer: "Cada 2,5 s cae un rayo sobre 3 enemigos cercanos y puede paralizarlos (+1 rayo por copia).",
+  "silph-scope": "Cada 6 s marca al enemigo más fuerte cercano (+1 por copia): recibe un 40% más de daño de todo. Si cae, marca otro.",
+  "max-ether": "Tus vitaminas pueden subir 2 niveles más (hasta el 12).",
+  "tm-case": "Tus movimientos pueden subir 2 niveles más (hasta el 10).",
+  "poke-flute": "Tu definitiva se carga un 25% más rápido; al usarla, todos tus movimientos se recargan y ganas +30% de velocidad de ataque durante 6 s.",
+  "secret-key": "Los Altares Antiguos se recargan en vez de desaparecer tras curar (45 s; un 30% más rápido por copia extra).",
+  "dowsing-machine": "A partir de la siguiente zona o piso, cada uno trae 1 altar y 2 cofres más cerca (por copia).",
+};
+export const itemDesc = (key, def) => pick(ITEM_DESC_PT, ITEM_DESC_EN, ITEM_DESC_ES)[key] ?? def?.desc ?? "";

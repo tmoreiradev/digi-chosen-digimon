@@ -5,11 +5,11 @@
 
 import { installFakeDom } from "../tests/_dom.mjs";
 
-export async function collectMissing() {
+export async function collectMissing(lang = "en", { endlessMinutes = 25 } = {}) {
   const dom = installFakeDom();
   dom.register("ui");
   const { setLang, tr, TR_MISSING } = await import("../src/core/lang.js");
-  setLang("en");
+  setLang(lang);
   TR_MISSING.clear();
   const { makeRun, loadData } = await import("../tests/_helpers.mjs");
   const { playRun } = await import("../tests/_bot.mjs");
@@ -82,7 +82,7 @@ export async function collectMissing() {
   }
   // Full bot runs: banners, bosses, evolutions, captures, events.
   const bot = [];
-  for (const [mode, seed] of [["classic", 23], ["tower", 42], ["endless", 5]]) {
+  for (const [mode, seed, minutes] of [["classic", 23, 25], ["tower", 42, 25], ["endless", 5, endlessMinutes]]) {
     const { run, input, calls } = makeRun({ mode, profile });
     const banners = [];
     const orig = run.banner.bind(run);
@@ -112,7 +112,7 @@ export async function collectMissing() {
       scan(document.getElementById("ui"));
       return out;
     };
-    bot.push({ mode, ...playRun({ run, input, calls, seed, maxSeconds: 25 * 60, godMode: true }) });
+    bot.push({ mode, ...playRun({ run, input, calls, seed, maxSeconds: minutes * 60, godMode: true }) });
     for (const b of banners) tr(b);
     for (const f of floaters) tr(f);
     sweepRun(run, calls);
@@ -147,7 +147,13 @@ export async function collectMissing() {
 }
 
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}` || process.argv[1]?.endsWith("collect-strings.mjs")) {
-  const { missing } = await collectMissing();
+  // --lang=es picks the language, --long plays 60 minutes of Endless.
+  const lang = process.argv.find((a) => a.startsWith("--lang="))?.slice(7) ?? "en";
+  const { missing, rendered, bot } = await collectMissing(lang, { endlessMinutes: process.argv.includes("--long") ? 60 : 25 });
+  if (process.argv.includes("--summary")) {
+    for (const b of bot) console.log(`${b.mode}: ${b.state} at ${Math.round(b.time)} s, level ${b.level}, ${b.kills} kills, chests ${b.chestsOpened ?? 0}, bought ${b.bought ?? 0}`);
+    console.log(`rendered texts: ${rendered.length}`);
+  }
   if (process.argv.includes("--json")) console.log(JSON.stringify(missing, null, 1));
   else {
     console.log(missing.join("\n"));

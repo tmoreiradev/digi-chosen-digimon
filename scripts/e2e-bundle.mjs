@@ -149,6 +149,11 @@ async function scenario() {
   click("Play as guest");
   await sleep(100);
   expect(/Choose your partner/i.test(body()), "the next screens follow in English");
+  globalThis.__PB__.screens.showTitle(); // the partner screen has no way back; the debug handle does
+  await sleep(100);
+  click("🌐 Español");
+  await sleep(150);
+  expect(/▶ Jugar/.test(body()) && document.documentElement.lang === "es", "and on to Spanish");
   return log;
 }
 

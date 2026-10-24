@@ -19,6 +19,7 @@ export const MODULE_ORDER = [
   "src/core/math.js",
   "src/core/rng.js",
   "src/core/lang-en.js",
+  "src/core/lang-es.js",
   "src/core/lang.js",
   "src/ui/dom.js",
   "src/core/i18n.js",

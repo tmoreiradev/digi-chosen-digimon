@@ -12,6 +12,8 @@ import { HELD_ITEMS } from "../game/scripted.js";
 import { tr, getLang, setLang, LANGS } from "../core/lang.js";
 
 /** The account name; any guest (old saves were named "Guest") shows as Convidado. */
+/** The title switch cycles through the languages; its label names the next one, in that language. */
+const NEXT_LANG = { "pt-BR": "en", en: "es", es: "pt-BR" };
 const trainerName = () => (!accounts.current || accounts.current.kind === "guest" ? tr("Convidado") : accounts.current.name);
 
 export class Screens {
@@ -53,8 +55,8 @@ export class Screens {
             el("button", { class: "btn big red", onclick: () => this.showAccountPicker() }, "▶ Jogar"),
             el("button", { class: "btn big ghost", onclick: () => this.showHelp() }, "? Como jogar"),
             // Language switch: names the other language in that language, so it is readable either way.
-            el("button", { class: "btn big ghost lang-switch", onclick: () => { setLang(getLang() === "en" ? "pt-BR" : "en"); this.showTitle(); } },
-              getLang() === "en" ? "🌐 Português" : "🌐 English")
+            el("button", { class: "btn big ghost lang-switch", onclick: () => { setLang(NEXT_LANG[getLang()]); this.showTitle(); } },
+              lit(`🌐 ${LANGS[NEXT_LANG[getLang()]]}`))
           ),
           el("div", { class: "title-stats" },
             el("span", {}, lit(`${tr("Treinador:")} ${trainerName()}`)), // the name is the player's, never translated

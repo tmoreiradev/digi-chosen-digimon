@@ -4,9 +4,12 @@
 // Anything without a translation stays in pt-BR, and is recorded in TR_MISSING to find it.
 
 import { EN, EN_PATTERNS, bindTr } from "./lang-en.js";
+import { ES, ES_PATTERNS, bindTrEs } from "./lang-es.js";
 
 export const LANG_KEY = "pokebonk-clone.lang.v1"; // new key; the save keys are untouched
-export const LANGS = { "pt-BR": "Português", en: "English" };
+export const LANGS = { "pt-BR": "Português", en: "English", es: "Español" };
+/** Dictionary and patterns per language (pt-BR is the source text, no dictionary). */
+const DICTS = { en: [EN, EN_PATTERNS], es: [ES, ES_PATTERNS] };
 
 let current = "pt-BR";
 try {
@@ -34,8 +37,9 @@ export const TR_MISSING = new Set();
 
 export function tr(text) {
   if (current === "pt-BR" || typeof text !== "string" || !text) return text;
-  if (Object.hasOwn(EN, text)) return EN[text]; // own keys only: "toString" is not a translation
-  for (const [re, fn] of EN_PATTERNS) {
+  const [dict, patterns] = DICTS[current];
+  if (Object.hasOwn(dict, text)) return dict[text]; // own keys only: "toString" is not a translation
+  for (const [re, fn] of patterns) {
     const m = text.match(re);
     if (!m) continue;
     const out = fn(...m.slice(1));
@@ -48,3 +52,4 @@ export function tr(text) {
 }
 
 bindTr(tr);
+bindTrEs(tr);

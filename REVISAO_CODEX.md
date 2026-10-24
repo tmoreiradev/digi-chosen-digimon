@@ -1115,3 +1115,19 @@ aceitos, e um registro meu corrigido:
 1 P2 + 1 P3, aceitos: o altar em recarga (Secret Key) seguia mostrando "Altar — E" sem aceitar o E; agora mostra a contagem
 ("Altar — 45 s", `WorldEvents.hintFor`). E o `review14.test.mjs`, com a lista de excluídos vazia, não verificava mais nada;
 virou "todo item scriptado dos dados está em SCRIPTED e no pool" (38). Suíte **184 / 184**; build, `check-bundle` e `npm run e2e` OK.
+
+## 35. Fase 24 — Espanhol e partida longa no Infinito (24/10/2026)
+
+- **Espanhol:** `src/core/lang-es.js` com as mesmas 199 entradas e 54 padrões do inglês (nomes de topo únicos — `ES`,
+  `ES_PATTERNS`, `STAT_ES`… — porque o bundle junta os módulos num escopo só). `lang.js` escolhe o dicionário pelo idioma
+  ativo (`DICTS`); `i18n.js` ganhou tabelas em espanhol (tipos, arquétipos, biomas, raridade, vitaminas, andares, itens
+  segurados e os 38 itens scriptados). O botão do título agora cicla pt-BR → English → Español, sempre nomeando o próximo
+  idioma nele mesmo. O bot de teste lê os painéis nos três idiomas.
+- **Teste:** `tests/lang.test.mjs` varre o espanhol também, com um detector de português que ignora o que o espanhol
+  compartilha ("golpe", "de", "para", acentos agudos) e usa fronteiras por letra (`` do JavaScript quebra em "Común").
+  O `npm run e2e` passa pelos três idiomas no bundle por `file://`.
+- **Partida longa (item pedido como "jogo humano"):** não dá para jogar como humano daqui; o equivalente automatizado foi o
+  bot jogando **60 minutos de Infinito** (nível 45, 5377 derrotas, 17 baús abertos, 6 compras) em inglês e em espanhol, com
+  leitura do HUD a cada 10 s e de cada painel aberto: **nenhum texto em português** nos dois idiomas
+  (`node scripts/collect-strings.mjs --lang=es --long --summary`). O jogo humano continua sendo o teste de balanço.
+- Suíte **185 / 185**; build, `check-bundle` e `npm run e2e` OK.
