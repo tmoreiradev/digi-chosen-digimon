@@ -1021,3 +1021,9 @@ escolha da carta é só pela tecla `1`, e o teste exige que o painel feche e que
 **Trigésima quarta rodada** (fase 20, `459923e..3612bd6`, `reviews/codex-2026-10-24-07-25-459923e..HEAD.md`): **Aprovado com
 ressalvas**, 1 P3 aceito: o teste da renovação só comparava a tela com o próprio `ev.stock`. Agora `shopSelection` é
 substituído por um estoque conhecido e o teste exige exatamente um sorteio e esses títulos na tela reaberta.
+
+## 32. Fase 21 — Nome do treinador (24/10/2026)
+
+- O nome da conta (permanente, já existia em `accounts`) passa a aparecer no título ("Treinador: Ash") e na linha de
+  resultados ("Ash · Bulbasaur · Floresta Verde · Normal"); convidado aparece como "Convidado". Teste em `pause.test.mjs`.
+  Suíte **175 / 175**; build, `check-bundle` e `npm run e2e` OK.

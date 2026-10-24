@@ -50,6 +50,7 @@ export class Screens {
             el("button", { class: "btn big ghost", onclick: () => this.showHelp() }, "? Como jogar")
           ),
           el("div", { class: "title-stats" },
+            el("span", {}, `Treinador: ${accounts.current?.name ?? "Convidado"}`),
             el("span", {}, `Partidas: ${profile.data.runs ?? 0}`),
             el("span", {}, `Melhor: ${fmtTime(profile.data.best ?? 0)}`),
             el("span", {}, `Capturados: ${(profile.data.pokedex?.caught ?? []).length} / ${this.data.pokemon.length}`),
@@ -322,7 +323,7 @@ export class Screens {
           "div",
           { class: "card panel" },
           el("h2", {}, victory ? "Vitória!" : "Você desmaiou"),
-          el("p", { class: "muted" }, `${p.species.name} · ${biomeName(run.biome)} · ${run.difficulty.name}`),
+          el("p", { class: "muted" }, `${accounts.current?.name ?? "Convidado"} · ${p.species.name} · ${biomeName(run.biome)} · ${run.difficulty.name}`),
           el("div", { class: "result-grid" },
             el("div", {}, el("b", {}, fmtTime(run.time)), el("span", {}, "sobrevividos")),
             el("div", {}, el("b", {}, String(stats.kills)), el("span", {}, "abates")),

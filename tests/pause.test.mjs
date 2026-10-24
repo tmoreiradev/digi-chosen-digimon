@@ -166,3 +166,13 @@ test("a save written before eggs/achievements/nickname existed still loads", () 
   assert.deepEqual(profile.data.eggs, { active: null, steps: 0, needed: 0, hatchSpecies: null });
   assert.ok(profile.data.achievements);
 });
+
+test("the trainer name (the profile's) is on the title screen and on the results", () => {
+  const { root, screens, run } = setup();
+  accounts.create("Ash", "");
+  screens.showTitle();
+  assert.match(root.querySelector(".title-stats").textContent, /Treinador: Ash/);
+  run.state = "dead";
+  screens.showResults(run, false);
+  assert.ok(root.all().some((n) => /^Ash · /.test(n.textContent ?? "")), "results line starts with the trainer");
+});

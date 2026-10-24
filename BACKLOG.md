@@ -41,7 +41,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 
 - Santuários e mercadores ambulantes: o santuário do Clássico (fase 2) e a loja ambulante (fase 5) existem; ~~renovação do estoque~~ feita na fase 20 (24/10).
 - Tarefas/conquistas avançadas com recompensas aplicadas de verdade (ver item 5).
-- Nome de jogador permanente (hoje só apelido do Pokémon).
+- ~~Nome de jogador permanente~~ — fase 21 (24/10): o nome da conta aparece como "Treinador" no título e nos resultados (convidado = "Convidado").
 - ~~Mais itens segurados com efeito~~ — fase 18 (24/10): 13 itens (Leftovers, Choice Band, Life Orb e 10 de atributo).
 - Roster completo de espécies/golpes/upgrades além das 40 da liga e 126 upgrades.
 - ~~Tradução completa para pt-BR~~ — feito na fase 8 (23/10); a escolha de idioma segue em aberto.
