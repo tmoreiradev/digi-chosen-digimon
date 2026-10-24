@@ -1033,5 +1033,7 @@ ressalvas**, 1 P2 aceito: convidados de saves antigos (nome gravado "Guest") apa
 agora vem do tipo da conta (`kind === "guest"` → "Convidado"), sem tocar no nome salvo; teste com um convidado chamado
 "Guest". **Achado de passagem:** `src/ui/account.js` tinha um byte NUL cru dentro da string do `passHash` (escrito pelo
 shell na fase 14); funcionava, mas o git e o `grep` tratavam o arquivo como binário. Trocado pelo escape ` ` — mesma
-string, mesmo hash (`passHash("Ash", "pikachu123")` = `f1:1tifgc5` antes e depois). Suíte **176 / 176**; build,
-`check-bundle` e `npm run e2e` OK.
+string, mesmo hash (`passHash("Ash", "pikachu123")` = `f1:1tifgc5` antes e depois). Suíte **176 / 176**; build e
+`check-bundle` OK. ⚠ Correção deste registro: `npm run e2e` **falhou** nesta rodada, na limpeza (EPERM ao apagar o perfil
+temporário do navegador ainda aberto), e o encadeamento do meu comando não barrou porque a saída passava por `tail`. O
+script agora espera o navegador sair antes de apagar o perfil e trata a limpeza como aviso; três execuções seguidas OK.

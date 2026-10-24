@@ -68,9 +68,16 @@ async function main() {
     else if (!process.exitCode) console.log("e2e: OK — the file:// bundle boots, plays and returns to the menu with no page errors");
     cdp.close();
   } finally {
+    // Wait for the browser to really exit before removing its profile (Windows keeps the files locked
+    // until then); a leftover temp folder is only worth a warning, never a failed check.
+    const exited = new Promise((r) => (browser.exitCode !== null ? r() : browser.once("exit", r)));
     browser.kill();
-    await new Promise((r) => setTimeout(r, 300));
-    fs.rmSync(profile, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    await Promise.race([exited, new Promise((r) => setTimeout(r, 5000))]);
+    try {
+      fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 });
+    } catch (e) {
+      console.warn(`e2e: could not remove ${profile} (${e.code}); harmless, delete it later`);
+    }
   }
 }
 
