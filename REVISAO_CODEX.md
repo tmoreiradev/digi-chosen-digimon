@@ -1027,3 +1027,11 @@ substituído por um estoque conhecido e o teste exige exatamente um sorteio e es
 - O nome da conta (permanente, já existia em `accounts`) passa a aparecer no título ("Treinador: Ash") e na linha de
   resultados ("Ash · Bulbasaur · Floresta Verde · Normal"); convidado aparece como "Convidado". Teste em `pause.test.mjs`.
   Suíte **175 / 175**; build, `check-bundle` e `npm run e2e` OK.
+
+**Trigésima quinta rodada** (fase 21, `17f89e6..df00b00`, `reviews/codex-2026-10-24-07-27-17f89e6..HEAD.md`): **Aprovado com
+ressalvas**, 1 P2 aceito: convidados de saves antigos (nome gravado "Guest") apareciam como "Treinador: Guest". O rótulo
+agora vem do tipo da conta (`kind === "guest"` → "Convidado"), sem tocar no nome salvo; teste com um convidado chamado
+"Guest". **Achado de passagem:** `src/ui/account.js` tinha um byte NUL cru dentro da string do `passHash` (escrito pelo
+shell na fase 14); funcionava, mas o git e o `grep` tratavam o arquivo como binário. Trocado pelo escape ` ` — mesma
+string, mesmo hash (`passHash("Ash", "pikachu123")` = `f1:1tifgc5` antes e depois). Suíte **176 / 176**; build,
+`check-bundle` e `npm run e2e` OK.

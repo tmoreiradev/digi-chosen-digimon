@@ -176,3 +176,10 @@ test("the trainer name (the profile's) is on the title screen and on the results
   screens.showResults(run, false);
   assert.ok(root.all().some((n) => /^Ash · /.test(n.textContent ?? "")), "results line starts with the trainer");
 });
+
+test("a guest, even an old save named Guest, shows as Convidado", () => {
+  const { root, screens } = setup();
+  accounts.current.name = "Guest"; // an old guest save
+  screens.showTitle();
+  assert.match(root.querySelector(".title-stats").textContent, /Treinador: Convidado/);
+});
