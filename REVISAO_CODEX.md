@@ -853,3 +853,9 @@ Throw deixa de ser uma área em volta do jogador. Suíte **143 / 143**; build + 
 1 achado (P2), aceito: o teto de 20 u/s só levava a bomba a ~14,7 u, mas a mira escolhe alvos até 26 u. Teto 40 u/s
 (26 ÷ 0,72 ≈ 36). Teste com alvos a 14, 20 e 25 u (a 20 u o código anterior caía em x = 15,3). Suíte **144 / 144**; build +
 `check-bundle` OK.
+
+**Vigésima terceira rodada** (`e96a946..2fa9f16`, `reviews/codex-2026-10-24-06-45-e96a946..HEAD.md`): **Aprovado com ressalvas**,
+1 achado (P2), aceito: o tempo de voo fixo de 0,72 s valia só do chão; lançada no alto de um pulo (`p.y ≈ 0,8`) a bomba
+voava ~0,87 s e passava 5 u do alvo a 25 u. O tempo agora sai da altura real: `(6 + √(36 + 36·(p.y + 0,8))) ÷ 18`. Teste
+com alvos a 14/20/25 u do chão e 10/25 u no pulo (o código anterior caía em x = 30,1). Suíte **144 / 144**; build +
+`check-bundle` OK.

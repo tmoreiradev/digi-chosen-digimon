@@ -91,8 +91,8 @@ test("orb and boomerang: +count raises the estimate as much as the measured dama
   }
 });
 
-test("a bomb reaches a target at the edge of the aim range", () => {
-  for (const d of [14, 20, 25]) {
+test("a bomb reaches a target at the edge of the aim range, from the ground or mid-jump", () => {
+  for (const [d, y] of [[14, 0], [20, 0], [25, 0], [25, 0.8], [10, 0.8]]) {
     const run = levelled(74);
     const p = run.player;
     run.player.moves = run.player.moves.filter((m) => m.def.arch === "lob");
@@ -100,11 +100,14 @@ test("a bomb reaches a target at the edge of the aim range", () => {
     e.hp = e.maxHp = 1e9;
     e.speed = 0;
     run.player.moves[0].timer = 0;
+    p.y = y; // mid-jump launch: higher start, longer flight
+    p.grounded = y === 0;
+    p.vy = 0;
     run.update(1 / 60);
     const bomb = run.projectiles.find((pr) => pr.lob);
     assert.ok(bomb, "thrown at " + d + " u");
     for (let i = 0; i < 90 && run.projectiles.includes(bomb); i++) run.update(1 / 60);
-    assert.ok(Math.abs(bomb.x - e.x) < 2.5, `${d} u: landed at x ${bomb.x.toFixed(1)}`);
+    assert.ok(Math.abs(bomb.x - e.x) < 2.5, `${d} u, y ${y}: landed at x ${bomb.x.toFixed(1)}`);
     assert.ok(e.hp < e.maxHp, d + " u: the target took the blast");
   }
 });
