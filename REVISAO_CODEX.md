@@ -459,6 +459,16 @@ dos 16 itens fora do pool cobre os 16 (`tests/review14.test.mjs`), não quatro. 
 Afirmações corrigidas: §20 e 14.ª rodada agora dizem "no instante do enfraquecimento" com razão (`Capture.weaken`), e a
 parada por status cobre o controlador do boss. Suíte **126 / 126**; build + `check-bundle` OK.
 
+**Décima sexta rodada** (correção da 15.ª, `93cfe58..2c1cd58`, `reviews/codex-2026-10-24-06-03-93cfe58..HEAD.md`):
+**Reprovado**, 1 achado, aceito — e a raiz era maior que o achado:
+
+| Achado | Decisão |
+|---|---|
+| Uma poça hostil podia enfraquecer o próprio boss no laço de inimigos (marcando-se `cancelled`) e ainda acertar o jogador no mesmo tick, porque a marca só era lida no topo da iteração (P2) | Raiz: poças **hostis** passavam pelo laço de inimigos via `hitEnemy` — a poça do boss feria a horda e o próprio boss **como dano do jogador** (`stats.damage`, roubo de vida, Shell Bell, enfraquecimento). Poça hostil agora só fere o jogador; o dano ao jogador também checa `!z.cancelled`. Teste `tests/review16.test.mjs` (falha no código antigo): boss a 10,1 % dentro da própria poça, jogador e um inimigo comum dentro — jogador leva dano, boss e inimigo não, boss não fica capturável. |
+
+Afirmação corrigida: "antes de tiquetear" passa a valer — nada dentro do tick de uma poça hostil pode mais cancelá-la.
+Suíte **127 / 127**; build + `check-bundle` OK.
+
 ---
 
 ## 15. Playtest automatizado — um bot que joga (23/10/2026)

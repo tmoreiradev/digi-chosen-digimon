@@ -1010,13 +1010,15 @@ export class Run {
       z.tick -= dt;
       if (z.tick <= 0) {
         z.tick = 0.4;
-        for (const e of this.enemies) {
+        // Hostile pools (boss attacks) hurt only the player: through hitEnemy they counted as player
+        // damage to the horde and to the boss itself (stats, lifesteal, items, even weakening it).
+        for (const e of z.hostile ? [] : this.enemies) {
           if (!e.alive) continue;
           if (dist2(e.x, e.z, z.x, z.z) > z.r * z.r) continue;
           this.hitEnemy(e, z.dmg, { type: z.type, cls: "special", status: z.status, statusChance: z.statusChance ?? 0.25, slot: -1 });
           if (z.snare) e.vx *= 0.5;
         }
-        if (z.hostile) {
+        if (z.hostile && !z.cancelled) {
           const p = this.player;
           if (dist2(p.x, p.z, z.x, z.z) <= z.r * z.r) this.hitPlayer(z.dmg * dt, null);
         }
