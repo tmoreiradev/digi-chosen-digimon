@@ -143,6 +143,7 @@ export function installFakeDom() {
   const store = new Map();
   globalThis.Node = FakeNode;
   globalThis.document = {
+    documentElement: { lang: "pt-BR" },
     createElement: (tag) => new FakeNode(tag),
     createTextNode: (text) => new FakeText(text),
     getElementById: (id) => byId[id] ?? null,

@@ -137,6 +137,18 @@ async function scenario() {
   click("Sair para o menu");
   await sleep(1300);
   expect(/Você desmaiou|Vitória!|▶ Jogar/i.test(body()), "back out of the run");
+  if (!/▶ Jogar/.test(body())) {
+    click("Menu principal");
+    await sleep(150);
+  }
+  click("🌐 English");
+  await sleep(150);
+  expect(/▶ Play/.test(body()) && document.documentElement.lang === "en", "the language switch turns the title to English");
+  click("▶ Play");
+  await sleep(100);
+  click("Play as guest");
+  await sleep(100);
+  expect(/Choose your partner/i.test(body()), "the next screens follow in English");
   return log;
 }
 

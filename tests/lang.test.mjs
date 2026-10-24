@@ -1,0 +1,62 @@
+// Language switch: pt-BR (default) / English. The sweep in scripts/collect-strings.mjs plays every
+// screen, card, event and full bot runs in English and lists the text that reached the screen
+// untranslated; nothing Portuguese may be left in it.
+import test from "node:test";
+import assert from "node:assert/strict";
+import { installFakeDom } from "./_dom.mjs";
+import { collectMissing } from "../scripts/collect-strings.mjs";
+
+installFakeDom().register("ui");
+
+const { getLang, setLang, tr, LANG_KEY } = await import("../src/core/lang.js");
+
+// Portuguese tell-tales: accents (except in Pokémon names) and common short words.
+const PT = /[ãõçáíóúâêôà]|\b(de|do|da|dos|das|para|com|seu|sua|não|uma|ao|no|na|em|por|mais|golpes?|inimigos|ouro|nível|aperte|sair|vença|capture|veja)\b/i;
+const NAMES = /Pokémon|Pokédex|Flabébé/g;
+
+test("in English, nothing Portuguese reaches the screen across screens, cards, events and full runs", async () => {
+  const missing = await collectMissing();
+  const portuguese = missing.filter((s) => PT.test(s.replace(NAMES, "")));
+  assert.deepEqual(portuguese, []);
+});
+
+test("spot checks: fixed text, patterns, nested parts and composites", () => {
+  setLang("en");
+  assert.equal(tr("Pausado"), "Paused");
+  assert.equal(tr("Zona 2 limpa!"), "Zone 2 cleared!");
+  assert.equal(tr("Comprou Doce Raro por 92G."), "Bought Rare Candy for 92G.");
+  assert.equal(tr("+12% de dano"), "+12% damage");
+  assert.equal(tr("+12% quantidade de inimigos · +10% ganho de XP · +5 sorte"), "+12% enemy count · +10% XP gain · +5 luck");
+  assert.equal(tr("Scyther: Saraivada!"), "Scyther: Volley!");
+  assert.equal(tr("Brock · Bulbasaur · Green Forest · Difícil"), "Brock · Bulbasaur · Green Forest · Hard");
+  assert.equal(tr("Leftovers"), "Leftovers", "proper names pass through");
+});
+
+test("the choice persists under its own key and pt-BR is untouched text", () => {
+  setLang("en");
+  assert.equal(localStorage.getItem(LANG_KEY), "en");
+  assert.equal(document.documentElement.lang, "en");
+  setLang("pt-BR");
+  assert.equal(getLang(), "pt-BR");
+  assert.equal(tr("Pausado"), "Pausado");
+  setLang("xx");
+  assert.equal(getLang(), "pt-BR", "unknown languages are ignored");
+});
+
+test("the title screen switch flips the language and redraws in it", async () => {
+  const { Screens } = await import("../src/ui/screens.js");
+  const { loadData } = await import("./_helpers.mjs");
+  setLang("pt-BR");
+  const root = document.createElement("div");
+  const screens = new Screens(root, loadData());
+  screens.showTitle();
+  const btn = () => root.all().find((n) => n.tagName === "button" && /🌐/.test(n.textContent));
+  assert.equal(btn().textContent, "🌐 English");
+  btn().click();
+  assert.equal(getLang(), "en");
+  assert.ok(root.all().some((n) => n.tagName === "button" && n.textContent === "▶ Play"));
+  assert.equal(btn().textContent, "🌐 Português");
+  btn().click();
+  assert.equal(getLang(), "pt-BR");
+  assert.ok(root.all().some((n) => n.tagName === "button" && n.textContent === "▶ Jogar"));
+});

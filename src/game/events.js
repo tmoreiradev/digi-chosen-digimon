@@ -9,6 +9,7 @@
 
 import { clamp, dist } from "../core/math.js";
 import { el } from "../ui/dom.js";
+import { tr } from "../core/lang.js";
 import { applyVitaminPick } from "./vitamins.js";
 import { MAX_LEVEL } from "./rules.js";
 
@@ -427,7 +428,7 @@ export class WorldEvents {
         ctx.fillStyle = "rgba(20,16,40,0.85)";
         ctx.font = "700 11px system-ui, sans-serif";
         ctx.textAlign = "center";
-        const label = ev.kind === "chest" ? "Baú — E" : ev.kind === "shop" ? "Loja — E" : "Altar — E";
+        const label = tr(ev.kind === "chest" ? "Baú — E" : ev.kind === "shop" ? "Loja — E" : "Altar — E");
         const labelY = sy - zoom * 2.2;
         ctx.fillText(label, sx, labelY);
         ctx.fillStyle = "#ffd166";

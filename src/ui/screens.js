@@ -9,6 +9,7 @@ import { Pokedex } from "./pokedex.js";
 import { ACHIEVEMENTS, DEX_TASKS, progressSnapshot } from "../game/achievements.js";
 import { typeName, biomeName, biomeDesc, rankName, heldItemDesc } from "../core/i18n.js";
 import { HELD_ITEMS } from "../game/scripted.js";
+import { tr, getLang, setLang, LANGS } from "../core/lang.js";
 
 /** The account name; any guest (old saves were named "Guest") shows as Convidado. */
 const trainerName = () => (!accounts.current || accounts.current.kind === "guest" ? "Convidado" : accounts.current.name);
@@ -50,7 +51,10 @@ export class Screens {
           el("p", { class: "tagline" }, "Roguelite survivor · Kanto · offline"),
           el("div", { class: "title-actions" },
             el("button", { class: "btn big red", onclick: () => this.showAccountPicker() }, "▶ Jogar"),
-            el("button", { class: "btn big ghost", onclick: () => this.showHelp() }, "? Como jogar")
+            el("button", { class: "btn big ghost", onclick: () => this.showHelp() }, "? Como jogar"),
+            // Language switch: names the other language in that language, so it is readable either way.
+            el("button", { class: "btn big ghost lang-switch", onclick: () => { setLang(getLang() === "en" ? "pt-BR" : "en"); this.showTitle(); } },
+              getLang() === "en" ? "🌐 Português" : "🌐 English")
           ),
           el("div", { class: "title-stats" },
             el("span", {}, `Treinador: ${trainerName()}`),
@@ -155,13 +159,13 @@ export class Screens {
           el("div", { class: "result-actions", style: { marginTop: 14, gap: 8 } },
             el("button", { class: "btn big red", onclick: () => {
               const r = accounts.create(nameIn.value, passIn.value);
-              if (!r.ok) { msg.textContent = r.error; return; }
+              if (!r.ok) { msg.textContent = tr(r.error); return; }
               profile.save();
               this.showPicker();
             } }, "Criar e jogar"),
             el("button", { class: "btn big ghost", onclick: () => {
               const r = accounts.login(nameIn.value, passIn.value);
-              if (!r.ok) { msg.textContent = r.error; return; }
+              if (!r.ok) { msg.textContent = tr(r.error); return; }
               profile.save();
               this.showPicker();
             } }, "Entrar"),

@@ -1,6 +1,7 @@
 // Canvas world renderer: terrain, creatures, projectiles, effects.
 
 import { TAU, clamp, lerp } from "../core/math.js";
+import { tr } from "../core/lang.js";
 import { makeRng } from "../core/rng.js";
 import { creatureSprite } from "./creature.js";
 import { drawSprite, spriteAspect, worldHeightFor } from "./sprites.js";
@@ -766,7 +767,7 @@ export class Renderer {
       const s = this.worldToScreen(f.x, f.z, f.y);
       ctx.globalAlpha = 1 - f.t / f.life;
       ctx.fillStyle = f.color;
-      ctx.fillText(String(f.text), s.x, s.y);
+      ctx.fillText(tr(String(f.text)), s.x, s.y);
     }
     ctx.globalAlpha = 1;
   }

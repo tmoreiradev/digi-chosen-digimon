@@ -1048,3 +1048,26 @@ e2e, que depende de um navegador instalado e por isso fica fora do `npm test`; u
 navegador custaria mais que a linha que protege. Evidência registrada: a execução completa do e2e termina em 4 s (sem o
 `unref`, o Node esperaria os 5 s do temporizador após o fim). A regra do `AGENTS.md` (correção com teste) vale para o jogo;
 scripts de ferramenta são verificados por execução.
+
+## 33. Fase 22 — Seletor de idioma pt-BR / English (24/10/2026)
+
+- **Desenho (estilo gettext):** o texto pt-BR continua no código e é a chave. `src/core/lang.js` (`getLang`, `setLang`,
+  `tr`) traduz nos pontos onde o texto chega à tela — `el()` de `dom.js` (filhos de texto, `placeholder`, `title`), os
+  `textContent` do HUD, banners (passam por `el`), flutuantes e rótulos no canvas, erro de conta e de boot. `lang-en.js`
+  tem `EN` (texto exato, ~230 entradas) e `EN_PATTERNS` (~55 regras para texto com números/nomes, que podem traduzir
+  partes aninhadas — item da loja, dificuldade, nome de atributo); compostos com " · " são traduzidos parte a parte. Os
+  rótulos derivados dos dados (tipos, biomas, arquétipos, raridade, vitaminas, andares, descrições de itens) saem de
+  `i18n.js` já no idioma ativo; em inglês, biomas/vitaminas/andares usam o próprio texto do `rules.json`.
+- **Por que não chaves:** trocar ~300 literais por chaves espalharia o texto longe do código e não mudaria o resultado; o
+  risco do desenho escolhido é um texto novo esquecido, coberto pela varredura abaixo.
+- **Seletor:** botão no título ("🌐 English" / "🌐 Português", cada um no próprio idioma); a escolha fica em
+  `pokebonk-clone.lang.v1` (chave nova; as de save não mudam) e `<html lang>` acompanha. Padrão continua pt-BR, então os
+  testes antigos não mudaram.
+- **Varredura:** `scripts/collect-strings.mjs` liga o inglês e percorre todas as telas, as cartas de level-up (40 sorteios
+  × 6 espécies), os três painéis de evento, conquistas e **runs inteiras do bot** (Clássico, Torre e Infinito), e lista o
+  texto que chegou à tela sem tradução. Da primeira passada (1815 textos, 642 sem contar nomes dos dados) até zero em
+  português; o que sobra é inglês ou nome próprio. `tests/lang.test.mjs` roda a mesma varredura e reprova qualquer texto
+  com cara de português (acentos ou palavras como "de", "para", "golpe"), mais testes pontuais de padrões, persistência
+  e do botão do título. O `npm run e2e` passou a trocar o idioma no bundle por `file://` e seguir em inglês.
+- **Navegador:** título "Survivor roguelite… ▶ Play… Trainer: Guest", HUD "Lv 1 … → Ivysaur at Lv 24 · Green Forest ·
+  CALM · Zone 1". Suíte **180 / 180**; build, `check-bundle` e `npm run e2e` OK. A regra de texto novo entrou no `AGENTS.md`.

@@ -1,6 +1,7 @@
 // Bootstrap: loads data, wires the screens, and drives the game loop.
 
 import { loadGameData } from "./data/game-data.js";
+import { getLang, setLang, tr } from "./core/lang.js";
 import { Run } from "./game/run.js";
 import { DIFFICULTIES } from "./game/rules.js";
 import { Tower } from "./game/tower.js";
@@ -78,6 +79,7 @@ async function boot() {
   state.screens.onStart = startRun;
   // Load the saved profile BEFORE reading its settings (the volume used to come from a blank default).
   accounts.load();
+  setLang(getLang()); // reflect the saved interface language on <html lang>
   state.sfx.setVolume(profile.data.settings?.volume ?? 0.5);
   state.music.setVolume(profile.data.settings?.volume ?? 0.5);
 
@@ -378,5 +380,5 @@ function drawMenuBackdrop() {
 boot().catch((err) => {
   console.error(err);
   document.getElementById("screens").innerHTML =
-    `<div class="screen dim"><div class="card panel"><h2>Falha ao iniciar</h2><p class="muted">${err.message}</p><p class="muted">Sirva a pasta por HTTP (npm start) e recarregue.</p></div></div>`;
+    `<div class="screen dim"><div class="card panel"><h2>${tr("Falha ao iniciar")}</h2><p class="muted">${err.message}</p><p class="muted">${tr("Sirva a pasta por HTTP (npm start) e recarregue.")}</p></div></div>`;
 });

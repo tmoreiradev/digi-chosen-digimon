@@ -1,5 +1,7 @@
 // Tiny DOM helpers used by the interface code.
 
+import { tr } from "../core/lang.js";
+
 export function el(tag, props = {}, ...children) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) {
@@ -9,12 +11,13 @@ export function el(tag, props = {}, ...children) {
     else if (k === "dataset") Object.assign(node.dataset, v);
     else if (k.startsWith("on") && typeof v === "function") node.addEventListener(k.slice(2).toLowerCase(), v);
     else if (k === "html") node.innerHTML = v;
+    else if (k === "placeholder" || k === "title") node.setAttribute(k, tr(v));
     else if (k in node) node[k] = v;
     else node.setAttribute(k, v);
   }
   for (const c of children.flat()) {
     if (c == null || c === false) continue;
-    node.append(c instanceof Node ? c : document.createTextNode(String(c)));
+    node.append(c instanceof Node ? c : document.createTextNode(tr(String(c)))); // interface language
   }
   return node;
 }

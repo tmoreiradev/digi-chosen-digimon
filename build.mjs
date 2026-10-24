@@ -18,6 +18,8 @@ export const OUT = path.join(ROOT, "dist", "digi-chosen.html");
 export const MODULE_ORDER = [
   "src/core/math.js",
   "src/core/rng.js",
+  "src/core/lang-en.js",
+  "src/core/lang.js",
   "src/ui/dom.js",
   "src/core/i18n.js",
   "src/render/palette.js",

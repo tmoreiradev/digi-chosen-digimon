@@ -1,3 +1,8 @@
+import { getLang } from "./lang.js";
+
+const en = () => getLang() === "en";
+const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
+
 // pt-BR labels for the data-driven strings (the extracted tables carry Spanish archetype labels
 // and English biome, vitamin and tower names) and for shared UI words. Species, moves, items,
 // roles and ultimate names stay as the data has them (they are proper names).
@@ -22,7 +27,7 @@ export const TYPE_PT = {
   dark: "Sombrio",
   fairy: "Fada",
 };
-export const typeName = (t) => TYPE_PT[t] ?? t;
+export const typeName = (t) => (en() ? cap(t) : TYPE_PT[t] ?? t);
 
 export const ARCH_PT = {
   bolt: "Projétil",
@@ -52,7 +57,14 @@ export const ARCH_PT = {
   random: "Aleatório",
   fusion: "Fusão",
 };
-export const archLabel = (arch, rules) => ARCH_PT[arch] ?? rules?.archetypes?.[arch]?.label ?? arch;
+const ARCH_EN = {
+  bolt: "Bolt", orb: "Explosive orb", lob: "Bomb", barrage: "Barrage", homing: "Homing", beam: "Beam", cone: "Cone",
+  nova: "Nova", aura: "Aura", orbit: "Orbit", strike: "Strike", dash: "Dash", chain: "Chain", smite: "Smite",
+  meteor: "Meteor", boomerang: "Boomerang", trap: "Trap", vortex: "Vortex", wave: "Wave", trail: "Trail",
+  drain: "Drain", spin: "Spin", weather: "Weather", buff: "Buff", random: "Random", fusion: "Fusion",
+};
+export const archLabel = (arch, rules) =>
+  (en() ? ARCH_EN[arch] : ARCH_PT[arch]) ?? rules?.archetypes?.[arch]?.label ?? arch;
 
 export const BIOME_PT = {
   forest: { name: "Floresta Verde", desc: "Uma floresta frondosa cheia de vida — e de Pokémon que preferem ficar com ela só para si." },
@@ -62,14 +74,15 @@ export const BIOME_PT = {
   graveyard: { name: "Torre Lavanda", desc: "Névoa, lápides e sussurros. Os fantasmas daqui nunca descansam." },
   volcano: { name: "Ilha do Vulcão", desc: "Rios de lava e cinzas. Só os mais fortes sobrevivem ao calor." },
 };
-export const biomeName = (b) => BIOME_PT[b?.id]?.name ?? b?.name ?? "";
-export const biomeDesc = (b) => BIOME_PT[b?.id]?.desc ?? b?.desc ?? "";
+// English: the data's own name and description.
+export const biomeName = (b) => (en() ? b?.name : BIOME_PT[b?.id]?.name ?? b?.name) ?? "";
+export const biomeDesc = (b) => (en() ? b?.desc : BIOME_PT[b?.id]?.desc ?? b?.desc) ?? "";
 
 export const MODE_PT = { classic: "Clássico", endless: "Infinito", tower: "Torre" };
 
 export const RARITY_PT = ["Comum", "Incomum", "Raro", "Épico", "Lendário"];
 export const RANK_PT = { common: "Comum", uncommon: "Incomum", rare: "Raro", epic: "Épico", legendary: "Lendário" };
-export const rankName = (rank) => RANK_PT[rank] ?? rank;
+export const rankName = (rank) => (en() ? cap(rank) : RANK_PT[rank] ?? rank);
 
 export const VITAMIN_DESC_PT = {
   protein: "Dano físico",
@@ -98,7 +111,7 @@ export const VITAMIN_DESC_PT = {
   "poke-radar": "Power-ups",
   "loaded-dice": "Um atributo aleatório",
 };
-export const vitaminDesc = (def) => VITAMIN_DESC_PT[def.key] ?? def.desc;
+export const vitaminDesc = (def) => (en() ? def.desc : VITAMIN_DESC_PT[def.key] ?? def.desc);
 
 export const TOWER_FLOOR_PT = {
   Vestibule: "Vestíbulo",
@@ -109,7 +122,7 @@ export const TOWER_FLOOR_PT = {
   "Marowak's Shadow": "Sombra de Marowak",
   "The Summit": "O Cume",
 };
-export const towerFloorName = (name) => TOWER_FLOOR_PT[name] ?? name;
+export const towerFloorName = (name) => (en() ? name : TOWER_FLOOR_PT[name] ?? name);
 
 export const THREAT_PT = ["CALMO", "INQUIETO", "ALERTA", "PERIGO", "CERCADO"];
 
@@ -130,7 +143,22 @@ export const HELD_ITEM_DESC_PT = {
   "lucky-egg": "+30% de experiência.",
   "amulet-coin": "+50% de moedas.",
 };
-export const heldItemDesc = (key, def) => HELD_ITEM_DESC_PT[key] ?? def?.desc ?? "";
+const HELD_ITEM_DESC_EN = {
+  leftovers: "Restores about 1/16 of max HP per second.",
+  "choice-band": "+50% damage on every move.",
+  "life-orb": "+30% damage; each move cast costs 2% of max HP.",
+  "scope-lens": "+10% crit chance.",
+  "muscle-band": "+15% physical damage.",
+  "wise-glasses": "+15% special damage.",
+  "expert-belt": "+25% super-effective damage.",
+  "quick-claw": "+10% attack speed.",
+  "bright-powder": "+8% evasion.",
+  "rocky-helmet": "Whoever hits you takes 20 damage.",
+  "big-root": "+30% healing received.",
+  "lucky-egg": "+30% experience.",
+  "amulet-coin": "+50% coins.",
+};
+export const heldItemDesc = (key, def) => (en() ? HELD_ITEM_DESC_EN : HELD_ITEM_DESC_PT)[key] ?? def?.desc ?? "";
 
 // Scripted upgrades (src/game/scripted.js): rules.json carries the upstream Spanish text; these
 // describe what THIS engine does. An item without an entry falls back to the data description.
@@ -172,4 +200,42 @@ export const ITEM_DESC_PT = {
   "tm-case": "Seus golpes podem subir mais 2 níveis (até o 10).",
   "poke-flute": "O ultimate carrega 25% mais rápido; ao usá-lo, todos os golpes recarregam e a velocidade de ataque sobe 30% por 6 s.",
 };
-export const itemDesc = (key, def) => ITEM_DESC_PT[key] ?? def?.desc ?? "";
+export const ITEM_DESC_EN = {
+  "grip-claw": "Each hit has a 4% chance to root the enemy for 2 s.",
+  "berry-juice": "Each kill has a 5% chance to heal 2% of max HP.",
+  "shell-bell": "Recover 0.8% of the damage you deal.",
+  metronome: "+2% damage per second without being hit (up to +40%).",
+  "binding-band": "+20% damage to paralysed, rooted, frozen, sleeping or flinching enemies.",
+  awakening: "Each hit has a 2.5% chance to put the enemy to sleep for 3 s.",
+  lemonade: "Your allies deal 25% more damage and attack 15% faster.",
+  "poke-doll": "Your allies' passives are worth 50% more.",
+  stick: "3% chance for a hit to deal x8 damage: Bonk!",
+  "razor-fang": "Instantly finishes common enemies below 8% HP (+4% per copy). Not alphas or bosses.",
+  "focus-band": "15% chance to survive a lethal hit with 1 HP (once every 20 s).",
+  "full-heal": "+6% damage per different status on the enemy (up to +30%).",
+  "guard-spec": "Every 14 s, fully blocks the next hit.",
+  "gold-teeth": "The shop charges 8% less (down to -24%).",
+  "focus-sash": "Survive a lethal hit once per zone.",
+  revive: "Revive once with 35% HP.",
+  "reaper-cloth": "+1% damage per 100 kills this run (up to +30%).",
+  "thick-club": "Physical damage +1% per 2 armour (up to +50%).",
+  "fire-stone": "Burned enemies explode on death (40% of their HP, 3 u).",
+  "leaf-stone": "Each kill has a 10% chance to release a leaf whirl that cuts nearby enemies and heals 1% HP.",
+  "ss-ticket": "+1 ally slot this run.",
+  "max-revive": "Revive once with 60% HP.",
+  "soda-pop": "Your dash bursts a bubble wave that hurts nearby enemies.",
+  "adrenaline-orb": "When hit: +20% speed and +12% attack speed for 3 s.",
+  "metal-powder": "Standing still for half a second: +30% armour and +8% attack speed until you move.",
+  "ice-heal": "Hitting a frozen enemy shatters the ice: +60% damage and shards that paralyse its neighbours.",
+  "old-rod": "Every 9 s a Magikarp leaps at an enemy. Sometimes a Gyarados bites...",
+  eviolite: "While you can still evolve: +50% armour and +25% max HP.",
+  "shed-shell": "Dash with longer invulnerability and 10% faster recharge.",
+  "cell-battery": "+1.5% attack speed per 10 kills without being hit (up to +25%).",
+  "griseous-orb": "Each kill has a 12% chance to leave a shadow that bursts and curses its neighbours.",
+  electirizer: "Every 2.5 s lightning strikes 3 nearby enemies and may paralyse them (+1 bolt per copy).",
+  "silph-scope": "Every 6 s marks the strongest nearby enemy (+1 per copy): it takes 40% more damage from everything. If it falls, another is marked.",
+  "max-ether": "Your vitamins can go 2 levels higher (up to 12).",
+  "tm-case": "Your moves can go 2 levels higher (up to 10).",
+  "poke-flute": "Your ultimate charges 25% faster; using it recharges every move and gives +30% attack speed for 6 s.",
+};
+export const itemDesc = (key, def) => (en() ? ITEM_DESC_EN : ITEM_DESC_PT)[key] ?? def?.desc ?? "";
