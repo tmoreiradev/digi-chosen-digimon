@@ -85,6 +85,12 @@ export class WorldEvents {
     }
   }
 
+  /** Proximity hint for an event; a recharging altar (Secret Key) shows its countdown instead of "E". */
+  hintFor(ev) {
+    if (ev.rechargeT > 0) return `Altar — ${Math.ceil(ev.rechargeT)} s`;
+    return ev.kind === "chest" ? "Baú — E" : ev.kind === "shop" ? "Loja — E" : "Altar — E";
+  }
+
   /** A new zone or tower floor: Dowsing Machine finds 1 altar and 2 chests per copy nearby. */
   onNewZone() {
     const dowsing = itemCount(this.run, "dowsing-machine");
@@ -441,11 +447,11 @@ export class WorldEvents {
 
       // Proximity hint when close enough to interact.
       const p = run.player;
-      if (dist(ev.x, ev.z, p.x, p.z) < 1.9) {
+      if (dist(ev.x, ev.z, p.x, p.z) < 1.9 && this.hintFor(ev)) {
         ctx.fillStyle = "rgba(20,16,40,0.85)";
         ctx.font = "700 11px system-ui, sans-serif";
         ctx.textAlign = "center";
-        const label = tr(ev.kind === "chest" ? "Baú — E" : ev.kind === "shop" ? "Loja — E" : "Altar — E");
+        const label = tr(this.hintFor(ev));
         const labelY = sy - zoom * 2.2;
         ctx.fillText(label, sx, labelY);
         ctx.fillStyle = "#ffd166";

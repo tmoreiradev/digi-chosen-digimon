@@ -1106,7 +1106,12 @@ aceitos, e um registro meu corrigido:
   - **Dowsing Machine:** a partir da próxima zona (Clássico/Infinito) ou andar (Torre), cada um traz 1 altar e 2 baús por
     perto, por cópia (`WorldEvents.onNewZone`, chamado em `advanceStage` e em `Tower.enterFloor` do 2.º andar em diante).
 - Com isso **os 38 itens scriptados do original estão no pool**. Testes em `items2.test.mjs` (recarga, 2 cópias, zona nova,
-  andar novo; os dois falham no código anterior); `items.test.mjs` e `review14.test.mjs` passam a exigir todos no pool.
+  andar novo; os dois falham no código anterior); `items.test.mjs` passa a exigir todos no pool (o `review14.test.mjs` só passou a exigir na 40.ª rodada).
   Suíte **184 / 184**; build, `check-bundle` e `npm run e2e` OK.
 - ⚠ O primeiro registro desta seção perdeu os trechos de código: um heredoc sem aspas fez o shell tratar os acentos
   graves como comandos (nenhum efeito além de erros "No such file" e um `npm run` inexistente). Reescrito por script.
+
+**Quadragésima rodada** (fase 23, `b8a6d16..748aca3`, `reviews/codex-2026-10-24-16-58-b8a6d16..HEAD.md`): **Aprovado com ressalvas**,
+1 P2 + 1 P3, aceitos: o altar em recarga (Secret Key) seguia mostrando "Altar — E" sem aceitar o E; agora mostra a contagem
+("Altar — 45 s", `WorldEvents.hintFor`). E o `review14.test.mjs`, com a lista de excluídos vazia, não verificava mais nada;
+virou "todo item scriptado dos dados está em SCRIPTED e no pool" (38). Suíte **184 / 184**; build, `check-bundle` e `npm run e2e` OK.

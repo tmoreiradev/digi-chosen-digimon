@@ -318,6 +318,7 @@ test("Secret Key: the altar recharges instead of crumbling (45 s, 30 % faster pe
   assert.equal(ev.interacted, false, "not consumed");
   assert.equal(ev.rechargeT, 45);
   assert.equal(run.events.findNear(ev.x, ev.z), null, "not usable while recharging");
+  assert.equal(run.events.hintFor(ev), "Altar — 45 s", "the hint shows the countdown, not E");
   ev.rechargeT = 0.01;
   run.events.update(0.02);
   assert.equal(run.events.findNear(ev.x, ev.z), ev, "usable again");
