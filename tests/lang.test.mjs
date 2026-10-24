@@ -11,13 +11,36 @@ installFakeDom().register("ui");
 const { getLang, setLang, tr, LANG_KEY } = await import("../src/core/lang.js");
 
 // Portuguese tell-tales: accents (except in Pokémon names) and common short words.
-const PT = /[ãõçáíóúâêôà]|\b(de|do|da|dos|das|para|com|seu|sua|não|uma|ao|no|na|em|por|mais|golpes?|inimigos|ouro|nível|aperte|sair|vença|capture|veja)\b/i;
-const NAMES = /Pokémon|Pokédex|Flabébé/g;
+const PT = /[ãõçáíóúâêôà]|\b(de|do|da|dos|das|para|com|seu|sua|não|uma|ao|no|na|em|por|mais|golpes?|inimigos|ouro|nível|aperte|sair|vença|veja)\b/i;
+const NAMES = /Pokémon|Pokédex|Flabébé|🌐 Português/g; // names, and the switch label that names Portuguese on purpose
 
 test("in English, nothing Portuguese reaches the screen across screens, cards, events and full runs", async () => {
-  const missing = await collectMissing();
-  const portuguese = missing.filter((s) => PT.test(s.replace(NAMES, "")));
-  assert.deepEqual(portuguese, []);
+  const { missing, rendered, bot } = await collectMissing();
+  const pt = (list) => list.filter((s) => PT.test(s.replace(NAMES, "")));
+  assert.deepEqual(pt(missing), [], "untranslated text that went through tr()");
+  assert.deepEqual(pt(rendered), [], "text actually on screen (text nodes, direct textContent writes included)");
+  assert.ok(rendered.length > 200, "the sweep really rendered the interface: " + rendered.length);
+  // The English runs must have used the panels for real, not just closed them.
+  assert.ok(bot.some((s) => (s.chestsOpened ?? 0) > 0), "a chest was opened in English");
+  assert.ok(bot.some((s) => (s.bought ?? 0) > 0), "something was bought in English");
+});
+
+test("names the player typed are never translated", async () => {
+  const { accounts } = await import("../src/ui/account.js");
+  const { Screens } = await import("../src/ui/screens.js");
+  const { loadData, makeRun } = await import("./_helpers.mjs");
+  setLang("en");
+  accounts.create("Campeão", "");
+  const root = document.createElement("div");
+  const screens = new Screens(root, loadData());
+  screens.showTitle();
+  assert.match(root.querySelector(".title-stats").textContent, /Trainer: Campeão/);
+  const { run } = makeRun();
+  run.state = "dead";
+  screens.showResults(run, false);
+  assert.ok(root.all().some((n) => /^Campeão · /.test(n.textContent ?? "")), "results keep the name");
+  assert.equal(tr("toString"), "toString", "inherited keys are not translations");
+  setLang("pt-BR");
 });
 
 test("spot checks: fixed text, patterns, nested parts and composites", () => {

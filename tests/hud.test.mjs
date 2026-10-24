@@ -72,3 +72,18 @@ test("slots and ultimate are rebuilt only when the loadout changes; bars still m
   assert.notEqual(root.querySelector(".slot"), slot, "rebuilt on a loadout change");
   assert.equal(root.querySelectorAll(".slot").length, p.moveSlots, "one more slot");
 });
+
+test("switching the language rebuilds the cached species block (type chips, evolution hint)", async () => {
+  const { setLang } = await import("../src/core/lang.js");
+  const root = document.createElement("div");
+  const hud = new Hud(root);
+  const { run } = makeRun();
+  setLang("pt-BR");
+  hud.update(run);
+  const chips = () => root.all().filter((n) => n.classList?.contains("chip")).map((n) => n.textContent);
+  assert.deepEqual(chips(), ["Planta", "Veneno"]);
+  setLang("en");
+  hud.update(run); // same species, same nickname: only the language changed
+  assert.deepEqual(chips(), ["Grass", "Poison"]);
+  setLang("pt-BR");
+});

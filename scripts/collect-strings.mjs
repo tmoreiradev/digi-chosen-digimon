@@ -21,25 +21,34 @@ export async function collectMissing() {
 
   const data = loadData();
   accounts.load();
+  // What actually ended up on screen (text nodes, including direct textContent writes), not only
+  // what went through tr(): a sink that skips tr() shows up here.
+  const rendered = new Set();
+  const scan = (node) => {
+    for (const n of node?.all?.() ?? []) if (n.tagName === "#text" && n.data) rendered.add(n.data);
+  };
   const root = document.createElement("div");
   const screens = new Screens(root, data);
   const seeRun = (run) => {
     screens.getRun = () => run;
-    screens.showTitle();
-    screens.showHelp();
-    screens.showAccountPicker();
-    screens.showAccountManage();
-    screens.showPicker();
-    screens.showSetup();
-    screens.showPause?.(() => {}, () => {});
-    screens.showHeldItem();
-    screens.showAchievements?.();
-    screens.showNickname?.();
-    screens.showPokedex?.();
-    run.state = "dead";
-    screens.showResults(run, false);
-    run.state = "victory";
-    screens.showResults(run, true);
+    for (const show of [
+      () => screens.showTitle(),
+      () => screens.showHelp(),
+      () => screens.showAccountPicker(),
+      () => screens.showAccountManage(),
+      () => screens.showPicker(),
+      () => screens.showSetup(),
+      () => screens.showPause?.(() => {}, () => {}),
+      () => screens.showHeldItem(),
+      () => screens.showAchievements?.(),
+      () => screens.showNickname?.(),
+      () => screens.showPokedex?.(),
+      () => ((run.state = "dead"), screens.showResults(run, false)),
+      () => ((run.state = "victory"), screens.showResults(run, true)),
+    ]) {
+      show();
+      scan(root);
+    }
   };
   // Account errors go through tr() where they are shown.
   for (const r of [accounts.create("", ""), accounts.create("Ash", ""), accounts.create("Ash", ""), accounts.login("Nobody", ""), accounts.login("Ash", "x")]) {
@@ -54,11 +63,13 @@ export async function collectMissing() {
 
   const sweepRun = (run, calls) => {
     hud.update(run);
+    scan(hudRoot);
     for (const b of calls.banners) tr(b);
     for (const f of run.floaters) tr(String(f.text));
     for (let i = 0; i < 40; i++) {
       const choices = run.rollChoices();
       panel.show?.(choices);
+      scan(panel.root ?? panel.el ?? panel.node);
       panel.close?.();
     }
   };
@@ -70,6 +81,7 @@ export async function collectMissing() {
     sweepRun(run, calls);
   }
   // Full bot runs: banners, bosses, evolutions, captures, events.
+  const bot = [];
   for (const [mode, seed] of [["classic", 23], ["tower", 42], ["endless", 5]]) {
     const { run, input, calls } = makeRun({ mode, profile });
     const banners = [];
@@ -90,7 +102,7 @@ export async function collectMissing() {
       upd(dt);
       if (++frames % 600 === 0) hud.update(run);
     };
-    playRun({ run, input, calls, seed, maxSeconds: 25 * 60, godMode: true });
+    bot.push({ mode, ...playRun({ run, input, calls, seed, maxSeconds: 25 * 60, godMode: true }) });
     for (const b of banners) tr(b);
     for (const f of floaters) tr(f);
     sweepRun(run, calls);
@@ -104,7 +116,11 @@ export async function collectMissing() {
       run.events.events.length = 0;
       run.events.spawn(kind, run.player.x + 1, run.player.z);
       run.events.openPanel(run.events.events[0]);
-      for (const b of [...document.getElementById("ui").all?.() ?? []]) void b;
+      const ui = document.getElementById("ui");
+      scan(ui);
+      // Buy something so the shop refreshes its gold line (a direct textContent write).
+      ui.all().find((n) => n.tagName === "button" && !n.disabled && /^(Buy|Comprar)/.test(n.textContent))?.click();
+      scan(ui);
       run.events.panel?.close?.();
     }
     for (const loot of [{ kind: "coins", amount: 10 }, { kind: "heal", amount: 30 }, { kind: "vitamin" }]) tr(run.events.lootText(loot));
@@ -117,11 +133,11 @@ export async function collectMissing() {
     tr(t.title);
     tr(t.desc);
   }
-  return [...TR_MISSING].sort();
+  return { missing: [...TR_MISSING].sort(), rendered: [...rendered].sort(), bot };
 }
 
 if (import.meta.url === `file:///${process.argv[1].replace(/\\/g, "/")}` || process.argv[1]?.endsWith("collect-strings.mjs")) {
-  const missing = await collectMissing();
+  const { missing } = await collectMissing();
   if (process.argv.includes("--json")) console.log(JSON.stringify(missing, null, 1));
   else {
     console.log(missing.join("\n"));

@@ -208,27 +208,36 @@ class Bot {
     const title = ui.querySelector("h2")?.textContent ?? "";
     const ev = run.events.findNear(p.x, p.z);
     if (ev) this.visited.set(ev.id, run.stats.gold);
-    if (/Baú/.test(title)) {
+    // Both interface languages: the bot reads the panel like a player would.
+    const LEAVE = /^(Sair|Leave)/;
+    if (/Baú|Chest/.test(title)) {
       summary.chests++;
-      byText(/^Abrir/)?.click();
+      const open = byText(/^(Abrir|Open)/);
+      if (open) {
+        open.click();
+        summary.chestsOpened = (summary.chestsOpened ?? 0) + 1;
+      }
     } else if (/Altar/.test(title)) {
       summary.altars++;
-      (byText(/^Curar/) ?? byText(/^Sair/)).click();
-    } else if (/Loja/.test(title)) {
+      (byText(/^(Curar|Heal)/) ?? byText(LEAVE)).click();
+    } else if (/Loja|Shop/.test(title)) {
       summary.shops++;
       for (const row of ui.querySelectorAll(".shop-row")) {
         const name = row.querySelector(".shop-title").textContent;
         const btn = row.querySelector("button");
         if (btn.disabled) continue;
         const want =
-          (name === "Doce Raro" && run.stats.gold >= 100) ||
-          (name === "Poção" && p.hp < p.maxHp * 0.5) ||
-          (name === "Restaurador" && p.hp < p.maxHp * 0.35) ||
-          (name === "Vitamina" && run.stats.gold >= 200);
-        if (want) btn.click();
+          (/^(Doce Raro|Rare Candy)$/.test(name) && run.stats.gold >= 100) ||
+          (/^(Poção|Potion)$/.test(name) && p.hp < p.maxHp * 0.5) ||
+          (/^(Restaurador|Full Restore)$/.test(name) && p.hp < p.maxHp * 0.35) ||
+          (/^(Vitamina|Vitamin)$/.test(name) && run.stats.gold >= 200);
+        if (want) {
+          btn.click();
+          summary.bought = (summary.bought ?? 0) + 1;
+        }
       }
       if (ev) this.visited.set(ev.id, run.stats.gold); // after buying, so the next look needs new gold
-      byText(/^Sair/)?.click();
+      byText(LEAVE)?.click();
     } else {
       run.events.panel?.close();
     }

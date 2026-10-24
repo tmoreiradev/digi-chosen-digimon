@@ -5,7 +5,7 @@ import { creatureSprite } from "../render/creature.js";
 import { paintSpritePortrait } from "../render/sprites.js";
 import { clamp, fmtClock, fmtTime } from "../core/math.js";
 import { typeName, biomeName, THREAT_PT } from "../core/i18n.js";
-import { tr } from "../core/lang.js";
+import { tr, getLang } from "../core/lang.js";
 
 export class Hud {
   constructor(root) {
@@ -109,9 +109,11 @@ export class Hud {
   update(run) {
     const p = run.player;
 
-    if (p.speciesId !== this.lastSpecies || p.nickname !== this.lastNickname) {
+    // Rebuilt on a new species, nickname or interface language (types and the evolution hint are text).
+    if (p.speciesId !== this.lastSpecies || p.nickname !== this.lastNickname || getLang() !== this.lastLang) {
       this.lastSpecies = p.speciesId;
       this.lastNickname = p.nickname;
+      this.lastLang = getLang();
       this.name.textContent = p.nickname ?? p.species.name;
       this.name.style.color = p.nickname ? "#ffd700" : "";
       this.shinyBadge.style.display = p.shiny ? "inline" : "none";

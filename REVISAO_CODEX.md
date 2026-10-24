@@ -1071,3 +1071,15 @@ scripts de ferramenta são verificados por execução.
   e do botão do título. O `npm run e2e` passou a trocar o idioma no bundle por `file://` e seguir em inglês.
 - **Navegador:** título "Survivor roguelite… ▶ Play… Trainer: Guest", HUD "Lv 1 … → Ivysaur at Lv 24 · Green Forest ·
   CALM · Zone 1". Suíte **180 / 180**; build, `check-bundle` e `npm run e2e` OK. A regra de texto novo entrou no `AGENTS.md`.
+
+**Trigésima oitava rodada** (fase 22, `351fb97..0ef55f0`, `reviews/codex-2026-10-24-16-27-351fb97..HEAD.md`): **Aprovado com
+ressalvas**, 3 P2 + 2 P3, todos aceitos: (1) o saldo da loja era reescrito por `textContent` direto, em português, a cada
+atualização — agora passa por `tr`. (2) O HUD guardava o bloco da espécie (chips de tipo, dica de evolução) e ignorava o
+idioma; o idioma entrou na invalidação. (3) A tradução nos pontos de saída alcançava nomes digitados pelo jogador (conta
+"Campeão" virava "Champion") e consultava chaves herdadas (`toString`): `lit()` em `dom.js` marca texto que nunca é
+traduzido (nome da conta no título, na lista de perfis e nos resultados) e o dicionário só responde por chaves próprias
+(`Object.hasOwn`). (4) A varredura só via o que passava por `tr`; agora lê também os nós de texto realmente renderizados
+(incluindo `textContent` direto) depois de cada tela e de uma compra na loja. (5) O bot reconhecia baú, loja e botões só
+em português e, em inglês, fechava os painéis sem usá-los; agora lê os dois idiomas e o teste exige baú aberto e compra
+feita nas runs em inglês. Correção do registro da §33: "zero em português" só passou a valer com esta rodada. Suíte **"+process.env.N+" / "+process.env.N+"**;
+build, `check-bundle` e `npm run e2e` OK.

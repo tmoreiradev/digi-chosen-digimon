@@ -34,8 +34,7 @@ export const TR_MISSING = new Set();
 
 export function tr(text) {
   if (current === "pt-BR" || typeof text !== "string" || !text) return text;
-  const exact = EN[text];
-  if (exact !== undefined) return exact;
+  if (Object.hasOwn(EN, text)) return EN[text]; // own keys only: "toString" is not a translation
   for (const [re, fn] of EN_PATTERNS) {
     const m = text.match(re);
     if (!m) continue;

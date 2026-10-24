@@ -2,6 +2,10 @@
 
 import { tr } from "../core/lang.js";
 
+const LITERAL = Symbol("literal");
+/** Text shown as is, never translated: names the player typed (accounts, nicknames). */
+export const lit = (text) => ({ [LITERAL]: String(text) });
+
 export function el(tag, props = {}, ...children) {
   const node = document.createElement(tag);
   for (const [k, v] of Object.entries(props)) {
@@ -17,7 +21,9 @@ export function el(tag, props = {}, ...children) {
   }
   for (const c of children.flat()) {
     if (c == null || c === false) continue;
-    node.append(c instanceof Node ? c : document.createTextNode(tr(String(c)))); // interface language
+    if (c instanceof Node) node.append(c);
+    else if (c[LITERAL] !== undefined) node.append(document.createTextNode(c[LITERAL]));
+    else node.append(document.createTextNode(tr(String(c)))); // interface language
   }
   return node;
 }

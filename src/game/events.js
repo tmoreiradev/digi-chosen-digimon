@@ -189,7 +189,7 @@ export class WorldEvents {
       const leaveBtn = el("button", { class: "btn ghost", onclick: close }, "Sair ", el("kbd", {}, "0"));
       footer.append(renewBtn, leaveBtn);
       const refresh = () => {
-        goldText.textContent = goldLine();
+        goldText.textContent = tr(goldLine());
         buyButtons.forEach((b, i2) => {
           const it2 = items[i2];
           const ok = run.stats.gold >= this.price(run, it2) && this.canApply(run, it2);

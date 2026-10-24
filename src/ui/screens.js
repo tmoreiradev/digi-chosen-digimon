@@ -1,6 +1,6 @@
 // Front-end screens: title, roster picker, region/difficulty setup, pause and results.
 
-import { el, clear, typeCss } from "./dom.js";
+import { el, clear, typeCss, lit } from "./dom.js";
 import { DIFFICULTIES } from "../game/rules.js";
 import { fmtTime } from "../core/math.js";
 import { accounts, profile } from "./account.js";
@@ -12,7 +12,7 @@ import { HELD_ITEMS } from "../game/scripted.js";
 import { tr, getLang, setLang, LANGS } from "../core/lang.js";
 
 /** The account name; any guest (old saves were named "Guest") shows as Convidado. */
-const trainerName = () => (!accounts.current || accounts.current.kind === "guest" ? "Convidado" : accounts.current.name);
+const trainerName = () => (!accounts.current || accounts.current.kind === "guest" ? tr("Convidado") : accounts.current.name);
 
 export class Screens {
   constructor(root, data) {
@@ -57,7 +57,7 @@ export class Screens {
               getLang() === "en" ? "🌐 Português" : "🌐 English")
           ),
           el("div", { class: "title-stats" },
-            el("span", {}, `Treinador: ${trainerName()}`),
+            el("span", {}, lit(`${tr("Treinador:")} ${trainerName()}`)), // the name is the player's, never translated
             el("span", {}, `Partidas: ${profile.data.runs ?? 0}`),
             el("span", {}, `Melhor: ${fmtTime(profile.data.best ?? 0)}`),
             el("span", {}, `Capturados: ${(profile.data.pokedex?.caught ?? []).length} / ${this.data.pokemon.length}`),
@@ -111,7 +111,7 @@ export class Screens {
               this.showPicker();
             },
           },
-          el("div", { class: "ac-name" }, prof.name),
+          el("div", { class: "ac-name" }, lit(prof.name)),
           el("div", { class: "ac-kind muted" }, prof.kindLabel + " · " + (prof.progress?.runs ?? 0) + " partidas"),
           el("div", { class: "ac-best muted" }, "Melhor: " + fmtTime(prof.progress?.best ?? 0))
         )
@@ -330,7 +330,7 @@ export class Screens {
           "div",
           { class: "card panel" },
           el("h2", {}, victory ? "Vitória!" : "Você desmaiou"),
-          el("p", { class: "muted" }, `${trainerName()} · ${p.species.name} · ${biomeName(run.biome)} · ${run.difficulty.name}`),
+          el("p", { class: "muted" }, lit(`${trainerName()} · ${p.species.name} · ${biomeName(run.biome)} · ${tr(run.difficulty.name)}`)),
           el("div", { class: "result-grid" },
             el("div", {}, el("b", {}, fmtTime(run.time)), el("span", {}, "sobrevividos")),
             el("div", {}, el("b", {}, String(stats.kills)), el("span", {}, "abates")),
