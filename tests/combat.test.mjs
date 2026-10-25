@@ -303,3 +303,44 @@ test("area damage, reactions and the dive also wake a sleeper with the x1.8", ()
   assert.ok(Math.abs((before - e.hp) / base - 1.8) < 1e-9);
   assert.equal(e.statuses.sleep, 0);
 });
+
+test("charm also softens a real boss pool and a real charge", () => {
+  const measure = (charmed, kind) => {
+    const { run } = setup();
+    const p = run.player;
+    p.iframes = 1e9;
+    run.stageTime = 299.99;
+    frames(run, 2);
+    const boss = run.boss;
+    const g = boss.enemy;
+    for (const e of run.enemies) if (e !== g) { e.hp = 0; e.dying = 0.01; }
+    frames(run, 1);
+    g.statuses.charm = charmed ? 30 : 0;
+    p.stats.evasion = 0;
+    p.shield = 0;
+    p.hp = p.maxHp;
+    if (kind === "pool") {
+      run.zonesHostile(g, p.x, p.z, 3, 5, 600);
+      run.zones.at(-1).tick = 0;
+      p.iframes = 0;
+      run.updateProjectiles(1 / 60);
+    } else {
+      g.x = p.x + 8;
+      g.z = p.z;
+      boss.windup = 0;
+      boss.active = null;
+      boss.nextMove = "charge";
+      boss.release();
+      p.iframes = 0;
+      for (let i = 0; i < 40 && p.hp === p.maxHp; i++) {
+        boss.update(1 / 60);
+      }
+    }
+    return p.maxHp - p.hp;
+  };
+  for (const kind of ["pool", "charge"]) {
+    const plain = measure(false, kind);
+    assert.ok(plain > 0, kind + " hits");
+    assert.ok(Math.abs(measure(true, kind) / plain - 0.6) < 1e-6, kind + ": -40 % when charmed");
+  }
+});

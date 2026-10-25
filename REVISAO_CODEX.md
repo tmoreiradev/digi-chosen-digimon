@@ -1173,3 +1173,8 @@ e espinhos) e aplica o −40 % a qualquer ataque; projéteis e poças passam o d
 (`hitAround`: itens, reações, mergulho, esbarrões de confusos) não dava o ×1,8 nem acordava o alvo dormindo; agora dá,
 como qualquer golpe direto (os tiques de status seguem à parte). Dois testes novos (falham no código anterior). Suíte
 **196 / 196**; build, `check-bundle` e `npm run e2e` OK.
+
+**Quadragésima segunda rodada** (`8ce0bde..921be0e`, `reviews/codex-2026-10-25-05-38-8ce0bde..HEAD.md`): **Aprovado com ressalvas**, 1 P3
+aceito: o teste do Encantado anunciava poças e investidas mas só exercitava `hitPlayer` e um projétil. Teste novo com uma
+poça real (`zonesHostile` + tique) e uma investida real (`release` + `Boss.update`), ambas −40 % com o boss encantado;
+conferido por mutação (sem o `owner` da poça, o teste falha). Suíte **197 / 197**.
