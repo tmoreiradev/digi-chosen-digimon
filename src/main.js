@@ -274,7 +274,8 @@ function onKeyDown(e) {
       togglePause();
       return;
     }
-    if (e.code === "KeyM" && !state.paused && state.run?.state === "running") {
+    // Not under the level-up cards: the map would open hidden behind them, and their Esc lock would keep it open.
+    if (e.code === "KeyM" && !state.paused && !state.levelup.active && state.run?.state === "running") {
       e.preventDefault();
       openZoneMap();
       return;

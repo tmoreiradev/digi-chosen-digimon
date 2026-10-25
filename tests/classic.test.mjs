@@ -63,6 +63,22 @@ test("classic: each zone's altar stands 45–70 u away and never expires; endles
   for (const mode of ["endless", "tower"]) assert.equal(makeRun({ mode }).run.events.guardianAltar, null, mode);
 });
 
+test("classic: a zone that starts with the player at the arena edge still gets its altar 45–70 u away, inside the arena", () => {
+  const half = makeRun().run.biome.size / 2;
+  for (const [x, z] of [[half - 2, half - 2], [-half + 2, 0], [0, half - 2], [-half + 2, -half + 2]]) {
+    for (let seed = 1; seed <= 20; seed++) {
+      const { run } = makeRun({ opts: { seed } });
+      run.player.x = x;
+      run.player.z = z;
+      run.advanceStage();
+      const a = run.events.guardianAltar;
+      const d = Math.hypot(a.x - x, a.z - z);
+      assert.ok(d >= 45 - 1e-6 && d <= 70 + 1e-6, `from (${x}, ${z}) seed ${seed}: ${d.toFixed(1)} u`);
+      assert.ok(Math.abs(a.x) <= half - 10 + 1e-6 && Math.abs(a.z) <= half - 10 + 1e-6, "inside the arena");
+    }
+  }
+});
+
 test("classic: when the zone clock runs out with the guardian asleep, the final swarm starts and grows every minute", () => {
   const { run, calls } = makeRun();
   run.player.iframes = 1e9;

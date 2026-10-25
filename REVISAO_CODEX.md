@@ -1211,3 +1211,15 @@ Itens 1 a 3 de `docs/MAPEAMENTO_POKEBONK.md`.
   testes que chamavam o guardião por `stageTime = 299.99` passaram a usar `run.callGuardian()`. Suíte **207 / 207**;
   build, `check-bundle` e `npm run e2e` OK (o e2e abre o mapa com M, confere que a partida fica parada e fecha com Esc).
   Navegador: mapa com o altar, bússola a 59 m, E no altar acorda o guardião (Scyther) e solta a bússola.
+
+**Quadragésima terceira rodada** (fase 26, `d59c3bb..ef9a615`, `reviews/codex-2026-10-25-08-14-d59c3bb..HEAD.md`): **Aprovado com
+ressalvas**, 3 P2 e 1 P3 aceitos, e as duas afirmações do §37 que ele contestou estavam erradas:
+(1) A regra "espécie forte sem evolução só na zona 3" filtrava só o elenco principal; residentes (Tauros, Kangaskhan) e
+o elenco tardio (Nihilego depois de 4 min) ainda os traziam. Agora vale para os três elencos; teste sorteia 40 cartas
+aos 5 min e confere as cartas de fato sorteadas. (2) O altar era limitado à arena com `clamp` depois de sorteado: com o
+jogador na borda ele podia cair a poucos metros. Agora a posição é sorteada de novo até cair dentro da arena (depois de
+16 tentativas, mira o centro, que sempre cabe); teste com o jogador em quatro bordas/cantos e 20 seeds confere 45–70 u e
+a arena. (3) M abria o mapa por baixo das cartas de nível, e o Esc ficava preso no bloqueio das cartas; agora M não faz
+nada com as cartas abertas, e o e2e aperta M sobre as cartas. (4) O teste do doce só exercitava elite e Alfa; ganhou o
+chefe. Os testes 1 e 2 falham no código anterior; o passo do e2e falha com o `main.js` anterior. Suíte **208 / 208**;
+build, `check-bundle` e `npm run e2e` OK.

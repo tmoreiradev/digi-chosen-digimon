@@ -90,13 +90,23 @@ export class WorldEvents {
     const rng = this.run.rng;
     const p = this.run.player;
     const half = this.run.biome.size / 2 - 10;
-    const a = rng.range(0, Math.PI * 2);
-    const r = rng.range(ALTAR_MIN, ALTAR_MAX);
+    // Draw until the spot lands inside the arena: clamping a spot that fell outside used to put the
+    // altar almost under a player standing near the edge. Towards the centre always fits, so after
+    // a few misses aim there.
+    let x = 0;
+    let z = 0;
+    for (let i = 0; i < 24; i++) {
+      const a = i < 16 ? rng.range(0, Math.PI * 2) : Math.atan2(-p.z, -p.x) + rng.range(-0.6, 0.6);
+      const r = rng.range(ALTAR_MIN, ALTAR_MAX);
+      x = p.x + Math.cos(a) * r;
+      z = p.z + Math.sin(a) * r;
+      if (Math.abs(x) <= half && Math.abs(z) <= half) break;
+    }
     this.events.push({
       id: this.nextId++,
       kind: "guardian",
-      x: clamp(p.x + Math.cos(a) * r, -half, half),
-      z: clamp(p.z + Math.sin(a) * r, -half, half),
+      x: clamp(x, -half, half),
+      z: clamp(z, -half, half),
       life: Infinity,
       interacted: false,
       seen: true,

@@ -120,6 +120,9 @@ async function scenario() {
   for (let i = 0; i < 3; i++) run.update(1 / 60);
   await sleep(200);
   expect(/Subiu de nível!/i.test(body()), "level-up cards");
+  key("m", "KeyM");
+  await sleep(150);
+  expect(!/Mapa da zona/.test(body()), "M does nothing while the cards are up");
   const picked = run.stats.items + run.player.moves.length + run.player.vitamins.size + run.player.moves.reduce((t, m) => t + m.level, 0);
   key("1", "Digit1"); // the keyboard shortcut alone picks the first card
   await sleep(200);

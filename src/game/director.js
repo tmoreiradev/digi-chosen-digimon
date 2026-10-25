@@ -86,18 +86,19 @@ export class Director {
     const maxStage = stage === 1 ? 0 : stage === 2 ? 1 : 2;
     const minStage = stage === 3 ? 1 : 0;
 
-    // Strong species with no evolution line (Pheromosa, Pinsir…) are zone-3 material: in zone 1
-    // they used to open the run three hits from death.
+    // Strong species with no evolution line (Pheromosa, Tauros…) are zone-3 material in every
+    // pool (main, late, residents): in zone 1 they used to open the run three hits from death.
     const strongSingle = (p) => p.evoStage === 0 && p.bst >= 420 && !this.data.evolutionsOf(p.id).length;
-    let pool = all.filter((p) => matches(p, biome.types) && p.evoStage <= maxStage && p.evoStage >= minStage && !strongSingle(p));
+    const early = (p) => stage === 3 || !strongSingle(p);
+    let pool = all.filter((p) => matches(p, biome.types) && p.evoStage <= maxStage && p.evoStage >= minStage && early(p));
     if (stage === 3) pool = pool.concat(all.filter((p) => matches(p, biome.types) && strongSingle(p)));
-    if (pool.length < 12) pool = all.filter((p) => p.evoStage <= maxStage && !strongSingle(p));
+    if (pool.length < 12) pool = all.filter((p) => p.evoStage <= maxStage && early(p));
 
     this.pool = this.rng.shuffle(pool);
-    this.latePool = this.rng.shuffle(all.filter((p) => matches(p, biome.late ?? []) && p.evoStage <= maxStage));
+    this.latePool = this.rng.shuffle(all.filter((p) => matches(p, biome.late ?? []) && p.evoStage <= maxStage && early(p)));
 
     const families = new Set(biome.residents ?? []);
-    const residents = all.filter((p) => families.has(p.family) && p.evoStage <= maxStage);
+    const residents = all.filter((p) => families.has(p.family) && p.evoStage <= maxStage && early(p));
     this.residentPool = this.rng.shuffle(residents);
   }
 

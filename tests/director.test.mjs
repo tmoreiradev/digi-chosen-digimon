@@ -80,11 +80,17 @@ test("the final swarm spawns faster and adds elites", () => {
   assert.ok(elites > 0, "elite bursts during the swarm");
 });
 
-test("strong species with no evolution line (BST ≥ 420) wait for zone 3", () => {
+test("strong species with no evolution line (BST ≥ 420) wait for zone 3, from every pool", () => {
   const { run } = makeRun();
   const d = run.director;
   const strong = (p) => p.evoStage === 0 && p.bst >= 420 && !d.data.evolutionsOf(p.id).length;
-  assert.equal(d.pool.filter(strong).length, 0, "zone 1 has none (Pheromosa used to open runs)");
+  for (const pool of ["pool", "latePool", "residentPool"]) assert.equal(d[pool].filter(strong).length, 0, `zone 1 ${pool} has none`);
+  // The cards actually drawn: residents every third card, the late pool after four minutes.
+  run.stageTime = 300;
+  for (let i = 0; i < 40; i++) d.addCard();
+  const drawn = d.cards.map((c) => d.data.get(c.id));
+  assert.equal(drawn.filter(strong).length, 0, `drawn: ${drawn.filter(strong).map((p) => p.name)}`);
+  run.stageTime = 0;
   run.stage = 3;
   d.onStage(3);
   assert.ok(d.pool.some(strong), "zone 3 adds them");
@@ -110,4 +116,5 @@ test("a free elite drops a rare candy only sometimes; wave elites, alphas and bo
   assert.equal(drops("elite", 0.1), 1, "15 % hit");
   assert.equal(drops("elite", 0.99, false), 1, "an elite-wave elite keeps its candy");
   assert.ok(drops("alpha", 0.99) >= 1, "alphas keep their candy");
+  assert.ok(drops("boss", 0.99) >= 1, "bosses keep theirs");
 });
