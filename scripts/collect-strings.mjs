@@ -74,8 +74,10 @@ export async function collectMissing(lang = "en", { endlessMinutes = 25 } = {}) 
     }
   };
 
-  // A few species so kits, abilities and evolutions vary.
-  for (const speciesId of [1, 4, 7, 25, 92, 133]) {
+  // A few species so kits, abilities and evolutions vary: the pack's starters plus a sample
+  // (Pikachu, Gastly, Eevee here) when the tables have it — another content pack skips the sample.
+  const { PACK } = await import("../src/content/pack.js");
+  for (const speciesId of new Set([...PACK.starters, ...[25, 92, 133].filter((id) => data.get(id))])) {
     const { run, calls } = makeRun({ speciesId, profile });
     seeRun(run);
     sweepRun(run, calls);
