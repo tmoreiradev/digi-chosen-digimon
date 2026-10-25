@@ -34,13 +34,20 @@ test("a pack's word swaps apply to every on-screen text, after translation", () 
   const lang = getLang();
   const saved = PACK.terms;
   try {
-    PACK.terms = { "pt-BR": { Pokédex: "DigiDex" }, en: { Pokédex: "DigiDex" }, es: {} };
+    // Each swap names a word of the TRANSLATED sentence ("Catch", "Captura"), which the pt-BR key
+    // does not contain: it can only match after translation.
+    PACK.terms = {
+      "pt-BR": { Pokémon: "Digimon" },
+      en: { Catch: "Scan", Pokémon: "Digimon" },
+      es: { Captura: "Escanea", Pokémon: "Digimon" },
+    };
+    const line = "Capture seu primeiro Pokémon.";
     setLang("pt-BR");
-    assert.equal(tr("Pokédex"), "DigiDex");
+    assert.equal(tr(line), "Capture seu primeiro Digimon.");
     setLang("en");
-    assert.equal(tr("Pokédex"), "DigiDex");
+    assert.equal(tr(line), "Scan your first Digimon.");
     setLang("es");
-    assert.equal(tr("Pokédex"), "Pokédex", "no swap listed for Spanish");
+    assert.equal(tr(line), "Escanea tu primer Digimon.");
   } finally {
     PACK.terms = saved;
     setLang(lang);

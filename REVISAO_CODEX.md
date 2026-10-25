@@ -1243,6 +1243,12 @@ Preparação para um fork em outro universo (Digimon, repositório à parte); o 
   esquema da engine; `__POKEBONK_DATA__` fica.
 - **Verificação:** as cores, o RGB e os nomes do pacote foram conferidos contra as três tabelas antigas antes da troca
   (18 tipos, 0 diferenças). `tests/pack.test.mjs` (4): tipos do pacote = `types.json`, tabelas da engine derivadas do
-  pacote, iniciais = `start: true` do roster, espécies e pastas existem, troca de termos nos três idiomas, e uma guarda
+  pacote, iniciais = `start: true` do roster, espécies e pastas existem, troca de termos nos três idiomas (testada só em pt-BR e inglês; ver 45.ª rodada), e uma guarda
   que reprova o código da engine com os IDs/chaves do pacote de volta (falha com `run.js`/`account.js` anteriores).
   Suíte **212 / 212**; build, `check-bundle` (34 módulos) e `npm run e2e` OK.
+
+**Quadragésima quinta rodada** (fase 27, `6d58996..a50c800`, `reviews/codex-2026-10-25-08-33-6d58996..HEAD.md`): **Aprovado com
+ressalvas**, 1 P3 aceito, e a afirmação contestada estava errada: o teste da troca de termos usava "Pokédex" (igual em
+inglês) e um mapa vazio no espanhol, então não provava a troca *depois* da tradução nem cobria o espanhol. Agora cada
+idioma troca uma palavra que só existe na frase traduzida ("Catch", "Captura") e "Pokémon" → "Digimon", conferindo a
+frase final nos três idiomas. Suíte **212 / 212**.
