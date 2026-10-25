@@ -1,17 +1,18 @@
 {
-  "name": "digi-chosen",
+  "name": "digi-chosen-digimon",
   "version": "1.0.0",
   "private": true,
-  "description": "Digi Chosen — local survivor roguelite built on Kanto data tables; runs offline from a single HTML file.",
+  "description": "Digi Chosen — Digimon fork: survivor roguelite on File Island; runs offline from a single HTML file.",
   "type": "module",
   "scripts": {
     "start": "node server.mjs",
     "dev": "node server.mjs 8080",
     "build": "node build.mjs",
-    "test": "node --test \"tests/*.test.mjs\"",
+    "test": "node --test tests/digimon.test.mjs tests/playtest.test.mjs tests/lang.test.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
     "review:codex": "node scripts/codex-review.mjs",
-    "e2e": "node scripts/e2e-bundle.mjs"
+    "e2e": "node scripts/e2e-bundle.mjs",
+    "make:data": "node scripts/make-digimon-data.mjs"
   },
   "engines": {
     "node": ">=18"

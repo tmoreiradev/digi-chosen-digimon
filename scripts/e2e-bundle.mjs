@@ -106,7 +106,7 @@ async function scenario() {
   expect(/Escolha seu parceiro/i.test(body()), "partner picker");
   click("Continuar");
   await sleep(100);
-  expect(/Região/i.test(body()) && /Floresta Verde/i.test(body()), "setup screen with biomes in pt-BR");
+  expect(/Região/i.test(body()) && /Ilha File/i.test(body()), "setup screen with the region in pt-BR");
   click("Começar!");
   await sleep(400);
   const run = globalThis.__PB__?.run;

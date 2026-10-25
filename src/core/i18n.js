@@ -62,7 +62,7 @@ const ARCH_ES = {
 export const archLabel = (arch, rules) => pick(ARCH_PT, ARCH_EN, ARCH_ES)[arch] ?? rules?.archetypes?.[arch]?.label ?? arch;
 
 export const BIOME_PT = {
-  forest: { name: "Floresta Verde", desc: "Uma floresta frondosa cheia de vida — e de Pokémon que preferem ficar com ela só para si." },
+  forest: { name: "Ilha File", desc: "A ilha onde as Crianças Escolhidas chegaram — e onde as Engrenagens Negras deixaram os Digimon selvagens." },
   desert: { name: "Deserto Rochoso", desc: "Areia escaldante, cânions de pedra e tempestades que cegam." },
   coast: { name: "Costa das Tempestades", desc: "Praias, recifes e tempestades elétricas sobre o mar. Cuidado com a maré." },
   glacier: { name: "Geleira Celestial", desc: "Gelo eterno sob auroras. Os lagos congelados escorregam e o frio morde até os seus ataques." },
@@ -71,7 +71,7 @@ export const BIOME_PT = {
 };
 // English: the data's own name and description.
 const BIOME_ES = {
-  forest: { name: "Bosque Verde", desc: "Un bosque frondoso lleno de vida — y de Pokémon que prefieren tenerlo para ellos solos." },
+  forest: { name: "Isla File", desc: "La isla donde llegaron los Niños Elegidos — y donde los Engranajes Negros volvieron salvajes a sus Digimon." },
   desert: { name: "Desierto Rocoso", desc: "Arena abrasadora, cañones de roca y tormentas cegadoras." },
   coast: { name: "Costa Tormentosa", desc: "Playas, arrecifes y tormentas eléctricas sobre el mar. Cuidado con la marea." },
   glacier: { name: "Glaciar Celeste", desc: "Hielo eterno bajo auroras. Los lagos helados resbalan y el frío muerde hasta tus ataques." },
