@@ -1054,7 +1054,7 @@ export class Run {
         const p = this.player;
         const rr = pr.radius + p.radius;
         if (dist2(pr.x, pr.z, p.x, p.z) <= rr * rr) {
-          this.hitPlayer(pr.dmg, null);
+          this.hitPlayer(pr.dmg, null, this.enemyById(pr.owner));
           list.splice(i, 1);
           continue;
         }
@@ -1111,7 +1111,7 @@ export class Run {
         }
         if (z.hostile && !z.cancelled) {
           const p = this.player;
-          if (dist2(p.x, p.z, z.x, z.z) <= z.r * z.r) this.hitPlayer(z.dmg * dt, null);
+          if (dist2(p.x, p.z, z.x, z.z) <= z.r * z.r) this.hitPlayer(z.dmg * dt, null, this.enemyById(z.owner));
         }
       }
       if (z.life <= 0) this.zones.splice(i, 1);
@@ -1212,12 +1212,14 @@ export class Run {
     if (e.hp > 0 && e.hp <= e.maxHp * this.rules.capture.weakenHpPct && CAPTURABLE_TIERS.has(e.tier)) this.capture.weaken(e);
   }
 
-  hitPlayer(amount, source) {
+  /** `source` is who touched the player (type chart, thorns); `attacker` who fired a projectile or pool. */
+  hitPlayer(amount, source, attacker = source) {
     const p = this.player;
     // The first terminal state of a step is final: a meteor timer that fires after the boss fell
     // in the same step cannot turn the victory into a death.
     if (p.dead || p.iframes > 0 || this.state !== "running") return;
     let dmg = amount;
+    if (attacker?.statuses?.charm > 0) dmg *= 0.6; // Charmed: -40 % on every attack, contact or special
     // Enemy type effectiveness against the player's typing.
     if (source?.types?.length) {
       const eff = effectiveness(this.data.types, source.types[0], p.types);
@@ -1303,7 +1305,10 @@ export class Run {
     for (const e of this.enemies) {
       if (!e.alive || e.dying > 0 || e.id === exceptId || (onlyId >= 0 && e.id !== onlyId)) continue;
       if (onlyId < 0 && dist2(e.x, e.z, x, z) > r2) continue;
-      const d = dmg * (e.marked ? 1.4 : 1); // Silph Scope
+      // Silph Scope mark; a sleeping target takes x1.8 and wakes, as from any direct hit.
+      const asleep = e.statuses.sleep > 0;
+      if (asleep) e.statuses.sleep = 0;
+      const d = dmg * (e.marked ? 1.4 : 1) * (asleep ? 1.8 : 1);
       const through = this.boss.index === e.id && this.boss.alive ? this.boss.capDamage(d * this.boss.hitMul()) : d;
       e.hp -= through;
       e.flash = 1;
@@ -1409,7 +1414,7 @@ export class Run {
       const charmed = e.statuses.charm > 0;
       if (d < touch && e.atkCd <= 0 && !(charmed && e.tier === "normal")) {
         e.atkCd = 0.4;
-        this.hitPlayer(e.dmg * this.difficulty.enemyDamage * (charmed ? 0.6 : 1), e);
+        this.hitPlayer(e.dmg * this.difficulty.enemyDamage, e); // charm's -40 % applies in hitPlayer
         // push the player away a bit, never out of the arena
         p.x = clamp(p.x - (dx / d) * 0.6, -half, half);
         p.z = clamp(p.z - (dz / d) * 0.6, -half, half);

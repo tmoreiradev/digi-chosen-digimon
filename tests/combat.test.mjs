@@ -264,3 +264,42 @@ test("dive: Shift in the air slams down and the landing hurts around, more from 
   run.update(1 / 60);
   assert.ok(run.player.dashT > 0 && !run.player.diving);
 });
+
+test("charm softens the boss's special attacks too (projectiles, pools, charges)", () => {
+  const { run } = setup();
+  const p = run.player;
+  run.stageTime = 299.99;
+  p.iframes = 1e9;
+  frames(run, 2);
+  const g = run.boss.enemy;
+  const taken = (charmed) => {
+    g.statuses.charm = charmed ? 3 : 0;
+    p.iframes = 0;
+    p.hp = p.maxHp;
+    p.shield = 0;
+    withRandom(0.999, () => run.hitPlayer(20, null, g)); // what a boss projectile or pool calls
+    return p.maxHp - p.hp;
+  };
+  const plain = taken(false);
+  assert.ok(Math.abs(taken(true) / plain - 0.6) < 1e-9);
+  g.statuses.charm = 3;
+  run.spawnHostileProjectile(g, 0, 0, 20, 2, 5); // sits on the player
+  run.projectiles.at(-1).x = p.x;
+  run.projectiles.at(-1).z = p.z;
+  p.iframes = 0;
+  p.hp = p.maxHp;
+  withRandom(0.999, () => run.updateProjectiles(1 / 60));
+  assert.ok(Math.abs((p.maxHp - p.hp) / plain - 0.6) < 1e-6, "a real projectile carries its owner");
+});
+
+test("area damage, reactions and the dive also wake a sleeper with the x1.8", () => {
+  const { run } = setup();
+  const e = dummy(run, 5, 5);
+  run.hitAround(5, 5, 1, 100, { type: "normal", cls: "special" });
+  const base = e.maxHp - e.hp;
+  e.statuses.sleep = 3;
+  const before = e.hp;
+  run.hitAround(5, 5, 1, 100, { type: "normal", cls: "special" });
+  assert.ok(Math.abs((before - e.hp) / base - 1.8) < 1e-9);
+  assert.equal(e.statuses.sleep, 0);
+});

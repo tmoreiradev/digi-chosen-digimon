@@ -1165,3 +1165,11 @@ Pedido: corrigir a sobrecura e trazer o combate que faltava, conforme o mapeamen
   aplicado.
 - ⚠ Balanço: paralisia, atordoamento e recuo passaram a valer de verdade (204 golpes), e as reações multiplicam dano —
   o jogo deve ficar mais fácil; conferir no playtest.
+
+**Quadragésima primeira rodada** (fase 25, `fd5a19e..8ce0bde`, `reviews/codex-2026-10-25-05-36-fd5a19e..HEAD.md`): **Aprovado com
+ressalvas**, 2 P2 aceitos: (1) o Encantado só abrandava o contato; investidas, ondas, meteoros, projéteis e poças do boss
+batiam inteiros. `hitPlayer` ganhou o parâmetro `attacker` (quem disparou; `source` segue sendo quem encostou, para tipo
+e espinhos) e aplica o −40 % a qualquer ataque; projéteis e poças passam o dono (`owner`). (2) O dano de área
+(`hitAround`: itens, reações, mergulho, esbarrões de confusos) não dava o ×1,8 nem acordava o alvo dormindo; agora dá,
+como qualquer golpe direto (os tiques de status seguem à parte). Dois testes novos (falham no código anterior). Suíte
+**196 / 196**; build, `check-bundle` e `npm run e2e` OK.
