@@ -70,3 +70,18 @@ test("engine code does not hard-code the pack's ids again", () => {
   walk("src");
   assert.deepEqual(offenders, []);
 });
+
+test("rules.evolution.levelByStage fixes the evolution level per target stage; without it the two bands stay", async () => {
+  const { evolutionPlan } = await import("../src/game/rules.js");
+  const data = loadData();
+  const before = evolutionPlan(data, 1); // Bulbasaur → Ivysaur on the default bands
+  assert.ok(before.level >= 16 && before.level <= 30);
+  const saved = data.rules.evolution;
+  try {
+    data.rules.evolution = { levelByStage: { 1: 11, 2: 23 } };
+    assert.equal(evolutionPlan(data, 1).level, 11, "stage 1 target");
+    assert.equal(evolutionPlan(data, 2).level, 23, "stage 2 target");
+  } finally {
+    data.rules.evolution = saved;
+  }
+});

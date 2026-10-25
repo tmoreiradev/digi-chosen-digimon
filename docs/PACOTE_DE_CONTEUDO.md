@@ -46,7 +46,7 @@ peças as mesmas chaves (ou isto vira tabela de dados numa fase futura):
 | Reações elementais por tipo e estado | `src/game/combat.js` (`REACTIONS`) | mapear os elementos do fork para as chaves de tipo (ou tornar a tabela dado) |
 | Itens da loja (Poção, Doce Raro…) | `src/game/events.js` (`SHOP_ITEMS`) | texto via `PACK.terms`/dicionários |
 | Captura (fórmula com `captureRate`/255, "Poké Bola") | `src/game/capture.js`, `rules.capture` | Digivice: mesma fórmula, outro nome |
-| Evolução por nível e `evoStage` | `rules.js` (`evolutionPlan`), `run.js` (`tryEvolve`) | Digivolução: `evoLevel` por estágio; os 5 estágios cabem em `evoStage` 0–4 com faixas de nível novas (hoje fixas 16–30 / 36–50) |
+| Evolução por nível e `evoStage` | `rules.js` (`evolutionPlan`), `run.js` (`tryEvolve`) | Digivolução: os 5 estágios cabem em `evoStage` 0–4; `rules.evolution.levelByStage` (fase 28) fixa o nível de cada estágio — sem ele valem as faixas 16–30 / 36–50 |
 | Nome global dos dados no bundle (`__POKEBONK_DATA__`) | `build.mjs`, `game-data.js`, `sprites.js` | pode ficar; não aparece ao jogador |
 
 ## Plano do fork Digimon (resumo)

@@ -417,12 +417,16 @@ export function describeUpgrade(up) {
 
 /**
  * Decide which evolution the player takes and at what level.
- * Mirrors upstream `runEvolution`.
+ * Mirrors upstream `runEvolution`; rules.evolution.levelByStage overrides the level per stage.
  */
 export function evolutionPlan(data, speciesId, rng) {
   const options = data.evolutionsOf(speciesId);
   if (!options.length) return null;
   const target = rng ? rng.pick(options) : options[0];
+  // A content pack can fix the level per evolution stage (rules.evolution.levelByStage, keyed by the
+  // target's evoStage): five-stage lines need more than the two bands below.
+  const fixed = data.rules?.evolution?.levelByStage?.[target.evoStage];
+  if (fixed != null) return { to: target, level: fixed };
   const current = data.get(speciesId);
   const base = target.evoLevel ?? (current.evoStage === 0 ? 20 : 34);
   if (data.evolutionsOf(target.id).length) {
