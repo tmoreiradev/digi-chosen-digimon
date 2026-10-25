@@ -1620,7 +1620,8 @@ export class Run {
       dark: "Umbral Eclipse",
       fairy: "Fairy Triumph",
     };
-    return names[this.player.types[0]] ?? "Ultimate";
+    // A content pack can name each species' ultimate (rules.ultimateBySpecies: signature attacks).
+    return this.rules.ultimateBySpecies?.[this.player.speciesId] ?? names[this.player.types[0]] ?? "Ultimate";
   }
 
   /* ------------------------------------------------------ level-up pool */

@@ -9,7 +9,7 @@ import { TYPE_COLORS } from "../src/game/rules.js";
 import { TYPE_RGB } from "../src/render/palette.js";
 import { typeName } from "../src/core/i18n.js";
 import { tr, setLang, getLang, LANG_KEY } from "../src/core/lang.js";
-import { loadData } from "./_helpers.mjs";
+import { loadData, makeRun } from "./_helpers.mjs";
 
 test("the pack's types are the type chart's types, and the engine's type tables come from them", () => {
   const data = loadData();
@@ -84,4 +84,17 @@ test("rules.evolution.levelByStage fixes the evolution level per target stage; w
   } finally {
     data.rules.evolution = saved;
   }
+});
+
+test("rules.ultimateBySpecies names a species' ultimate; without it the type's name stays", () => {
+  const { run } = makeRun();
+  const byType = run.ultimateName();
+  assert.ok(byType.length > 0);
+  run.rules.ultimateBySpecies = { [run.player.speciesId]: "Gaia Force" };
+  try {
+    assert.equal(run.ultimateName(), "Gaia Force");
+  } finally {
+    delete run.rules.ultimateBySpecies;
+  }
+  assert.equal(run.ultimateName(), byType);
 });
