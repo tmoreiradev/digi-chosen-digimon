@@ -1252,3 +1252,16 @@ ressalvas**, 1 P3 aceito, e a afirmação contestada estava errada: o teste da t
 inglês) e um mapa vazio no espanhol, então não provava a troca *depois* da tradução nem cobria o espanhol. Agora cada
 idioma troca uma palavra que só existe na frase traduzida ("Catch", "Captura") e "Pokémon" → "Digimon", conferindo a
 frase final nos três idiomas. Suíte **212 / 212**.
+
+## 39. Fase 28 — Engine pronta para o fork Digimon (25/10/2026)
+
+- `rules.evolution.levelByStage` (opcional): nível fixo de evolução por estágio do alvo; sem ele valem as faixas de
+  sempre. `rules.ultimateBySpecies` (opcional): nome da ultimate por espécie; sem ele, o nome por tipo.
+- `scripts/collect-strings.mjs` varre os iniciais do pacote mais Pikachu/Gastly/Eevee quando existem (no pacote
+  Pokémon o conjunto é o mesmo de antes).
+- Testes novos em `tests/pack.test.mjs` (2). Suíte **214 / 214**.
+- **Fork criado** em `../digi-chosen-digimon` (clone local, remote `engine` → este repositório; sem GitHub ainda):
+  pacote Digimon (tipos renomeados como elementos, iniciais Agumon/Gabumon/Patamon, termos Digimon/DigiDex/Digivice,
+  prefixo de save próprio), 22 Digimon gerados por `scripts/make-digimon-data.mjs`, Ilha File, digivolução 12/26/40,
+  arte de Pokémon removida (desenho procedural). No fork: `npm test` (conteúdo + playtest + idiomas) **14 / 14**, build,
+  `check-bundle` e `npm run e2e` OK; Clássico 9/10 seeds sobrevivem 10 min; Torre fácil demais (anotado no README do fork).
