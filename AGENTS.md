@@ -22,9 +22,9 @@ continuar funcionando offline, inclusive `dist/digi-chosen.html` aberto por `fil
 - Texto novo na interface: escreva em pt-BR e acrescente o inglês em `src/core/lang-en.js` e o espanhol em `src/core/lang-es.js` (exato em `EN`/`ES`, com números/nomes em `EN_PATTERNS`/`ES_PATTERNS`); `tests/lang.test.mjs` reprova texto em português que chegue à tela no modo inglês.
 - Não mude as chaves do `localStorage` (`pokebonk-clone.*`) nem o global `__POKEBONK_DATA__` sem migração;
   saves antigos têm de continuar carregando (`normalizeProgress` em `src/ui/account.js`).
-- Este é o fork **Digimon**: conteúdo em `src/content/pack.js`, `scripts/make-digimon-data.mjs` (gera `src/data`) e
-  `assets/sprites`. Mudança de **engine** vai para o repositório da engine (`digi-chosen-private`, remote `engine`) e
-  chega aqui por `git pull engine main`; não edite a engine só aqui.
+- Este é o fork **Digimon** e agora também a casa da engine: conteúdo em `src/content/pack.js`,
+  `scripts/make-digimon-data.mjs` (gera `src/data`) e `assets/sprites`; engine no resto de `src/`. O jogo Pokémon
+  original (com a suíte completa da engine) está congelado no branch `pokemon`; não faça commits nele.
 - Um caminho só para cada coisa: nível por `Run.addXp`/`useRareCandy`; compra por `WorldEvents.buy`;
   capturas em `profile.data.pokedex` (não existe outra lista); boss por `Boss.spawn` + teto em `hitEnemy`.
 - Correção de bug vem com um teste em `tests/` que falha no código antigo. `node --check` em tudo que mudar.

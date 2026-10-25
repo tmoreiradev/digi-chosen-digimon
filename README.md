@@ -29,17 +29,13 @@ npm run make:data    # regenerate src/data from scripts/make-digimon-data.mjs
   Sprite sheets go in `assets/sprites/<id>.png` (PMD sheet layout) with their entry in
   `sprites.json`.
 
-## Engine
+## Engine and the Pokémon original
 
-The engine lives in `digi-chosen-private` (git remote `engine`):
-
-```bash
-git pull engine main   # bring engine changes in
-```
-
-Engine tests run there; the contract between engine and content is the engine's
-`docs/PACOTE_DE_CONTEUDO.md`. Engine-side Pokémon keys still used as effect names here (items,
-passive kits) are listed in that document.
+The engine now lives here, on `main`. Branch `pokemon` keeps the original Pokémon game (engine
+plus Pokémon tables, PMD sheets and the full engine test suite, 214 tests) frozen at the point
+the repositories were merged; `git switch pokemon && npm test` runs it. The contract between
+engine and content is `docs/PACOTE_DE_CONTEUDO.md`; engine-side Pokémon keys still used as
+effect names here (items, passive kits) are listed there.
 
 ## Known gaps
 
