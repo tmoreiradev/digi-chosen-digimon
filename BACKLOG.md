@@ -43,6 +43,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 - Pendentes: cargas de veneno (até 10) e de resfriamento (3); chance de paralisia travar; Laboratório/Stardust; Mochila; tarefas diárias/semanais; Contra o relógio; Poké Bolas pagas, Máquina do Bill, altares Unown/de guardiões, frutas; remapear teclas, mando e toque.
 
 - Visual (mapa, sprites, efeitos, câmera): plano em 10 itens em `docs/VISUAL_POKEBONK.md`; avaliação do WebGL/three.js no mesmo doc, pendente a decisão (recomendado: spike `?gl=1`).
+- Mecânicas e números do PokéBonk (diretor, chefes, interagíveis, eventos, Sobrevivência, Torre) com prioridades em `docs/MAPEAMENTO_POKEBONK.md`.
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 
