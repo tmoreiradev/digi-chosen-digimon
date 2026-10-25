@@ -1223,3 +1223,6 @@ a arena. (3) M abria o mapa por baixo das cartas de nível, e o Esc ficava preso
 nada com as cartas abertas, e o e2e aperta M sobre as cartas. (4) O teste do doce só exercitava elite e Alfa; ganhou o
 chefe. Os testes 1 e 2 falham no código anterior; o passo do e2e falha com o `main.js` anterior. Suíte **208 / 208**;
 build, `check-bundle` e `npm run e2e` OK.
+
+**Quadragésima quarta rodada** (`ef9a615..5c91ec5`, `reviews/codex-2026-10-25-08-18-ef9a615..HEAD.md`): **Aprovado**, sem achados
+nem afirmações contestadas. Fase 26 encerrada.
