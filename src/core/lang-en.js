@@ -194,6 +194,15 @@ export const EN = {
   // floaters
   "errou": "miss",
   "bloqueado": "blocked",
+  "Eletrocutado!": "Electrocuted!",
+  "Congelou!": "Flash freeze!",
+  "Vapor!": "Steam!",
+  "Incêndio!": "Wildfire!",
+  "Destruição!": "Shatter!",
+  "Gás Venenoso!": "Poison Gas!",
+  "Pesadelo!": "Nightmare!",
+  "Colapso Mental!": "Mind Crash!",
+  "Fúria do Dragão!": "Dragon Rage!",
   // misc
   "🌐 Português": "🌐 Português",
   "Este jogo precisa de JavaScript.": "This game needs JavaScript.",

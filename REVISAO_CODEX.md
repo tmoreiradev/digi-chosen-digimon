@@ -1131,3 +1131,37 @@ virou "todo item scriptado dos dados está em SCRIPTED e no pool" (38). Suíte *
   leitura do HUD a cada 10 s e de cada painel aberto: **nenhum texto em português** nos dois idiomas
   (`node scripts/collect-strings.mjs --lang=es --long --summary`). O jogo humano continua sendo o teste de balanço.
 - Suíte **185 / 185**; build, `check-bundle` e `npm run e2e` OK.
+
+## 36. Fase 25 — Sobrecura, estados, reações elementais e mergulho (25/10/2026)
+
+Pedido: corrigir a sobrecura e trazer o combate que faltava, conforme o mapeamento do PokéBonk (glossário).
+
+- **Sobrecura (bug):** a vitamina Enigma Berry oferecia "+X % sobrecura", mas `healPlayer` parava no HP máximo — sem efeito.
+  Agora o excedente vira `overhealHp` até `overheal × HP máx.` e absorve dano antes do escudo; o HUD soma escudo e
+  sobrecura no "+N".
+- **Estados que não funcionavam (bug achado no caminho):** os golpes aplicam estados com os nomes dos dados
+  (`paralysis`, `stun`, `knock`, `wet`, `confusion`, `charm`, `healblock`), mas o motor só lia `para`, `freeze`,
+  `sleep`, `root`, `burn`, `poison`, `curse`. Paralisia (48 golpes), atordoamento (51) e recuo (105) não faziam nada.
+  `src/game/combat.js` (novo) normaliza (`statusKey`) e aplica (`applyStatus`) com as durações do glossário:
+  paralisia −50 % de velocidade 3 s; atordoamento para 0,5 s; recuo empurra 1,5 u; bosses ignoram atordoamento, recuo e
+  confusão.
+- **Estados novos:** Molhado 5 s (prepara reações); Confuso 3 s (anda sem rumo, não morde o jogador e fere o inimigo em
+  que esbarra); Encantado 3 s (inimigos comuns param de atacar, os demais batem −40 %); Heal Block 6 s (o alfa
+  enfraquecido não recupera HP ao escapar ou se recuperar — os inimigos deste motor não têm outra cura).
+- **Ajustes ao glossário:** o sono acaba no golpe que dá o ×1,8 (antes todo golpe durante o sono valia ×1,8); a raiz
+  passou a ser −65 % de velocidade (antes parava o inimigo e o controlador do boss).
+- **Reações** (`REACTIONS`, multiplicador no próprio golpe, contadas em `stats.reactions`, com flutuante nos 3 idiomas):
+  Eletrocutado (Molhado + Elétrico, ×1,5, salta para até 12 molhados a 9 u com 60 % de paralisia), Congelamento
+  (Molhado + Gelo, congela na hora), Vapor (Queimado + Água, ×1,4, confunde e enraíza ao redor), Incêndio (Queimado +
+  Planta/Voador, ×1,3, espalha a queimadura a 7 u), Destruição (Congelado + Lutador/Pedra/Aço, ×2,6 + estilhaços), Gás
+  Venenoso (Envenenado + Fogo, ×1,4, explosão que envenena), Pesadelo (Dormindo + Fantasma/Sombrio, ×1,7 sobre o ×1,8 e
+  cura 2 % do HP), Colapso Mental (Paralisado + Psíquico, ×1,6 + confusão), Fúria do Dragão (Encantado + Dragão, ×2).
+- **Mergulho:** Shift no ar desce a −22 u/s; ao pousar, onda de choque de raio `2,5 + 1,5 × altura` e dano
+  `(8 + 2 × nível) × dano × físico × (1 + altura)`. No chão, Shift segue sendo o deslize.
+- **Fora desta fase:** cargas de veneno (até 10) e de resfriamento (3 para congelar), e a chance de paralisia "travar".
+- **Testes:** `tests/combat.test.mjs` (9, todos falham no código anterior); `review14`/`review15` passaram a usar
+  atordoamento no lugar da raiz. Suíte **194 / 194**; bot segue vencendo Clássico (10/10 sobrevivem) e Torre (5/5);
+  build, `check-bundle` e `npm run e2e` OK. Navegador: "Eletrocutado!" sobre dois inimigos molhados e um mergulho de 3 u
+  aplicado.
+- ⚠ Balanço: paralisia, atordoamento e recuo passaram a valer de verdade (204 golpes), e as reações multiplicam dano —
+  o jogo deve ficar mais fácil; conferir no playtest.

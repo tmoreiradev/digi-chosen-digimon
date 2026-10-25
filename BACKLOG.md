@@ -37,6 +37,11 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 | 19 | ~~`showResults` adiciona a espécie jogada a `caught`~~ | `screens.js` — **Já resolvido na fase 3:** o parceiro jogado conta como *visto*. |
 | 20 | ~~Loop continua até 4 passos depois de um level-up~~ | `main.js` `loop` — **Feito na fase 14:** o laço de recuperação para (e zera o acumulador) quando abre carta, painel de evento ou a run termina. |
 
+## 2b. Do mapeamento do PokéBonk (25/10)
+
+- ~~Sobrecura sem efeito~~, ~~estados com nome dos dados mortos~~, ~~Molhado/Confuso/Encantado/Heal Block~~, ~~reações elementais~~, ~~mergulho~~ — fase 25.
+- Pendentes: cargas de veneno (até 10) e de resfriamento (3); chance de paralisia travar; Laboratório/Stardust; Mochila; tarefas diárias/semanais; Contra o relógio; Poké Bolas pagas, Máquina do Bill, altares Unown/de guardiões, frutas; remapear teclas, mando e toque.
+
 ## 3. Funcionalidades futuras (do README e da especificação)
 
 - Santuários e mercadores ambulantes: o santuário do Clássico (fase 2) e a loja ambulante (fase 5) existem; ~~renovação do estoque~~ feita na fase 20 (24/10).

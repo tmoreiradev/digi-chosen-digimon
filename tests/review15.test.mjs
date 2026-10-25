@@ -80,8 +80,8 @@ test("control: an unhindered charge moves the boss and rams the player", () => {
   assert.ok(p.hp < hp, "and hit the player");
 });
 
-test("a frozen, asleep, rooted or flinching boss aborts its charge and waits the status out", () => {
-  for (const status of ["freeze", "sleep", "root", "flinch"]) {
+test("a frozen, asleep or flinching boss aborts its charge and waits the status out", () => {
+  for (const status of ["freeze", "sleep", "flinch"]) { // root slows the boss, it no longer pins it
     const { run } = setup();
     const p = run.player;
     const { boss, g } = guardianAt(run, 8);

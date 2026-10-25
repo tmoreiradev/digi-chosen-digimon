@@ -21,7 +21,7 @@ const BOSS_MOVE_NAMES = {
 };
 
 /** Statuses that stop an enemy in updateEnemies; the controller stops with them (no charge, no telegraph). */
-const BOSS_STOPPED = ["freeze", "sleep", "root", "flinch"];
+const BOSS_STOPPED = ["freeze", "sleep", "flinch"]; // root slows (enemy movement), it no longer pins
 
 export class Boss {
   constructor(run) {

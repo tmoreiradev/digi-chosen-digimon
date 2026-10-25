@@ -108,7 +108,7 @@ export class Capture {
     const run = this.run;
     this.reset();
     e.captureReady = false;
-    e.hp = Math.max(e.hp, e.maxHp * 0.3);
+    if (!(e.statuses.healblock > 0)) e.hp = Math.max(e.hp, e.maxHp * 0.3); // Heal Block: no recovery
     run.banner(`${e.species.name} se soltou!`);
   }
 
@@ -132,7 +132,7 @@ export class Capture {
       e.vz *= 0.8;
       if (this.downT <= 0) {
         e.captureReady = false;
-        e.hp = Math.max(e.hp, e.maxHp * 0.25);
+        if (!(e.statuses.healblock > 0)) e.hp = Math.max(e.hp, e.maxHp * 0.25); // Heal Block: no recovery
         this.reset();
         this.run.banner(`${e.species.name} se recuperou!`);
       }

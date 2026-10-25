@@ -204,7 +204,8 @@ export class Hud {
     // Bars
     const hpPct = clamp(p.hp / p.maxHp, 0, 1);
     this.hpFill.style.width = `${hpPct * 100}%`;
-    this.hpText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}${p.shield > 0 ? ` +${Math.ceil(p.shield)}` : ""}`;
+    const extra = (p.shield > 0 ? p.shield : 0) + (p.overhealHp > 0 ? p.overhealHp : 0); // shield + overheal
+    this.hpText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}${extra > 0 ? ` +${Math.ceil(extra)}` : ""}`;
     const xpPct = clamp(p.xp / p.xpNext, 0, 1);
     this.xpFill.style.width = `${xpPct * 100}%`;
     this.xpText.textContent = `XP ${Math.floor(p.xp)} / ${p.xpNext}`;

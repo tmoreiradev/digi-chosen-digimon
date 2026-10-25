@@ -35,8 +35,8 @@ test("Poké Doll scales the allies' passive on pickup, no other recompute needed
   assert.ok(Math.abs(p.stats.damage / before - (1 + boost * 1.5) / (1 + boost)) < 1e-9, `damage ${before} → ${p.stats.damage}`);
 });
 
-test("frozen, asleep and rooted enemies neither move nor bite until the status ends", () => {
-  for (const status of ["freeze", "sleep", "root"]) {
+test("frozen, asleep and stunned enemies neither move nor bite until the status ends", () => {
+  for (const status of ["freeze", "sleep", "stun"]) { // root slows since the combat phase; stun pins
     const { run } = setup();
     const p = run.player;
     p.iframes = 0;

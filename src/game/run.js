@@ -22,6 +22,7 @@ import {
 import { Director } from "./director.js";
 import { Boss } from "./boss.js";
 import { Allies, Capture, CAPTURABLE_TIERS, isBossTier } from "./capture.js";
+import { statusKey, applyStatus, findReaction, applyReaction } from "./combat.js";
 import {
   SCRIPTED,
   itemDamageMul,
@@ -446,7 +447,12 @@ export class Run {
 
     // Dash
     if (p.dashT > 0) p.dashT -= dt;
-    if (input.dash && p.dashCd <= 0 && len > 0) {
+    if (input.dash && !p.grounded && !p.diving) {
+      // Dive: Shift in the air slams down; the landing sends a shockwave sized by the fall.
+      p.diving = true;
+      p.vy = Math.min(p.vy, -22);
+      p.iframes = Math.max(p.iframes, 0.15);
+    } else if (input.dash && p.grounded && p.dashCd <= 0 && len > 0) {
       const shed = itemCount(this, "shed-shell"); // Shed Shell: longer invulnerable start, faster recharge
       p.dashT = 0.18;
       p.dashCd = shed ? 1.4 * 0.9 : 1.4;
@@ -479,10 +485,13 @@ export class Run {
     if (!p.grounded) {
       p.vy -= 16 * dt;
       p.y += p.vy * dt;
+      p.peakY = Math.max(p.peakY ?? 0, p.y);
       if (p.y <= 0) {
         p.y = 0;
         p.vy = 0;
         p.grounded = true;
+        if (p.diving) this.diveLanding(p);
+        p.peakY = 0;
         p.jumpsLeft = 1 + Math.round(p.stats.extraJumps);
       }
     }
@@ -1162,6 +1171,8 @@ export class Run {
     if (e.statuses.sleep > 0) amount *= 1.8;
     if (e.statuses.freeze > 0) amount *= 1.2;
     if (e.statuses.curse > 0) amount *= 1.25;
+    const reaction = findReaction(e, dtype);
+    if (reaction) amount *= reaction.mul;
 
     // Base for burn/poison DPS: without the Silph Scope mark (the tick applies it) and before the boss cap
     // (the ticks go through the cap themselves).
@@ -1173,16 +1184,18 @@ export class Run {
     e.flash = 1;
     this.stats.damage += amount;
     this.opts.onHit?.();
+    if (e.statuses.sleep > 0) e.statuses.sleep = 0; // the hit that lands the x1.8 also wakes it
+    if (reaction) applyReaction(this, e, reaction, amount);
 
     if (def?.drain) this.healPlayer(amount * def.drain);
     if (s.lifesteal > 0 && Math.random() < 0.2) this.healPlayer(amount * s.lifesteal);
     itemOnHit(this, e, amount);
 
     // Status application
-    if (def?.status && def.statusChance > 0 && Math.random() < def.statusChance * s.statusChance) {
-      e.statuses[def.status] = 3.2;
-      if (def.status === "burn") e.burnDps = Math.max(e.burnDps ?? 0, dotBase * 0.06);
-      if (def.status === "poison") e.poisonDps = Math.max(e.poisonDps ?? 0, dotBase * 0.05);
+    if (def?.status && def.statusChance > 0 && Math.random() < def.statusChance * s.statusChance && applyStatus(this, e, def.status)) {
+      const key = statusKey(def.status);
+      if (key === "burn") e.burnDps = Math.max(e.burnDps ?? 0, dotBase * 0.06);
+      if (key === "poison") e.poisonDps = Math.max(e.poisonDps ?? 0, dotBase * 0.05);
     }
 
     // Flinch (King's Rock): a chance to stop the target for half a second; bosses shrug it off.
@@ -1221,6 +1234,12 @@ export class Run {
     }
     if (itemBlockHit(this)) return;
     p.lastHitT = this.time;
+    if (p.overhealHp > 0) {
+      // Overheal soaks damage before the shield.
+      const absorbed = Math.min(p.overhealHp, dmg);
+      p.overhealHp -= absorbed;
+      dmg -= absorbed;
+    }
     if (p.shield > 0) {
       const absorbed = Math.min(p.shield, dmg);
       p.shield -= absorbed;
@@ -1259,14 +1278,31 @@ export class Run {
   /** Every heal goes through here, so the healing stat (Big Root, abilities) applies exactly once. */
   healPlayer(amount) {
     const p = this.player;
-    p.hp = Math.min(p.maxHp, p.hp + amount * p.stats.healing);
+    const heal = amount * p.stats.healing;
+    const room = p.maxHp - p.hp;
+    p.hp = Math.min(p.maxHp, p.hp + heal);
+    // Overheal (Enigma Berry): what does not fit becomes extra HP, up to that share of max HP.
+    if (heal > room && p.stats.overheal > 0) p.overhealHp = Math.min(p.maxHp * p.stats.overheal, (p.overhealHp ?? 0) + heal - Math.max(0, room));
+  }
+
+  /** The dive lands: a shockwave whose damage and radius grow with the height it fell from. */
+  diveLanding(p) {
+    p.diving = false;
+    const height = p.peakY ?? 0;
+    const radius = 2.5 + height * 1.5;
+    const dmg = (8 + 2 * p.level) * p.stats.damage * p.stats.physical * (1 + height);
+    this.ring(p.x, 0.2, p.z, radius, 0xffffff, 0.35);
+    this.shake(0.25);
+    this.hitAround(p.x, p.z, radius, dmg, { type: p.types[0], cls: "physical" });
+    this.stats.dives = (this.stats.dives ?? 0) + 1;
   }
 
   /** Flat area damage for item effects: no player multipliers, through the boss budget, kills handled. */
-  hitAround(x, z, radius, dmg, def, exceptId = -1) {
+  hitAround(x, z, radius, dmg, def, exceptId = -1, onlyId = -1) {
     const r2 = radius * radius;
     for (const e of this.enemies) {
-      if (!e.alive || e.dying > 0 || e.id === exceptId || dist2(e.x, e.z, x, z) > r2) continue;
+      if (!e.alive || e.dying > 0 || e.id === exceptId || (onlyId >= 0 && e.id !== onlyId)) continue;
+      if (onlyId < 0 && dist2(e.x, e.z, x, z) > r2) continue;
       const d = dmg * (e.marked ? 1.4 : 1); // Silph Scope
       const through = this.boss.index === e.id && this.boss.alive ? this.boss.capDamage(d * this.boss.hitMul()) : d;
       e.hp -= through;
@@ -1320,7 +1356,7 @@ export class Run {
       // Frozen, asleep, rooted or flinching: stopped in place, no chase and no contact damage until
       // the timer runs out. (Damping the velocity and then chasing again, as before, left frozen and
       // sleeping enemies walking at about a third of their speed.)
-      if (e.statuses.freeze > 0 || e.statuses.sleep > 0 || e.statuses.root > 0 || e.statuses.flinch > 0) {
+      if (e.statuses.freeze > 0 || e.statuses.sleep > 0 || e.statuses.stun > 0 || e.statuses.flinch > 0) {
         e.vx *= 0.8;
         e.vz *= 0.8;
         if (e.atkCd > 0) e.atkCd -= dt;
@@ -1335,17 +1371,33 @@ export class Run {
         continue;
       }
 
-      // Chase
+      // Chase (paralysed: half speed; rooted: -65 %)
       const dx = p.x - e.x;
       const dz = p.z - e.z;
       const d = Math.hypot(dx, dz) || 1;
-      const speed = e.speed * (e.statuses.para > 0 ? 0.5 : 1);
+      const speed = e.speed * (e.statuses.para > 0 ? 0.5 : 1) * (e.statuses.root > 0 ? 0.35 : 1);
+      const half = this.biome.size / 2;
+      if (e.statuses.confusion > 0) {
+        // Confused: wanders, never bites the player, and hurts the enemies it bumps into.
+        e.wanderA = (e.wanderA ?? Math.random() * TAU) + (Math.random() - 0.5) * 4 * dt;
+        e.vx = lerp(e.vx, Math.cos(e.wanderA) * speed, Math.min(1, 6 * dt));
+        e.vz = lerp(e.vz, Math.sin(e.wanderA) * speed, Math.min(1, 6 * dt));
+        e.x = clamp(e.x + e.vx * dt, -half, half);
+        e.z = clamp(e.z + e.vz * dt, -half, half);
+        if (e.atkCd > 0) e.atkCd -= dt;
+        else {
+          const other = this.enemies.find((n) => n !== e && n.alive && !(n.dying > 0) && Math.hypot(n.x - e.x, n.z - e.z) < e.radius + n.radius);
+          if (other) {
+            e.atkCd = 0.4;
+            this.hitAround(other.x, other.z, 0.1, e.dmg * this.difficulty.enemyDamage, { type: e.types[0], cls: "physical" }, -1, other.id);
+          }
+        }
+        continue;
+      }
       e.vx = lerp(e.vx, (dx / d) * speed, Math.min(1, 6 * dt));
       e.vz = lerp(e.vz, (dz / d) * speed, Math.min(1, 6 * dt));
       e.x += e.vx * dt;
       e.z += e.vz * dt;
-
-      const half = this.biome.size / 2;
       e.x = clamp(e.x, -half, half);
       e.z = clamp(e.z, -half, half);
 
@@ -1353,9 +1405,11 @@ export class Run {
       // shoving 0.4 units on every frame (24 units/s per touching enemy) pinned the player
       // between two enemies with no way to walk out — the bot died that way at 19 s.
       const touch = e.radius + p.radius;
-      if (d < touch && e.atkCd <= 0) {
+      // Charmed: common enemies stop attacking, the rest hit 40 % softer.
+      const charmed = e.statuses.charm > 0;
+      if (d < touch && e.atkCd <= 0 && !(charmed && e.tier === "normal")) {
         e.atkCd = 0.4;
-        this.hitPlayer(e.dmg * this.difficulty.enemyDamage, e);
+        this.hitPlayer(e.dmg * this.difficulty.enemyDamage * (charmed ? 0.6 : 1), e);
         // push the player away a bit, never out of the arena
         p.x = clamp(p.x - (dx / d) * 0.6, -half, half);
         p.z = clamp(p.z - (dz / d) * 0.6, -half, half);
