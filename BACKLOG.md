@@ -42,7 +42,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 - ~~Sobrecura sem efeito~~, ~~estados com nome dos dados mortos~~, ~~Molhado/Confuso/Encantado/Heal Block~~, ~~reações elementais~~, ~~mergulho~~ — fase 25.
 - Pendentes: cargas de veneno (até 10) e de resfriamento (3); chance de paralisia travar; Laboratório/Stardust; Mochila; tarefas diárias/semanais; Contra o relógio; Poké Bolas pagas, Máquina do Bill, altares Unown/de guardiões, frutas; remapear teclas, mando e toque.
 
-- Visual (mapa, sprites, efeitos, câmera): plano em 10 itens em `docs/VISUAL_POKEBONK.md`; pendente a decisão 2,5D × WebGL.
+- Visual (mapa, sprites, efeitos, câmera): plano em 10 itens em `docs/VISUAL_POKEBONK.md`; avaliação do WebGL/three.js no mesmo doc, pendente a decisão (recomendado: spike `?gl=1`).
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 

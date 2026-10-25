@@ -83,7 +83,76 @@ P = até meio dia, M = 1–2 dias, G = vários dias.
 O item 10 é a maior diferença e não cabe no Canvas 2D sem um "mode 7" caro e frágil. As opções são:
 (a) ficar no 2,5D e fechar a distância com os itens 1–9 (o grosso do ganho); (b) migrar o render para
 WebGL — three.js vendorizado no bundle mantém o jogo offline, mas quebra a regra "sem dependências" e
-muda todo o `src/render`. Recomendo (a) primeiro e reavaliar depois do item 7.
+muda todo o `src/render`. A avaliação abaixo detalha (b).
+
+## Avaliação: render em WebGL com three.js vendorizado
+
+### O que muda
+
+- **Só o mundo.** `Renderer` é lido por um único ponto (`main.js`: `new Renderer(canvas)`, `resize()`,
+  `render(run)`) e só lê o estado da run (`player`, `enemies`, `allies`, `projectiles`, `effects`,
+  `floaters`, `pickups`, `events`, `eggs`, `biome`, `weather`, `time`, `shakeAmount`). A simulação já
+  trabalha em `x, y, z` (`ring(x, y, z…)`, `floater(x, y, z…)`, pulo em `p.y`), então `src/game/*` não
+  muda. HUD, menus, cartas e retratos são DOM e continuam iguais (inclusive o recorte CSS de
+  `sprites.js`, que funciona em `file://`).
+- **Reescrito:** os 986 linhas de `renderer.js` viram cena three.js: câmera em perspectiva que segue o
+  jogador (e pode girar), chão como malha com textura pixel-art (`NearestFilter`), criaturas como
+  billboards com UV do quadro PMD e a linha de direção calculada relativa à câmera, sombras como
+  decalques, projéteis/anéis/áreas como malhas planas, névoa e luz no lugar de `drawNightTint`/clima,
+  vinheta em CSS, números de dano em overlay DOM ou sprites de texto.
+- **Ganho que só o WebGL dá:** horizonte, câmera inclinada e girando, névoa de distância, relevo
+  (platôs/rampas) com ordenação por profundidade de graça, milhares de sprites com `InstancedMesh`.
+- **O que o WebGL não dá:** a arte. Texturas de chão, paredões, atlas de props e sprites de projétil
+  têm de ser feitos do mesmo jeito nas duas opções. E platôs onde se sobe são mudança de simulação
+  (altura do chão em `run.js`) em qualquer render.
+
+### Riscos (verificados ou medidos)
+
+1. **`file://` bloqueia textura do disco — verificado.** No Edge headless, `texImage2D` com um
+   `assets/pmd/4.png` carregado por `<img>` em `file://` lança `SecurityError: … contains cross-origin
+   data`, e `fetch("4.png")` é rejeitado. O mesmo PNG como data URI vindo de um `<script src="4.js">`
+   sobe sem erro (`gl.getError() = 0`). Saída: o build gera `dist/pmd/<id>.js` com o PNG em base64
+   (+33 %: 21,6 KB → 28,8 KB no Charmander; ~30 MB → ~40 MB nas 971 sheets, carregadas sob demanda
+   como hoje). O Canvas 2D atual não sofre disso porque só desenha, nunca lê pixels.
+2. **Bundle num escopo só.** `build.mjs` concatena os módulos e remove `import/export`; o
+   `three.module.js` tem centenas de nomes no topo (`clamp`, `lerp` inclusive, que já existem em
+   `src/core`). Precisa entrar embrulhado numa função que devolve o namespace (~30 linhas no build e
+   no `check-bundle`). O three não publica mais o build UMD.
+3. **Tamanho.** three minificado é ~0,7 MB (estimativa, não medido aqui) contra 1,9 MB do bundle atual.
+   Sem tree-shaking no nosso build, entra inteiro.
+4. **Regra "sem dependências" do AGENTS.md** deixa de valer para o render. Licença MIT: copiar o
+   `LICENSE` para `vendor/` e citar em "Provenance".
+5. **Máquinas sem WebGL / GPU fraca.** Ou se mantém o render 2D como reserva (dois renders para
+   manter), ou se aceita que o jogo não abre sem WebGL.
+6. **Testes.** Nenhum teste toca o render hoje (o bot e os testes rodam só a simulação), então a
+   suíte segue verde, mas também não pega regressão visual. O `npm run e2e` precisa subir o navegador
+   com WebGL em software (`--use-angle=swiftshader --enable-unsafe-swiftshader`, que funcionaram no
+   teste acima) e conferir que o canvas desenhou algo.
+
+### Custo estimado
+
+| Etapa | Esforço |
+|---|---|
+| Vendorizar three + embrulho no build + `dist/pmd/*.js` + e2e com WebGL | 1–2 dias |
+| Paridade com o render atual (chão, criaturas 8 direções, sombras, projéteis, efeitos, floaters, clima, noite, tremor) | 4–6 dias |
+| Arte nova (texturas, paredões, atlas de props, projéteis) — igual nas duas opções | 3–5 dias |
+| Relevo jogável (altura do chão na simulação, colisão com paredão) — igual nas duas opções | 2–4 dias |
+
+Total para chegar perto do PokéBonk em WebGL: ~10–17 dias, contra ~6–10 no 2,5D sem horizonte nem
+câmera girando.
+
+### Alternativa intermediária
+
+WebGL puro sem three (um shader de sprite + um de chão, ~800–1500 linhas próprias): mantém "sem
+dependências" e o bundle pequeno, mas é código de motor para manter; só compensa se o escopo 3D ficar
+restrito a chão + billboards.
+
+### Recomendação
+
+1. Fazer primeiro a arte em formato neutro (canvases/atlas gerados por código): serve aos dois renders.
+2. Aplicar no 2D os itens baratos (1, 2, 3, 5) — ganho imediato e pouco descartável.
+3. Fazer um *spike* de 1–2 dias atrás de `?gl=1`: three vendorizado, chão + criaturas billboard + câmera
+   inclinada, rodando em `file://` com `dist/pmd/*.js`. Decidir a migração vendo o spike, não a tabela.
 
 ## Limites deste mapeamento
 
