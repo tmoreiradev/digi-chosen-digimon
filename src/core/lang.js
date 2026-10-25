@@ -5,8 +5,9 @@
 
 import { EN, EN_PATTERNS, bindTr } from "./lang-en.js";
 import { ES, ES_PATTERNS, bindTrEs } from "./lang-es.js";
+import { PACK } from "../content/pack.js";
 
-export const LANG_KEY = "pokebonk-clone.lang.v1"; // new key; the save keys are untouched
+export const LANG_KEY = `${PACK.storagePrefix}.lang.v1`; // new key; the save keys are untouched
 export const LANGS = { "pt-BR": "Português", en: "English", es: "Español" };
 /** Dictionary and patterns per language (pt-BR is the source text, no dictionary). */
 const DICTS = { en: [EN, EN_PATTERNS], es: [ES, ES_PATTERNS] };
@@ -35,7 +36,19 @@ export function setLang(lang) {
 /** pt-BR strings that reached the screen in English mode without a translation (for tests/tools). */
 export const TR_MISSING = new Set();
 
+/** The content pack's word swaps for the active language (none for the Pokémon pack). */
+function terms(text) {
+  const swaps = PACK.terms?.[current];
+  if (!swaps || typeof text !== "string") return text;
+  for (const from in swaps) if (text.includes(from)) text = text.split(from).join(swaps[from]);
+  return text;
+}
+
 export function tr(text) {
+  return terms(translate(text));
+}
+
+function translate(text) {
   if (current === "pt-BR" || typeof text !== "string" || !text) return text;
   const [dict, patterns] = DICTS[current];
   if (Object.hasOwn(dict, text)) return dict[text]; // own keys only: "toString" is not a translation

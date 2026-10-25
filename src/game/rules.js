@@ -2,29 +2,12 @@
 
 import { clamp, lerp } from "../core/math.js";
 import { typeName, itemDesc } from "../core/i18n.js";
+import { PACK } from "../content/pack.js";
 
 /* ------------------------------------------------------------------ types */
 
-export const TYPE_COLORS = {
-  normal: 0xc8d0dc,
-  fighting: 0xe0a020,
-  flying: 0x6ac8ff,
-  poison: 0xb560e0,
-  ground: 0xd8b070,
-  rock: 0xb0a060,
-  bug: 0x8ac020,
-  ghost: 0x7a68b0,
-  steel: 0xa0b0c0,
-  fire: 0xff7a2a,
-  water: 0x3aa0ff,
-  grass: 0x5ad24a,
-  electric: 0xffd030,
-  psychic: 0xff7fa0,
-  ice: 0x80d8f0,
-  dragon: 0x9060e0,
-  dark: 0x706090,
-  fairy: 0xf090c0,
-};
+/** Type colours (0xRRGGBB), from the content pack. */
+export const TYPE_COLORS = Object.fromEntries(Object.entries(PACK.types).map(([k, t]) => [k, t.color]));
 
 export const typeColor = (t) => TYPE_COLORS[t] ?? 0xcccccc;
 

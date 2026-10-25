@@ -11,11 +11,13 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { PACK } from "./src/content/pack.js";
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 export const OUT = path.join(ROOT, "dist", "digi-chosen.html");
 
 export const MODULE_ORDER = [
+  "src/content/pack.js",
   "src/core/math.js",
   "src/core/rng.js",
   "src/core/lang-en.js",
@@ -117,7 +119,7 @@ ${bundleScript()}
   fs.writeFileSync(OUT, html);
 
   // Ship the sprite sheets next to the bundle so it keeps working from file://.
-  for (const dir of ["pmd", "front"]) {
+  for (const dir of PACK.spriteDirs) {
     const src = path.join(ROOT, "assets", dir);
     const dest = path.join(ROOT, "dist", dir);
     if (fs.existsSync(src)) {
@@ -126,8 +128,9 @@ ${bundleScript()}
     }
   }
 
-  const sheetCount = fs.existsSync(path.join(ROOT, "dist", "pmd"))
-    ? fs.readdirSync(path.join(ROOT, "dist", "pmd")).length
+  const sheetDir = path.join(ROOT, "dist", PACK.spriteDirs[0]);
+  const sheetCount = fs.existsSync(sheetDir)
+    ? fs.readdirSync(sheetDir).length
     : 0;
   console.log(`Built ${OUT} (${(fs.statSync(OUT).size / 1024 / 1024).toFixed(2)} MB, ${sheetCount} sprites)`);
 }

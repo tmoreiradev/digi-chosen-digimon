@@ -1,6 +1,8 @@
 // Spanish for the pt-BR interface text (see lang.js and lang-en.js, same keys and patterns).
 // Top-level names are unique (ES_*, *_ES): the offline bundle puts every module in one scope.
 
+import { PACK } from "../content/pack.js";
+
 export const ES = {
   // title, help, accounts
   "Roguelite survivor · Kanto · offline": "Roguelite survivor · Kanto · sin conexión",
@@ -267,7 +269,8 @@ const STAT_ES = {
   "chance de megacrítico": "probabilidad de megacrítico",
   "sobrecura": "sobrecuración",
 };
-const TYPE_ES_WORDS = { Normal: "Normal", Lutador: "Lucha", Voador: "Volador", Veneno: "Veneno", Terra: "Tierra", Pedra: "Roca", Inseto: "Bicho", Fantasma: "Fantasma", Aço: "Acero", Fogo: "Fuego", Água: "Agua", Planta: "Planta", Elétrico: "Eléctrico", Psíquico: "Psíquico", Gelo: "Hielo", Dragão: "Dragón", Sombrio: "Siniestro", Fada: "Hada" };
+// pt-BR type names inside composed text, from the content pack.
+const TYPE_ES_WORDS = Object.fromEntries(Object.values(PACK.types).map((t) => [t.pt, t.es ?? t.pt]));
 const BOSS_MOVE_ES = { Pancadas: "Golpes", "Anel de Choque": "Anillo de Choque", Investida: "Embestida", Saraivada: "Ráfaga", "Onda de Choque": "Onda de Choque", Espiral: "Espiral", "Chuva do Céu": "Lluvia del Cielo", "Poças Perigosas": "Charcos Peligrosos" };
 Object.assign(ES, TYPE_ES_WORDS);
 

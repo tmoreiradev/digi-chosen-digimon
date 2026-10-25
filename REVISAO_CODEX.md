@@ -1226,3 +1226,23 @@ build, `check-bundle` e `npm run e2e` OK.
 
 **Quadragésima quarta rodada** (`ef9a615..5c91ec5`, `reviews/codex-2026-10-25-08-18-ef9a615..HEAD.md`): **Aprovado**, sem achados
 nem afirmações contestadas. Fase 26 encerrada.
+
+## 38. Fase 27 — Separação engine / pacote de conteúdo (25/10/2026)
+
+Preparação para um fork em outro universo (Digimon, repositório à parte); o jogo daqui não muda.
+
+- **`src/content/pack.js` (`PACK`)**: o manifesto da franquia. A engine passou a ler dele: prefixo do
+  `localStorage` (`pokebonk-clone`, mesmo valor — saves intactos), pastas de sprites (`pmd`, `front`: `sprites.js` e o
+  build), iniciais `[1, 4, 7]` (`account.js`, `achievements.js`), lendário de reserva 150 (`run.js`), espécies da Old
+  Rod 129/130 (o flutuante usa o nome da tabela) e os 18 tipos (cor e nome pt-BR/es). `TYPE_COLORS`, `TYPE_RGB`,
+  `TYPE_PT`, `typeName` e o mapa de nomes de tipo do espanhol derivam do pacote; o mapa RGB duplicado em `run.js` sumiu.
+- **`PACK.terms`**: troca de palavras por idioma, aplicada por `tr()` depois da tradução, em pt-BR também. Vazia no
+  pacote Pokémon (o texto da engine já é de Pokémon); um fork troca "Pokémon", "Pokédex"…
+- **Fora desta fase** (documentado em `docs/PACOTE_DE_CONTEUDO.md`): efeitos de itens e habilidades por chave,
+  reações por tipo, loja, captura e evolução seguem sendo mecânica com chaves de Pokémon; os nomes das tabelas são o
+  esquema da engine; `__POKEBONK_DATA__` fica.
+- **Verificação:** as cores, o RGB e os nomes do pacote foram conferidos contra as três tabelas antigas antes da troca
+  (18 tipos, 0 diferenças). `tests/pack.test.mjs` (4): tipos do pacote = `types.json`, tabelas da engine derivadas do
+  pacote, iniciais = `start: true` do roster, espécies e pastas existem, troca de termos nos três idiomas, e uma guarda
+  que reprova o código da engine com os IDs/chaves do pacote de volta (falha com `run.js`/`account.js` anteriores).
+  Suíte **212 / 212**; build, `check-bundle` (34 módulos) e `npm run e2e` OK.

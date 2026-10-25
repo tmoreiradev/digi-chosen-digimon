@@ -47,6 +47,11 @@ etapa; é a lista para a próxima fase ("o que está faltando").
   - ~~Altar do guardião sob demanda + enxame final~~, ~~diretor por linha do tempo~~, ~~mapa da zona com bússola~~ — fase 26.
   - Pendentes da fase 26: portal depois do guardião; totem e invocador na linha do tempo da zona; eventos de mundo (Eclipse, Névoa, Tempestade, Meowth dourado); ícones dos eventos no minimapa; marcas livres no mapa (até 3).
 
+## 2c. Fork em outro universo (Digimon)
+
+- ~~Separar engine e pacote de conteúdo~~ — fase 27 (`src/content/pack.js`, `docs/PACOTE_DE_CONTEUDO.md`).
+- Pendentes: efeitos de itens/habilidades e reações como dados; faixas de nível da evolução como dado (5 estágios); repositório do fork Digimon (20 espécies + 1 bioma para validar).
+
 ## 3. Funcionalidades futuras (do README e da especificação)
 
 - Santuários e mercadores ambulantes: o santuário do Clássico (fase 2) e a loja ambulante (fase 5) existem; ~~renovação do estoque~~ feita na fase 20 (24/10).

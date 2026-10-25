@@ -1,4 +1,5 @@
 import { getLang } from "./lang.js";
+import { PACK } from "../content/pack.js";
 
 const en = () => getLang() === "en";
 const es = () => getLang() === "es";
@@ -10,32 +11,13 @@ const pick = (pt, enT, esT) => (es() ? esT : en() ? enT : pt);
 // and English biome, vitamin and tower names) and for shared UI words. Species, moves, items,
 // roles and ultimate names stay as the data has them (they are proper names).
 
-export const TYPE_PT = {
-  normal: "Normal",
-  fighting: "Lutador",
-  flying: "Voador",
-  poison: "Veneno",
-  ground: "Terra",
-  rock: "Pedra",
-  bug: "Inseto",
-  ghost: "Fantasma",
-  steel: "Aço",
-  fire: "Fogo",
-  water: "Água",
-  grass: "Planta",
-  electric: "Elétrico",
-  psychic: "Psíquico",
-  ice: "Gelo",
-  dragon: "Dragão",
-  dark: "Sombrio",
-  fairy: "Fada",
+// Type names come from the content pack (English defaults to the capitalised key).
+export const TYPE_PT = Object.fromEntries(Object.entries(PACK.types).map(([k, t]) => [k, t.pt]));
+export const typeName = (t) => {
+  const def = PACK.types[t];
+  if (!def) return t;
+  return es() ? def.es ?? def.pt : en() ? def.en ?? cap(t) : def.pt;
 };
-const TYPE_ES = {
-  normal: "Normal", fighting: "Lucha", flying: "Volador", poison: "Veneno", ground: "Tierra", rock: "Roca", bug: "Bicho",
-  ghost: "Fantasma", steel: "Acero", fire: "Fuego", water: "Agua", grass: "Planta", electric: "Eléctrico", psychic: "Psíquico",
-  ice: "Hielo", dragon: "Dragón", dark: "Siniestro", fairy: "Hada",
-};
-export const typeName = (t) => (en() ? cap(t) : pick(TYPE_PT, null, TYPE_ES)[t] ?? t);
 
 export const ARCH_PT = {
   bolt: "Projétil",

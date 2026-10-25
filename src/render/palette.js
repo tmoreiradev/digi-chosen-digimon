@@ -1,25 +1,9 @@
 // Colour palettes for the renderer.
 
-export const TYPE_RGB = {
-  normal: [200, 208, 220],
-  fighting: [224, 160, 32],
-  flying: [106, 200, 255],
-  poison: [181, 96, 224],
-  ground: [216, 176, 112],
-  rock: [176, 160, 96],
-  bug: [138, 192, 32],
-  ghost: [122, 104, 176],
-  steel: [160, 176, 192],
-  fire: [255, 122, 42],
-  water: [58, 160, 255],
-  grass: [90, 210, 74],
-  electric: [255, 208, 48],
-  psychic: [255, 127, 160],
-  ice: [128, 216, 240],
-  dragon: [144, 96, 224],
-  dark: [112, 96, 144],
-  fairy: [240, 144, 192],
-};
+import { PACK, packRgb } from "../content/pack.js";
+
+/** Type colours as [r, g, b], from the content pack. */
+export const TYPE_RGB = Object.fromEntries(Object.entries(PACK.types).map(([k, t]) => [k, packRgb(t.color)]));
 
 /** Fallback body colour keyed by the species' `color` field upstream. */
 export const COLOR_RGB = {

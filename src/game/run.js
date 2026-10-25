@@ -46,6 +46,8 @@ import { AchievementTracker, EggSystem } from "./achievements.js";
 import { applyFusion, fusionChoices } from "./fusion.js";
 import { applyVitaminPick, vitaminChoices, vitaminGroups } from "./vitamins.js";
 import { archLabel, typeName } from "../core/i18n.js";
+import { TYPE_RGB } from "../render/palette.js";
+import { PACK } from "../content/pack.js";
 
 const ENEMY_CAP = 260;
 const PICKUP_CAP = 400;
@@ -399,7 +401,7 @@ export class Run {
     }
     this.banner("O santuário — algo antigo desperta");
     const candidates = this.biome.legendaries ?? [];
-    const speciesId = candidates.length ? this.rng.pick(candidates) : 150; // Mewtwo when the biome lists none
+    const speciesId = candidates.length ? this.rng.pick(candidates) : PACK.fallbackLegendary; // the pack's (Mewtwo) when the biome lists none
     this.later(2.5, () => {
       const spot = this.director.spawnPoint(12, 16) ?? { x: this.player.x + 12, z: this.player.z };
       this.boss.spawn(speciesId, spot.x, spot.z, "legendary");
@@ -1915,7 +1917,7 @@ export class Run {
   }
 
   typeRgb(type) {
-    const c = TYPE_RGB_CACHE[type] ?? [200, 200, 200];
+    const c = TYPE_RGB[type] ?? [200, 200, 200];
     return (c[0] << 16) | (c[1] << 8) | c[2];
   }
 
@@ -2205,25 +2207,5 @@ export class Run {
   }
 }
 
-const TYPE_RGB_CACHE = {
-  normal: [200, 208, 220],
-  fighting: [224, 160, 32],
-  flying: [106, 200, 255],
-  poison: [181, 96, 224],
-  ground: [216, 176, 112],
-  rock: [176, 160, 96],
-  bug: [138, 192, 32],
-  ghost: [122, 104, 176],
-  steel: [160, 176, 192],
-  fire: [255, 122, 42],
-  water: [58, 160, 255],
-  grass: [90, 210, 74],
-  electric: [255, 208, 48],
-  psychic: [255, 127, 160],
-  ice: [128, 216, 240],
-  dragon: [144, 96, 224],
-  dark: [112, 96, 144],
-  fairy: [240, 144, 192],
-};
 
 const dtSafe = (run) => run.lastDt ?? 0.016;

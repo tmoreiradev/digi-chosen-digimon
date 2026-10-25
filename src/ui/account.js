@@ -6,8 +6,9 @@
 // Nothing leaves the browser.
 
 import { hashString } from "../core/rng.js";
+import { PACK } from "../content/pack.js";
 
-const STORE_KEY = "pokebonk-clone.accounts.v1";
+const STORE_KEY = `${PACK.storagePrefix}.accounts.v1`;
 
 // shortcut: a salted, iterated FNV-1a only keeps the passphrase out of plain sight in localStorage;
 // it is not real protection (anyone with the device reads the profile anyway). Upgrade to
@@ -17,7 +18,8 @@ export function passHash(name, passphrase) {
   for (let i = 0; i < 2000; i++) h = hashString(h.toString(36) + passphrase);
   return "f1:" + h.toString(36);
 }
-const CURRENT_KEY = "pokebonk-clone.current.v1";
+const CURRENT_KEY = `${PACK.storagePrefix}.current.v1`;
+const GUEST_KEY = `${PACK.storagePrefix}.guest.v1`;
 
 function safeParse(raw) {
   try {
@@ -49,7 +51,7 @@ export function normalizeProgress(p) {
   if (!p.pokedex) p.pokedex = { seen: [], caught: [] };
   if (!Array.isArray(p.pokedex.seen)) p.pokedex.seen = [];
   if (!Array.isArray(p.pokedex.caught)) p.pokedex.caught = [];
-  if (!Array.isArray(p.unlocked)) p.unlocked = [1, 4, 7]; // roster partners; the starters always
+  if (!Array.isArray(p.unlocked)) p.unlocked = [...PACK.starters]; // roster partners; the starters always
   if (Array.isArray(p.caught)) {
     for (const id of p.caught) if (!p.pokedex.seen.includes(id)) p.pokedex.seen.push(id);
     delete p.caught;
@@ -58,11 +60,11 @@ export function normalizeProgress(p) {
 }
 
 function guestKey() {
-  let key = localStorage.getItem("pokebonk-clone.guest.v1");
+  let key = localStorage.getItem(GUEST_KEY);
   if (!key) {
     key = "g" + Math.random().toString(36).slice(2, 10);
     try {
-      localStorage.setItem("pokebonk-clone.guest.v1", key);
+      localStorage.setItem(GUEST_KEY, key);
     } catch {
       /* ignore */
     }
@@ -178,7 +180,7 @@ function newProfile(name, kind = "guest") {
     passHash: "",
     createdAt: Date.now(),
     progress: {
-      unlocked: [1, 4, 7],
+      unlocked: [...PACK.starters],
       pokedex: { seen: [], caught: [] },
       nickname: null,
       heldItem: null,

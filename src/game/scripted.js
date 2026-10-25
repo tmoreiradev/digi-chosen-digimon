@@ -4,6 +4,7 @@
 // Descriptions the cards show live in src/core/i18n.js (ITEM_DESC_PT); keep both in step.
 
 import { CAPTURABLE_TIERS } from "./capture.js";
+import { PACK } from "../content/pack.js";
 
 export const SCRIPTED = new Set([
   "grip-claw", "berry-juice", // r0
@@ -85,7 +86,7 @@ export function itemTick(run, dt) {
     const e = pool[Math.floor(Math.random() * pool.length)];
     if (e) {
       const gyarados = Math.random() < 0.1 * rod;
-      run.floater(e.x, e.y + 2, e.z, gyarados ? "Gyarados!" : "Magikarp!", "#7ab8ff");
+      run.floater(e.x, e.y + 2, e.z, `${run.data.get(gyarados ? PACK.oldRod.rare : PACK.oldRod.common)?.name ?? ""}!`, "#7ab8ff");
       run.hitAround(e.x, e.z, gyarados ? 3 : 0.1, itemPower(run) * (gyarados ? 5 : 1.5) * rod, { type: "water", cls: "physical" });
     }
   }

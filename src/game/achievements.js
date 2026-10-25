@@ -7,6 +7,7 @@
 // profile for the next run when it happens after a run ended (results screen).
 
 import { clamp } from "../core/math.js";
+import { PACK } from "../content/pack.js";
 
 // An achievement unlocks when snapshot[stat] >= goal; the screen shows stat/goal as progress.
 export const ACHIEVEMENTS = [
@@ -94,7 +95,7 @@ export class AchievementTracker {
   /** Roster partners unlocked so far (profile.data.unlocked; the starters are always there). */
   partnersUnlocked() {
     const p = this.profile.data;
-    if (!Array.isArray(p.unlocked)) p.unlocked = [1, 4, 7];
+    if (!Array.isArray(p.unlocked)) p.unlocked = [...PACK.starters];
     return p.unlocked;
   }
 

@@ -9,9 +9,12 @@
 // upstream renderer: rows are quantised from atan2(dx, dz) into 8 steps, with row 0
 // facing the camera (+Z).
 
+import { PACK } from "../content/pack.js";
+
 const BUNDLED = !!globalThis.__POKEBONK_DATA__;
 const SPRITE_BASE = BUNDLED ? "" : "assets/";
 
+const [SHEET_DIR] = PACK.spriteDirs; // animated sheets; static fallbacks carry their own path (meta.fallback)
 const sheets = new Map(); // species id -> { img, ready, meta, kind }
 let META = null;
 let BOUNDS = null;
@@ -45,7 +48,7 @@ function loadSheet(id) {
   }
   const img = new Image();
   const kind = meta.anims && Object.keys(meta.anims).length ? "pmd" : "front";
-  img.src = SPRITE_BASE + (kind === "pmd" ? `pmd/${id}.png` : meta.fallback);
+  img.src = SPRITE_BASE + (kind === "pmd" ? `${SHEET_DIR}/${id}.png` : meta.fallback);
   s = { img, meta, kind, ready: false };
   img.addEventListener("load", () => { s.ready = true; });
   img.addEventListener("error", () => { s.ready = false; });
@@ -253,7 +256,7 @@ export function portraitStyle(id, box = 56) {
     return {
       width: `${Math.round(fw * scale)}px`,
       height: `${Math.round(visH * scale)}px`,
-      backgroundImage: `url("${SPRITE_BASE}pmd/${id}.png")`,
+      backgroundImage: `url("${SPRITE_BASE}${SHEET_DIR}/${id}.png")`,
       backgroundSize: `${Math.round((meta.w ?? fw) * scale)}px ${Math.round((meta.h ?? fh) * scale)}px`,
       backgroundPosition: `0px ${-Math.round(((anim.y ?? 0) + bb[0]) * scale)}px`,
       backgroundRepeat: "no-repeat",

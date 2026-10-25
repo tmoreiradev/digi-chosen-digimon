@@ -38,3 +38,5 @@ continuar funcionando offline, inclusive `dist/digi-chosen.html` aberto por `fil
 `src/game/boss.js` · `src/game/capture.js` (captura/aliados) · `src/game/events.js` (baú/loja/altar) ·
 `src/game/achievements.js` (conquistas, tarefas, ovos) · `src/ui/*` (telas, HUD, contas) ·
 `src/render/*` (sprites PMD e render) · `src/audio/*` (SFX e música sintetizados).
+Constantes da franquia (tipos, iniciais, prefixo de save, pastas de sprites, troca de termos) ficam só em
+`src/content/pack.js`; o contrato engine × conteúdo está em `docs/PACOTE_DE_CONTEUDO.md`.
