@@ -45,6 +45,7 @@ export const MODULE_ORDER = [
   "src/ui/levelup.js",
   "src/ui/account.js",
   "src/ui/screens.js",
+  "src/ui/zonemap.js",
   "src/audio/sfx.js",
   "src/audio/music.js",
   "src/main.js",

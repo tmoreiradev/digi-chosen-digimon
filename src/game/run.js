@@ -19,7 +19,7 @@ import {
   toughness,
   xpForLevel,
 } from "./rules.js";
-import { Director } from "./director.js";
+import { Director, ZONE_SECS } from "./director.js";
 import { Boss } from "./boss.js";
 import { Allies, Capture, CAPTURABLE_TIERS, isBossTier } from "./capture.js";
 import { statusKey, applyStatus, findReaction, applyReaction } from "./combat.js";
@@ -49,7 +49,7 @@ import { archLabel, typeName } from "../core/i18n.js";
 
 const ENEMY_CAP = 260;
 const PICKUP_CAP = 400;
-const STAGE_SECS = 300; // a zone lasts five minutes before its guardian (classic) or the next zone (endless)
+const STAGE_SECS = 300; // an endless zone lasts five minutes; classic zones run on ZONE_SECS (director.js)
 // Card stats the data lists for an archetype but this engine cannot honour, so they are not
 // offered: beam, cone, orbit and vortex strike instantly (no duration); buff has no duration;
 // dash and wave have no projectile speed.
@@ -144,6 +144,7 @@ export class Run {
 
     this.player = this.createPlayer(opts.speciesId);
     this.director = new Director(this, this.rng);
+    if (this.mode === "classic") this.events.placeGuardianAltar();
 
     // Achievement gold earned after the last run ended waits in the profile; pay it out now.
     const pending = this.profile?.data?.pendingGold ?? 0;
@@ -335,27 +336,37 @@ export class Run {
     this.zoneBossSpawned = false;
     this.director.onStage(this.stage);
     this.events.onNewZone();
+    if (this.mode === "classic") this.events.placeGuardianAltar();
     this.banner(`Zona ${this.stage} — inimigos mais fortes`);
   }
 
   /* ------------------------------------------------------------ classic */
 
   /**
-   * Classic mode: a zone lasts STAGE_SECS, then its guardian (biome.guardians,
-   * one candidate list per zone) must fall to open the next zone. After zone
-   * 3 the run enters the sanctuary, where the biome's legendary waits;
-   * defeating it wins the run.
+   * Classic mode: each zone has a guardian altar (WorldEvents.placeGuardianAltar). The player
+   * wakes the guardian there whenever ready (callGuardian); beating it opens the next zone.
+   * If the zone clock (ZONE_SECS) runs out first, the director's final swarm starts and grows
+   * every minute. After zone 3 the run enters the sanctuary, where the biome's legendary
+   * waits; defeating it wins the run.
    */
   updateClassic() {
-    if (this.sanctuary || this.zoneBossSpawned || this.stageTime < STAGE_SECS) return;
+    if (this.sanctuary || this.zoneBossSpawned || this.stageTime < ZONE_SECS) return;
+    this.director.startFinalSwarm();
+  }
+
+  /** E at the guardian altar: wake the zone's guardian (biome.guardians, one list per zone). */
+  callGuardian() {
+    if (this.mode !== "classic" || this.sanctuary || this.zoneBossSpawned || this.state !== "running") return false;
     const candidates = this.biome.guardians?.[this.stage - 1] ?? [];
     const speciesId = candidates.length ? this.rng.pick(candidates) : this.biome.bosses?.[this.stage - 1];
     if (!speciesId) {
-      this.advanceStage(); // biome without guardians: keep the timer behaviour
-      return;
+      this.advanceStage(); // biome without guardians: the altar just opens the next zone
+      return true;
     }
-    const spot = this.director.spawnPoint(14, 22) ?? { x: this.player.x + 14, z: this.player.z };
-    if (this.boss.spawn(speciesId, spot.x, spot.z, "guardian")) this.zoneBossSpawned = true;
+    const spot = this.director.spawnPoint(8, 12) ?? { x: this.player.x + 8, z: this.player.z };
+    if (!this.boss.spawn(speciesId, spot.x, spot.z, "guardian")) return false;
+    this.zoneBossSpawned = true;
+    return true;
   }
 
   /** Boss.onDefeat calls this for every boss kind (tower floors included). */
@@ -1448,7 +1459,9 @@ export class Run {
     // Loot (Poké Radar: `powerup` widens every drop bracket)
     const roll = Math.random() / p.stats.powerup;
     if (e.tier === "elite" || e.tier === "alpha" || e.tier === "boss") {
-      this.spawnPickup(e.x, e.z, "candy", 1);
+      // Free elites (director.eliteRoll and the final swarm) are common: a guaranteed level each
+      // would double the levelling pace, so theirs is a 15 % candy. Wave elites, alphas and bosses keep theirs.
+      if (!e.freeElite || Math.random() < 0.15 * p.stats.powerup) this.spawnPickup(e.x, e.z, "candy", 1);
       this.spawnPickup(e.x, e.z, "heal", 1);
     } else if (roll < 0.055) {
       this.spawnPickup(e.x, e.z, "heal", 1);

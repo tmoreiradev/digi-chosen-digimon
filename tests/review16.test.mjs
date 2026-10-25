@@ -15,7 +15,7 @@ test("a boss pool hurts the player but never the horde or the boss itself", () =
   p.moves.length = 0;
   p.stats.evasion = 0;
   p.iframes = 1e9;
-  run.stageTime = 299.99;
+  run.callGuardian(); // wake the zone guardian at once (the altar's E)
   frames(run, 2);
   const g = run.boss.enemy;
   g.x = p.x;

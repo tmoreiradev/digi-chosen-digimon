@@ -268,7 +268,7 @@ test("dive: Shift in the air slams down and the landing hurts around, more from 
 test("charm softens the boss's special attacks too (projectiles, pools, charges)", () => {
   const { run } = setup();
   const p = run.player;
-  run.stageTime = 299.99;
+  run.callGuardian(); // wake the zone guardian at once (the altar's E)
   p.iframes = 1e9;
   frames(run, 2);
   const g = run.boss.enemy;
@@ -309,7 +309,7 @@ test("charm also softens a real boss pool and a real charge", () => {
     const { run } = setup();
     const p = run.player;
     p.iframes = 1e9;
-    run.stageTime = 299.99;
+    run.callGuardian(); // wake the zone guardian at once (the altar's E)
     frames(run, 2);
     const boss = run.boss;
     const g = boss.enemy;

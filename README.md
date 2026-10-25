@@ -94,8 +94,11 @@ upstream scripted items (Shell Bell, Metronome, Razor Fang, Focus Sash, Revive, 
 own hook in `src/game/scripted.js`. Scripted items the engine does not model are never offered.
 
 **Game modes**
-- **Classic** — three 5-minute zones, each closed by a **zone guardian** picked from the biome's
-  own list; the zone only advances once it falls. After zone 3 the run enters the **sanctuary**:
+- **Classic** — three zones, each closed by a **zone guardian** picked from the biome's own list.
+  The player wakes it at the zone's **guardian altar** (E) whenever ready; if the 10-minute zone
+  clock runs out first, a **final swarm** floods in and grows every minute. A scripted timeline
+  brings new species, alphas, swarms, stampedes and elite waves; **M** opens the zone map, where
+  clicking an icon follows it with a compass. The zone only advances once the guardian falls. After zone 3 the run enters the **sanctuary**:
   the horde fades and the biome's **legendary** arrives. Defeat it to win. Boss damage is capped to
   the fight budget and ramps up if a fight stalls.
 - **Endless** — hordes and milestones that never stop.

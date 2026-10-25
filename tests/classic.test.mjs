@@ -3,25 +3,43 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { makeRun } from "./_helpers.mjs";
 import { toughness } from "../src/game/rules.js";
+import { ZONE_SECS } from "../src/game/director.js";
 
 const frames = (run, n) => {
   for (let i = 0; i < n; i++) run.update(1 / 60);
 };
 
-test("classic: the zone guardian spawns when the timer runs out and the zone waits for it to fall", () => {
+/** Walk onto this zone's guardian altar and press E, the way main.js feeds the key. */
+const wakeGuardian = (run) => {
+  const altar = run.events.guardianAltar;
+  assert.ok(altar, "the zone has a guardian altar");
+  run.player.x = altar.x;
+  run.player.z = altar.z;
+  run.opts.input.capturePressed = true;
+  frames(run, 1);
+  run.opts.input.capturePressed = false;
+  return altar;
+};
+
+test("classic: the guardian sleeps until the player wakes it at the altar, and the zone waits for it to fall", () => {
   const { run, calls } = makeRun();
   run.player.iframes = 1e9;
   run.stageTime = 299.99;
   frames(run, 2);
-  assert.equal(run.stage, 1, "the zone does not advance on the timer alone");
+  assert.equal(run.boss.alive, false, "the clock alone no longer calls the guardian");
+  const altar = wakeGuardian(run);
+  assert.equal(run.stage, 1, "the zone does not advance on the altar alone");
   assert.ok(run.boss.alive, "a guardian is up");
+  assert.ok(altar.interacted, "the altar is spent");
+  assert.equal(run.events.guardianAltar, null);
   assert.equal(run.boss.kind, "guardian");
   const guardian = run.boss.enemy;
   assert.ok(run.biome.guardians[0].includes(guardian.species.id), "picked from biome.guardians[zone]");
   assert.ok(calls.banners.some((b) => /guardião da Floresta Verde/.test(b)));
 
+  assert.equal(run.callGuardian(), false, "no second guardian while the first lives");
   frames(run, 60);
-  assert.equal(run.boss.enemy, guardian, "no second guardian while the first lives");
+  assert.equal(run.boss.enemy, guardian);
   assert.equal(run.stage, 1);
 
   guardian.hp = 0;
@@ -30,6 +48,39 @@ test("classic: the zone guardian spawns when the timer runs out and the zone wai
   assert.ok(run.stageTime < 1, "zone timer restarts");
   assert.ok(calls.banners.includes("Zona 1 limpa!"));
   assert.equal(run.zoneBossSpawned, false);
+  assert.ok(run.events.guardianAltar, "the next zone has its own altar");
+});
+
+test("classic: each zone's altar stands 45–70 u away and never expires; endless and tower have none", () => {
+  const { run } = makeRun();
+  const altar = run.events.guardianAltar;
+  const d = Math.hypot(altar.x - run.player.x, altar.z - run.player.z);
+  assert.ok(d >= 45 - 1e-6 && d <= 70 + 1e-6, `altar at ${d.toFixed(1)} u`);
+  assert.equal(altar.seen, true, "always on the zone map");
+  run.player.iframes = 1e9;
+  frames(run, 60 * 20);
+  assert.equal(run.events.guardianAltar, altar, "still there after the timed events come and go");
+  for (const mode of ["endless", "tower"]) assert.equal(makeRun({ mode }).run.events.guardianAltar, null, mode);
+});
+
+test("classic: when the zone clock runs out with the guardian asleep, the final swarm starts and grows every minute", () => {
+  const { run, calls } = makeRun();
+  run.player.iframes = 1e9;
+  run.stageTime = ZONE_SECS - 0.01;
+  frames(run, 2);
+  assert.equal(run.director.finalSwarm, true);
+  assert.ok(calls.banners.some((b) => /enxame final/.test(b)));
+  run.stageTime += 60;
+  const swarmMin = (run.stageTime - run.director.finalSwarmAt) / 60;
+  assert.ok(Math.abs(run.director.hpMult() / run.director.hpMultAt(1, run.stageTime / 60) - 4 ** swarmMin) < 1e-9, "HP x4 per minute on top of the curve");
+  assert.ok(Math.abs(run.director.dmgMult() / run.director.dmgMultAt(1, run.stageTime / 60) - 2 ** swarmMin) < 1e-9, "damage x2 per minute on top of the curve");
+  assert.equal(run.boss.alive, false, "the swarm does not wake the guardian");
+  wakeGuardian(run);
+  assert.ok(run.boss.alive, "the altar still works during the swarm");
+  run.boss.enemy.hp = 0;
+  frames(run, 1);
+  assert.equal(run.stage, 2);
+  assert.equal(run.director.finalSwarm, false, "a new zone ends the swarm");
 });
 
 test("classic: after zone 3's guardian the sanctuary opens, the legendary arrives, beating it wins", () => {
@@ -37,8 +88,7 @@ test("classic: after zone 3's guardian the sanctuary opens, the legendary arrive
   const { run, calls } = makeRun({ opts: { onVictory: () => victories++ } });
   run.player.iframes = 1e9;
   for (let zone = 1; zone <= 3; zone++) {
-    run.stageTime = 300;
-    frames(run, 1);
+    wakeGuardian(run);
     assert.equal(run.stage, zone);
     assert.equal(run.boss.kind, "guardian");
     run.boss.enemy.hp = 0;

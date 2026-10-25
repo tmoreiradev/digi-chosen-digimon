@@ -126,6 +126,15 @@ async function scenario() {
   expect(!/Subiu de nível!/i.test(body()), "key 1 closes the cards");
   const after = run.stats.items + run.player.moves.length + run.player.vitamins.size + run.player.moves.reduce((t, m) => t + m.level, 0);
   expect(after > picked, "key 1 applied the first card");
+  key("m", "KeyM");
+  await sleep(150);
+  expect(/Mapa da zona/.test(body()) && /Altar do guardião/.test(body()), "M opens the zone map with the guardian altar");
+  const frozen = run.time;
+  await sleep(300);
+  expect(run.time === frozen, "the zone map holds the run still");
+  key("Escape", "Escape");
+  await sleep(150);
+  expect(!/Mapa da zona/.test(body()), "Esc closes the zone map");
   key("p", "KeyP");
   await sleep(150);
   expect(/Pausado/i.test(body()), "pause menu");

@@ -5,7 +5,8 @@
 // It reacts every 6 frames (100 ms), holds keys between decisions, flees nearby enemies,
 // drifts to XP orbs when safe, walks to chests/shops/altars when it wants them, dashes
 // when cornered, fires the ultimate in crowds, throws the ball at a weakened alpha, and
-// keeps away from the arena edge. It is not good at the game; it is consistent.
+// keeps away from the arena edge, and in classic mode walks to the guardian altar and wakes
+// the guardian once the zone has run five minutes. It is not good at the game; it is consistent.
 import { makeRng } from "../src/core/rng.js";
 
 const STEP = 1 / 60;
@@ -142,12 +143,15 @@ class Bot {
         fz += ((best.z - p.z) / (bd || 1)) * 0.7;
       }
     }
+    // Five minutes into a classic zone: go wake the guardian, whatever is around.
+    const altar = run.mode === "classic" && !run.zoneBossSpawned && run.stageTime >= 300 ? run.events.guardianAltar : null;
     // A chest, shop or altar worth the walk.
-    const ev = this.wantedEvent(nearest);
+    const ev = altar ?? this.wantedEvent(nearest);
     if (ev) {
       const d = Math.hypot(ev.x - p.x, ev.z - p.z) || 1;
-      fx += ((ev.x - p.x) / d) * 0.9;
-      fz += ((ev.z - p.z) / d) * 0.9;
+      const pull = altar ? 2.5 : 0.9;
+      fx += ((ev.x - p.x) / d) * pull;
+      fz += ((ev.z - p.z) / d) * pull;
       if (d < 1.8) input.capturePressed = true; // E opens it
     }
     // Stay off the walls.
@@ -187,7 +191,7 @@ class Bot {
     const p = run.player;
     if (nearestEnemy < 4) return null; // not with enemies on us
     const ev = run.events.findNear(p.x, p.z, 40);
-    if (!ev) return null;
+    if (!ev || ev.kind === "guardian") return null; // the guardian is woken on schedule (decide)
     const seenWith = this.visited.get(ev.id);
     if (ev.kind === "altar") return p.hp < p.maxHp * 0.6 && seenWith === undefined ? ev : null;
     if (ev.kind === "shop") {

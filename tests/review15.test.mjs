@@ -19,7 +19,7 @@ function setup() {
 function guardianAt(run, dist) {
   const p = run.player;
   p.iframes = 1e9;
-  run.stageTime = 299.99;
+  run.callGuardian(); // wake the zone guardian at once (the altar's E)
   frames(run, 2);
   const boss = run.boss;
   const g = boss.enemy;

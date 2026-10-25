@@ -6,6 +6,7 @@ import { Run } from "./game/run.js";
 import { DIFFICULTIES } from "./game/rules.js";
 import { Tower } from "./game/tower.js";
 import { Renderer } from "./render/renderer.js";
+import { ZoneMap } from "./ui/zonemap.js";
 import { initSprites } from "./render/sprites.js";
 import { Hud } from "./ui/hud.js";
 import { LevelUpPanel } from "./ui/levelup.js";
@@ -75,6 +76,7 @@ async function boot() {
   state.screens = new Screens(screenRoot, state.data);
   state.screens.getRun = () => state.run;
   state.levelup = new LevelUpPanel(levelRoot, handleLevelUpChoice);
+  state.zoneMap = new ZoneMap(document.getElementById("ui"));
 
   state.screens.onStart = startRun;
   // Load the saved profile BEFORE reading its settings (the volume used to come from a blank default).
@@ -182,6 +184,7 @@ function endRun(expected = state.run) {
   // A chest/shop/altar panel open at the moment of death must not outlive the run (its key
   // listener would keep selling). Closing it restarts the music, so stop the music after.
   run.events.panel?.close();
+  state.zoneMap.close(); // its close resumes the music too, so it goes before the stop
   state.music.stop();
   // A level-up that landed as the run ended must not sit on the results or block the next run.
   state.levelup.close();
@@ -247,6 +250,14 @@ function onKeyDown(e) {
   }
 
   if (state.mode === "game") {
+    // The zone map holds the game still and owns the keyboard: M or Esc closes it.
+    if (state.zoneMap.active) {
+      if (e.code === "KeyM" || e.code === "Escape") {
+        e.preventDefault();
+        state.zoneMap.close();
+      }
+      return;
+    }
     // A world-event panel (chest/shop/altar) owns the keyboard: Esc closes it, P is ignored;
     // toggling the pause on top of it used to restart the music while the panel stayed open.
     if (state.run?.stateEventPanel) {
@@ -261,6 +272,11 @@ function onKeyDown(e) {
     if (e.code === "KeyP" || e.code === "Escape") {
       e.preventDefault();
       togglePause();
+      return;
+    }
+    if (e.code === "KeyM" && !state.paused && state.run?.state === "running") {
+      e.preventDefault();
+      openZoneMap();
       return;
     }
     const action = KEY_MAP[e.code];
@@ -281,6 +297,17 @@ function onKeyDown(e) {
 function onKeyUp(e) {
   const action = KEY_MAP[e.code];
   if (action) input[action] = false;
+}
+
+/** M: the zone map pauses the run like the pause menu does, and resumes it on close. */
+function openZoneMap() {
+  state.paused = true;
+  state.music.stop();
+  for (const k of ["up", "down", "left", "right", "dash", "jump"]) input[k] = false; // no key stays held behind the map
+  state.zoneMap.open(state.run, () => {
+    state.paused = false;
+    state.music.start();
+  });
 }
 
 function togglePause() {

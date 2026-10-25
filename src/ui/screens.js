@@ -86,8 +86,9 @@ export class Screens {
             el("li", {}, el("kbd", {}, "Shift"), " — dash (invulnerabilidade breve)"),
             el("li", {}, el("kbd", {}, "R"), " — ultimate, quando carregado"),
             el("li", {}, el("kbd", {}, "P"), " — pausar"),
+            el("li", {}, el("kbd", {}, "M"), " — mapa da zona (clique num ícone para segui-lo)"),
             el("li", {}, el("kbd", {}, "1"), el("kbd", {}, "2"), el("kbd", {}, "3"), " — escolher um upgrade ao subir de nível"),
-            el("li", {}, el("kbd", {}, "E"), " — abrir baú/loja/altar ou lançar a bola num alfa enfraquecido (captura)"),
+            el("li", {}, el("kbd", {}, "E"), " — abrir baú/loja/altar, acordar o guardião no altar dele ou lançar a bola num alfa enfraquecido (captura)"),
             el("li", {}, el("kbd", {}, "F"), " re-sortear · ", el("kbd", {}, "X"), " pular · ", el("kbd", {}, "Z"), " banir")
           ),
           el("p", { class: "muted" }, "Seu Pokémon ataca sozinho. Colete as orbes azuis de XP para subir de nível, escolha upgrades e evolua antes que a horda te engula."),

@@ -6,6 +6,7 @@ import { makeRng } from "../core/rng.js";
 import { creatureSprite } from "./creature.js";
 import { drawSprite, spriteAspect, worldHeightFor } from "./sprites.js";
 import { BIOME_PALETTES, TYPE_RGB, hex, mixRgb, shade } from "./palette.js";
+import { MAP_KINDS } from "../game/events.js";
 
 const ZOOM = 26; // world units -> pixels at zoom 1
 const DEPTH = 0.62; // vertical squash to fake a 3/4 camera
@@ -941,6 +942,64 @@ export class Renderer {
     this.drawAmbient(run);
     this.drawNightTint(run);
     this.drawVignette();
+    this.drawCompass(run);
+  }
+
+  /**
+   * Compass for the event the zone map follows: over it while on screen, pinned to the
+   * screen edge in its direction otherwise, with the distance in metres (world units).
+   */
+  drawCompass(run) {
+    const events = run.events;
+    const ev = events?.followId != null ? events.events.find((x) => x.id === events.followId) : null;
+    const kind = ev && MAP_KINDS[ev.kind];
+    if (!kind) return;
+    const ctx = this.ctx;
+    const s = this.worldToScreen(ev.x, ev.z);
+    const m = 46;
+    let x = s.x;
+    let y = s.y - this.zoom * 2.6;
+    const inside = x > m && x < this.w - m && y > m && y < this.h - m;
+    const d = Math.round(Math.hypot(ev.x - run.player.x, ev.z - run.player.z));
+    if (inside && d < 4) return; // arrived: the event's own hint takes over
+    let ang = null;
+    if (!inside) {
+      const dx = x - this.w / 2;
+      const dy = y - this.h / 2;
+      const t = Math.min((this.w / 2 - m) / Math.abs(dx || 1e-6), (this.h / 2 - m) / Math.abs(dy || 1e-6));
+      x = this.w / 2 + dx * t;
+      y = this.h / 2 + dy * t;
+      ang = Math.atan2(dy, dx);
+    }
+    ctx.save();
+    if (ang != null) {
+      ctx.fillStyle = "#ffd23a";
+      ctx.beginPath();
+      ctx.moveTo(x + Math.cos(ang) * 24, y + Math.sin(ang) * 24);
+      ctx.lineTo(x + Math.cos(ang + 0.45) * 15, y + Math.sin(ang + 0.45) * 15);
+      ctx.lineTo(x + Math.cos(ang - 0.45) * 15, y + Math.sin(ang - 0.45) * 15);
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.fillStyle = "rgba(20,16,40,0.85)";
+    ctx.beginPath();
+    ctx.arc(x, y, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = kind.color;
+    ctx.beginPath();
+    ctx.arc(x, y, 11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#fff";
+    ctx.font = "700 12px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(kind.glyph, x, y + 0.5);
+    ctx.font = "800 11px system-ui, sans-serif";
+    ctx.fillStyle = "rgba(20,16,40,0.85)";
+    ctx.fillRect(x - 20, y + 17, 40, 15);
+    ctx.fillStyle = "#fff";
+    ctx.fillText(`${d} m`, x, y + 25);
+    ctx.restore();
   }
 
   /** Subtle edge darkening to focus the play field. */

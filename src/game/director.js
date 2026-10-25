@@ -2,8 +2,9 @@
 
 import { enemyHpCurve } from "./rules.js";
 
-const TIMELINE_EVERY = 52;
 const STAGE_DAMAGE = [1, 1.35, 1.8, 2.4];
+/** The classic zone clock (seconds): the timeline spans it, and when it runs out with the guardian asleep the final swarm starts. */
+export const ZONE_SECS = 600;
 
 export class Director {
   constructor(run, rng) {
@@ -19,6 +20,8 @@ export class Director {
     this.credits = 0;
     this.spawnAllowance = 0;
     this.finalSwarm = false;
+    this.finalSwarmAt = 0;
+    this.cardsDrawn = 0;
     this.buildPool();
     for (let i = 0; i < 3; i++) this.addCard();
     this.buildTimeline();
@@ -39,12 +42,26 @@ export class Director {
 
   /** Enemy HP multiplier for the current stage and time. */
   hpMult(t = 0) {
-    return this.hpMultAt(this.stage, Math.max(t, this.effTime() / 60));
+    return this.hpMultAt(this.stage, Math.max(t, this.effTime() / 60)) * this.swarmMult(4);
   }
 
   /** Enemy damage multiplier for the current stage and time. */
   dmgMult(t = 0) {
-    return this.dmgMultAt(this.stage, Math.max(t, this.effTime() / 60));
+    return this.dmgMultAt(this.stage, Math.max(t, this.effTime() / 60)) * this.swarmMult(2);
+  }
+
+  /** Final swarm: `base` to the power of the minutes since it started (HP x4, damage x2 per minute). */
+  swarmMult(base) {
+    return this.finalSwarm ? base ** ((this.run.stageTime - this.finalSwarmAt) / 60) : 1;
+  }
+
+  /** The zone clock ran out with the guardian still asleep: the horde floods in and keeps growing. */
+  startFinalSwarm() {
+    if (this.finalSwarm) return;
+    this.finalSwarm = true;
+    this.finalSwarmAt = this.run.stageTime;
+    this.run.banner("O tempo acabou: o enxame final chegou! Acorde o guardião.");
+    this.run.shake(0.4);
   }
 
   /** The same curves for an arbitrary stage and minute (the tower feeds its floors' virtual minutes). */
@@ -69,8 +86,12 @@ export class Director {
     const maxStage = stage === 1 ? 0 : stage === 2 ? 1 : 2;
     const minStage = stage === 3 ? 1 : 0;
 
-    let pool = all.filter((p) => matches(p, biome.types) && p.evoStage <= maxStage && p.evoStage >= minStage);
-    if (pool.length < 12) pool = all.filter((p) => p.evoStage <= maxStage);
+    // Strong species with no evolution line (Pheromosa, Pinsir…) are zone-3 material: in zone 1
+    // they used to open the run three hits from death.
+    const strongSingle = (p) => p.evoStage === 0 && p.bst >= 420 && !this.data.evolutionsOf(p.id).length;
+    let pool = all.filter((p) => matches(p, biome.types) && p.evoStage <= maxStage && p.evoStage >= minStage && !strongSingle(p));
+    if (stage === 3) pool = pool.concat(all.filter((p) => matches(p, biome.types) && strongSingle(p)));
+    if (pool.length < 12) pool = all.filter((p) => p.evoStage <= maxStage && !strongSingle(p));
 
     this.pool = this.rng.shuffle(pool);
     this.latePool = this.rng.shuffle(all.filter((p) => matches(p, biome.late ?? []) && p.evoStage <= maxStage));
@@ -80,9 +101,14 @@ export class Director {
     this.residentPool = this.rng.shuffle(residents);
   }
 
-  /** Pick a new enemy "card" to add to the rotation. */
+  /**
+   * Pick a new enemy "card" to add to the rotation: every third card is a resident of the
+   * region; after four minutes of zone, 40 % of the others come from the late pool.
+   */
   addCard() {
-    const pool = this.residentPool.length && this.rng.chance(0.35) ? this.residentPool : this.pool;
+    const resident = this.cardsDrawn++ % 3 === 1 && this.residentPool.length;
+    const late = !resident && this.run.stageTime > 240 && this.latePool.length && this.rng.chance(0.4);
+    const pool = resident ? this.residentPool : late ? this.latePool : this.pool;
     const used = new Set(this.cards.map((c) => c.id));
     const pick = pool.find((p) => !used.has(p.id)) ?? this.pool[0];
     if (!pick) return;
@@ -92,10 +118,15 @@ export class Director {
     this.cards[this.cards.length - 1].weight = 1.4;
   }
 
+  /**
+   * The zone's script (seconds of zone): a new species card every ~60 s up to 9.6 min, alphas
+   * at 150/330/480, a swarm or stampede, a swarm, a stampede and two elite waves. Zone 1 gets
+   * the first horde and elite wave a little later.
+   */
   buildTimeline() {
     this.timeline = [];
-    for (let t = TIMELINE_EVERY; t < 300; t += TIMELINE_EVERY) {
-      this.timeline.push({ t, kind: "card", done: false });
+    for (let m = 1; m < 9.6; m += this.rng.range(0.8, 1.2)) {
+      this.timeline.push({ t: m * 60, kind: "card", done: false });
     }
     this.timeline.push({ t: 150, kind: "alpha", done: false });
     this.timeline.push({ t: 330, kind: "alpha", done: false });
@@ -112,7 +143,7 @@ export class Director {
     this.buildPool();
     this.timeline = [];
     this.buildTimeline();
-    for (const c of this.timeline) c.t += 40;
+    this.finalSwarm = false;
   }
 
   update(dt) {
@@ -131,10 +162,18 @@ export class Director {
     const cap = this.popCap(eff);
     this.spawnAccum += dt;
     const minutes = eff / 60;
-    const interval = Math.max(0.22, 1 / (1.1 + minutes * 0.14));
+    // The final swarm spawns six times as fast and throws in bursts of elites.
+    const interval = Math.max(0.22, 1 / (1.1 + minutes * 0.14)) / (this.finalSwarm ? 6 : 1);
     while (this.spawnAccum >= interval) {
       this.spawnAccum -= interval;
       if (run.enemies.length < cap) this.spawnNormal();
+    }
+    if (this.finalSwarm && this.cards.length && this.rng.chance(dt * 2)) {
+      for (let i = 0; i < 6 && run.enemies.length < cap; i++) {
+        const spot = this.spawnPoint(16, 30);
+        const e = spot && run.spawnEnemy(this.rng.pick(this.cards).id, spot.x, spot.z, "elite");
+        if (e) e.freeElite = true;
+      }
     }
   }
 
@@ -158,7 +197,20 @@ export class Director {
     const p = this.run.player;
     const spot = this.spawnPoint(16, 30);
     if (!spot) return;
-    this.run.spawnEnemy(card.id, spot.x, spot.z, "normal");
+    const elite = this.eliteRoll();
+    const e = this.run.spawnEnemy(card.id, spot.x, spot.z, elite ? "elite" : "normal");
+    if (e && elite) e.freeElite = true; // see Run.killEnemy: a 15 % candy instead of a sure one
+  }
+
+  /**
+   * A free spawn turns elite with 1.2 % + 0.4 % per minute + 3 % per zone (Super Lure scales it);
+   * never in the first 90 s of zone 1.
+   */
+  eliteRoll() {
+    const run = this.run;
+    if (run.stage === 1 && run.stageTime < 90) return false;
+    const chance = (0.012 + (run.stageTime / 60) * 0.004 + (run.stage - 1) * 0.03) * (run.player?.stats.eliteSpawn ?? 1);
+    return this.rng.chance(chance);
   }
 
   spawnPoint(min = 16, max = 30) {

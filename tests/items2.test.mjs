@@ -285,7 +285,7 @@ test("a capped hit on a marked boss still stores the full, unmarked burn", () =>
   run.player.iframes = 1e9;
   give(run, "silph-scope");
   run.player.scopeT = 1e9;
-  run.stageTime = 299.99;
+  run.callGuardian(); // wake the zone guardian at once (the altar's E)
   frames(run, 2);
   const boss = run.boss;
   const g = boss.enemy;
@@ -333,10 +333,10 @@ test("Dowsing Machine: each new zone and tower floor brings 1 altar and 2 chests
   const { run } = setup();
   run.events.events.length = 0;
   run.advanceStage();
-  assert.equal(run.events.events.length, 0, "nothing without the item");
+  assert.equal(run.events.events.filter((e) => e.kind !== "guardian").length, 0, "nothing without the item");
   give(run, "dowsing-machine");
   run.advanceStage();
-  const kinds = run.events.events.map((e) => e.kind).sort();
+  const kinds = run.events.events.filter((e) => e.kind !== "guardian").map((e) => e.kind).sort(); // classic: plus the zone altar
   assert.deepEqual(kinds, ["altar", "chest", "chest"]);
   const { run: tower } = setup({ mode: "tower" });
   give(tower, "dowsing-machine", 2);

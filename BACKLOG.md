@@ -44,6 +44,8 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 
 - Visual (mapa, sprites, efeitos, câmera): plano em 10 itens em `docs/VISUAL_POKEBONK.md`; avaliação do WebGL/three.js no mesmo doc, pendente a decisão (recomendado: spike `?gl=1`).
 - Mecânicas e números do PokéBonk (diretor, chefes, interagíveis, eventos, Sobrevivência, Torre) com prioridades em `docs/MAPEAMENTO_POKEBONK.md`.
+  - ~~Altar do guardião sob demanda + enxame final~~, ~~diretor por linha do tempo~~, ~~mapa da zona com bússola~~ — fase 26.
+  - Pendentes da fase 26: portal depois do guardião; totem e invocador na linha do tempo da zona; eventos de mundo (Eclipse, Névoa, Tempestade, Meowth dourado); ícones dos eventos no minimapa; marcas livres no mapa (até 3).
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 

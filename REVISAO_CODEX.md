@@ -1178,3 +1178,36 @@ como qualquer golpe direto (os tiques de status seguem à parte). Dois testes no
 aceito: o teste do Encantado anunciava poças e investidas mas só exercitava `hitPlayer` e um projétil. Teste novo com uma
 poça real (`zonesHostile` + tique) e uma investida real (`release` + `Boss.update`), ambas −40 % com o boss encantado;
 conferido por mutação (sem o `owner` da poça, o teste falha). Suíte **197 / 197**.
+
+## 37. Fase 26 — Altar do guardião, diretor por linha do tempo e mapa da zona (25/10/2026)
+
+Itens 1 a 3 de `docs/MAPEAMENTO_POKEBONK.md`.
+
+- **Altar do guardião (Clássico):** cada zona coloca um altar (`WorldEvents.placeGuardianAltar`) a 45–70 u do ponto de
+  partida; não expira e não conta no limite de eventos. E no altar chama `Run.callGuardian` (sem painel) e o altar se
+  gasta. O relógio da zona passou a 10 min (`ZONE_SECS = 600`, em `director.js`) e não chama mais o guardião: quando
+  zera com o guardião dormindo, começa o **enxame final** (`Director.startFinalSwarm`): spawn 6× mais rápido, rajadas de
+  6 elites, HP ×4 e dano ×2 **por minuto** sobre a curva; acaba na zona seguinte. O Infinito segue avançando a cada 5 min.
+  HUD: "⏳ 9:59" ao lado da zona e "Enxame final!" quando ele começa.
+- **Diretor por linha do tempo:** carta de espécie a cada 48–72 s de 1 a 9,6 min; Alfas 150/330/480 s; manada ou enxame
+  em 235 s (zona 1) / 200 s; enxame 390 s; manada 520 s; ondas de elites 330 s (zona 1) / 270 s e 450 s (as zonas 2–3
+  não somam mais 40 s a tudo). Cartas: uma em cada três vem dos residentes da região; depois de 4 min, 40 % das outras
+  vêm do elenco tardio. **Elites livres:** um spawn comum vira elite com `1,2 % + 0,4 %/min + 3 %/zona` (× Super
+  Lure), nunca nos primeiros 90 s da zona 1.
+- **Dois ajustes de balanço que a mudança expôs** (o playtest pegou os dois):
+  - A nova ordem de cartas abria a zona 1 com Pheromosa (BST 570): o bot morria aos 13 s em 9 de 10 seeds. Espécies sem
+    linha evolutiva com BST ≥ 420 só entram no elenco da zona 3 (regra do PokéBonk).
+  - Cada elite soltava um Doce Raro garantido; com elites livres o bot chegava ao nível 41–50 aos 600 s (antes 25–32).
+    Elites livres (`freeElite`, do diretor e do enxame final) soltam doce com 15 % × power-ups; elites de onda, Alfas e
+    chefes seguem garantidos. Bot: nível 20–30 aos 600 s, 10/10 sobrevivem; Torre 5/5 sem mudança.
+- **Mapa da zona (M):** painel com a arena inteira (norte para cima), ícones dos eventos descobertos (a 30 u ou menos do
+  jogador; o altar do guardião sempre), o chefe e a seta do jogador; legenda "Descoberto nesta zona" com contagem.
+  Clicar num ícone o segue: **bússola** na borda da tela com o ícone e a distância em metros (`Renderer.drawCompass`),
+  sobre o alvo quando ele está à vista e oculta ao chegar. O mapa pausa o jogo como o menu; M ou Esc fecha.
+- **Bot:** aos 300 s de zona vai ao altar e acorda o guardião (o mesmo marco do relógio antigo); ignora o altar fora disso.
+- **Fora desta fase** (BACKLOG 2b): portal depois do guardião (hoje a zona muda na hora), totem e invocador na linha do
+  tempo da zona, eventos de mundo (Eclipse, Névoa…), ícones dos eventos no minimapa e marcas livres no mapa.
+- **Testes:** `tests/director.test.mjs` (6), `tests/zonemap.test.mjs` (2), 2 novos em `tests/classic.test.mjs`; os
+  testes que chamavam o guardião por `stageTime = 299.99` passaram a usar `run.callGuardian()`. Suíte **207 / 207**;
+  build, `check-bundle` e `npm run e2e` OK (o e2e abre o mapa com M, confere que a partida fica parada e fecha com Esc).
+  Navegador: mapa com o altar, bússola a 59 m, E no altar acorda o guardião (Scyther) e solta a bússola.

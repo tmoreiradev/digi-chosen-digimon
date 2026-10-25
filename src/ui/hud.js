@@ -6,6 +6,7 @@ import { paintSpritePortrait } from "../render/sprites.js";
 import { clamp, fmtClock, fmtTime } from "../core/math.js";
 import { typeName, biomeName, THREAT_PT } from "../core/i18n.js";
 import { tr, getLang } from "../core/lang.js";
+import { ZONE_SECS } from "../game/director.js";
 
 export class Hud {
   constructor(root) {
@@ -135,7 +136,12 @@ export class Hud {
     this.difficulty.className = "hud-diff " + run.difficulty.id;
 
     this.clock.textContent = fmtClock(8 * 3600 + run.time * 60);
-    this.runTimer.textContent = `${fmtTime(run.time)} · ${tr(run.sanctuary ? "Santuário" : "Zona " + run.stage)}`;
+    // Classic: the zone clock until the final swarm, while the guardian still sleeps.
+    let zoneClock = "";
+    if (run.mode === "classic" && !run.sanctuary && !run.zoneBossSpawned) {
+      zoneClock = run.director.finalSwarm ? ` · ${tr("Enxame final!")}` : ` · ⏳ ${fmtTime(Math.max(0, ZONE_SECS - run.stageTime))}`;
+    }
+    this.runTimer.textContent = `${fmtTime(run.time)} · ${tr(run.sanctuary ? "Santuário" : "Zona " + run.stage)}${zoneClock}`;
 
     // Threat meter reflects enemy pressure over the stage.
     const threat = clamp(run.enemies.length / 70, 0, 1);

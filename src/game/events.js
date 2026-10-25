@@ -6,6 +6,7 @@
 //   chest   - one-time loot: coins + possibly a vitamin or heal
 //   shop    - buy items with gold (heals, vitamins, XP boost)
 //   altar   - free full heal, consumed on use
+//   guardian - classic mode: the zone's guardian altar; E wakes the guardian (no panel)
 
 import { clamp, dist } from "../core/math.js";
 import { el } from "../ui/dom.js";
@@ -25,6 +26,19 @@ export const SHOP_ITEMS = [
 // minutes without one in reach when they were scattered anywhere.
 const SPAWN_MIN = 12;
 const SPAWN_MAX = 24;
+// The guardian altar stands 45–70 units from where the zone starts: a walk, not a hunt.
+const ALTAR_MIN = 45;
+const ALTAR_MAX = 70;
+// Events within this distance of the player count as discovered on the zone map.
+export const SEEN_RANGE = 30;
+
+/** How each event kind shows on the zone map and on the follow compass. */
+export const MAP_KINDS = {
+  guardian: { label: "Altar do guardião", color: "#e8243a", glyph: "☠" },
+  chest: { label: "Baú", color: "#c08a4a", glyph: "▣" },
+  shop: { label: "Loja", color: "#3fa34d", glyph: "$" },
+  altar: { label: "Altar de cura", color: "#4fa8f0", glyph: "✚" },
+};
 
 const CHEST_LOOT = [
   { kind: "coins", min: 15, max: 45, weight: 60 },
@@ -41,6 +55,7 @@ export class WorldEvents {
     this.spawnTimer = 0;
     this.spawnInterval = 90; // seconds between spawns
     this.panel = null; // { close }
+    this.followId = null; // the event the zone map follows (compass at the screen edge)
     this.opts = run.opts; // callbacks: onBanner, onSfx, onWorldEventOpen, onWorldEventClose
   }
 
@@ -66,10 +81,37 @@ export class WorldEvents {
     });
   }
 
+  /**
+   * Classic mode: place this zone's guardian altar (it replaces the last zone's). It never
+   * expires and is always on the zone map, discovered or not.
+   */
+  placeGuardianAltar() {
+    this.events = this.events.filter((ev) => ev.kind !== "guardian");
+    const rng = this.run.rng;
+    const p = this.run.player;
+    const half = this.run.biome.size / 2 - 10;
+    const a = rng.range(0, Math.PI * 2);
+    const r = rng.range(ALTAR_MIN, ALTAR_MAX);
+    this.events.push({
+      id: this.nextId++,
+      kind: "guardian",
+      x: clamp(p.x + Math.cos(a) * r, -half, half),
+      z: clamp(p.z + Math.sin(a) * r, -half, half),
+      life: Infinity,
+      interacted: false,
+      seen: true,
+    });
+  }
+
+  /** The guardian altar of this zone, while it stands. */
+  get guardianAltar() {
+    return this.events.find((ev) => ev.kind === "guardian") ?? null;
+  }
+
   update(dt) {
-    // Spawn new events on a timer (max 2 active at once).
+    // Spawn new events on a timer (max 2 active at once; the guardian altar does not count).
     this.spawnTimer += dt;
-    if (this.spawnTimer >= this.spawnInterval && this.events.length < 2) {
+    if (this.spawnTimer >= this.spawnInterval && this.events.filter((ev) => ev.kind !== "guardian").length < 2) {
       this.spawnTimer = 0;
       const roll = this.run.rng.range(0, 1);
       const kind = roll < 0.5 ? "chest" : roll < 0.8 ? "shop" : "altar";
@@ -82,12 +124,15 @@ export class WorldEvents {
       if (ev.rechargeT > 0) ev.rechargeT -= dt; // Secret Key altar
       ev.life -= dt;
       if (ev.life <= 0 || ev.interacted) this.events.splice(i, 1);
+      else if (!ev.seen && dist(ev.x, ev.z, this.run.player.x, this.run.player.z) < SEEN_RANGE) ev.seen = true;
     }
+    if (this.followId != null && !this.events.some((ev) => ev.id === this.followId)) this.followId = null;
   }
 
   /** Proximity hint for an event; a recharging altar (Secret Key) shows its countdown instead of "E". */
   hintFor(ev) {
     if (ev.rechargeT > 0) return `Altar — ${Math.ceil(ev.rechargeT)} s`;
+    if (ev.kind === "guardian") return "Acordar o guardião — E";
     return ev.kind === "chest" ? "Baú — E" : ev.kind === "shop" ? "Loja — E" : "Altar — E";
   }
 
@@ -121,6 +166,11 @@ export class WorldEvents {
     const p = this.run.player;
     const ev = this.findNear(p.x, p.z);
     if (!ev || this.panel) return null;
+    if (ev.kind === "guardian") {
+      // No panel: the guardian wakes at once and the altar is spent.
+      if (this.run.callGuardian()) ev.interacted = true;
+      return ev;
+    }
     this.openPanel(ev);
     return ev;
   }
@@ -432,6 +482,26 @@ export class WorldEvents {
         ctx.fill();
         ctx.fillStyle = "#ffd166";
         ctx.fillRect(-u * 0.12, u * 0.05, u * 0.24, u * 0.1);
+      } else if (ev.kind === "guardian") {
+        // A ring of dark standing stones around a pulsing red heart.
+        const g = zoom * 0.9;
+        ctx.fillStyle = "rgba(232,36,58,0.25)";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, g * 1.5, g * 0.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        for (let k = 0; k < 6; k++) {
+          const a = (k / 6) * Math.PI * 2;
+          const x = Math.cos(a) * g * 1.2;
+          const y = Math.sin(a) * g * 0.45;
+          ctx.fillStyle = "#3b3550";
+          ctx.fillRect(x - g * 0.14, y - g * 0.9, g * 0.28, g * 0.9);
+          ctx.fillStyle = "#5a5370";
+          ctx.fillRect(x - g * 0.14, y - g * 0.9, g * 0.28, g * 0.12);
+        }
+        ctx.fillStyle = "#e8243a";
+        ctx.beginPath();
+        ctx.arc(0, -g * 0.45, g * 0.28 * pulse, 0, Math.PI * 2);
+        ctx.fill();
       } else if (ev.kind === "altar") {
         ctx.fillStyle = "#90caf9";
         ctx.beginPath();
@@ -461,6 +531,7 @@ export class WorldEvents {
   }
 
   titleFor(ev) {
+    if (ev.kind === "guardian") return "Altar do guardião";
     if (ev.kind === "chest") return "Baú do Tesouro";
     if (ev.kind === "shop") return "Loja Ambulante";
     return "Altar Antigo";

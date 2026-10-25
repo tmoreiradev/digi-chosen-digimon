@@ -87,7 +87,7 @@ test("items' area damage, burn ticks and thorns all hand a low alpha to the capt
 /** Put the zone guardian up and make its RNG land every meteor 2 units from the player. */
 function guardianWithMeteors(run) {
   run.player.iframes = 1e9;
-  run.stageTime = 299.99;
+  run.callGuardian(); // wake the zone guardian at once (the altar's E)
   frames(run, 2);
   const boss = run.boss;
   assert.ok(boss.alive);

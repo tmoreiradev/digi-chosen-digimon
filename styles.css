@@ -1548,3 +1548,52 @@ kbd {
   color: var(--gold);
   font-weight: 700;
 }
+
+/* Zone map (M) */
+.zonemap-panel {
+  width: min(420px, 94vw);
+  max-height: 94vh;
+  gap: 8px;
+}
+.zonemap-panel .muted {
+  margin: 0;
+  text-align: center;
+  font-size: 12px;
+}
+.zonemap-panel h3 {
+  margin: 4px 0 0;
+  font: 800 12px/1 var(--font);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted, #b9b3d6);
+}
+.zonemap-canvas {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 10px;
+  border: 2px solid var(--edge);
+  cursor: pointer;
+}
+.zonemap-legend {
+  display: grid;
+  gap: 4px;
+}
+.zonemap-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+.zonemap-row b {
+  margin-left: auto;
+}
+.zonemap-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  font: 700 11px/1 var(--font);
+  font-style: normal;
+}

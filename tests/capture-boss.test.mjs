@@ -11,7 +11,7 @@ const frames = (run, n) => {
 
 function guardianUp(run) {
   run.player.iframes = 1e9;
-  run.stageTime = 299.99;
+  run.callGuardian(); // wake the zone guardian at once (the altar's E)
   frames(run, 2);
   assert.ok(run.boss.alive && run.boss.kind === "guardian", "the zone guardian is up");
   return run.boss.enemy;
