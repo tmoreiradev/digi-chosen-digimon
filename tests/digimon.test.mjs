@@ -133,3 +133,29 @@ test("NSS index: a name's main form wins over alternate forms in any order (Blac
     fs.rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test("recell: a drawing drifted into the cell below goes back to its own cell, feet down, alpha hard", async () => {
+  const { recellPixels } = await import("../scripts/recell.mjs");
+  const w = 64, h = 80; // 2x2 cells of 32x40
+  const px = Buffer.alloc(w * h * 4);
+  const put = (x, y, a = 250) => px.set([200, 50, 50, a], (y * w + x) * 4);
+  // A 6x20 body in cell (0,0) drifted 25 px down: rows 25..44, its last 5 rows inside cell (0,1).
+  for (let y = 25; y < 45; y++) for (let x = 3; x < 9; x++) put(x, y);
+  put(50, 10, 8); // haze far away: not a drawing
+  const out = recellPixels({ w, h, px });
+  const alpha = (x, y) => out[(y * w + x) * 4 + 3];
+  assert.equal(alpha(13, 38), 255, "feet on row 38 of cell (0,0), centred");
+  assert.equal(alpha(13, 19), 255, "top of the body");
+  assert.equal(alpha(13, 18), 0);
+  for (let y = 40; y < 80; y++) for (let x = 0; x < 32; x++) assert.equal(alpha(x, y), 0, "nothing left in cell (0,1)");
+  assert.equal(alpha(50, 10), 0, "haze dropped");
+});
+
+test("every Digimon walks on the map: an NSS or generated 4x8 sheet with every cell drawn", () => {
+  const sprites = JSON.parse(fs.readFileSync("src/data/sprites.json", "utf8"));
+  for (const p of data.pokemon) {
+    const walk = sprites[p.id]?.anims?.walk;
+    assert.ok(walk, `${p.name} has a walk sheet`);
+    assert.equal(walk.rows, 8, `${p.name}: 8 directions`);
+  }
+});

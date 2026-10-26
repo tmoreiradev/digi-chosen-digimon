@@ -4,7 +4,7 @@ import { TAU, clamp, lerp } from "../core/math.js";
 import { tr } from "../core/lang.js";
 import { makeRng } from "../core/rng.js";
 import { creatureSprite } from "./creature.js";
-import { drawSprite, spriteAspect, worldHeightFor } from "./sprites.js";
+import { drawSprite, hasAnim, spriteAspect, worldHeightFor } from "./sprites.js";
 import { BIOME_PALETTES, TYPE_RGB, hex, mixRgb, shade } from "./palette.js";
 import { MAP_KINDS } from "../game/events.js";
 
@@ -23,6 +23,37 @@ const PROP_CONFIG = {
   graveyard: { kinds: ["tomb", "tree", "rock", "bone"], countMul: 1.5, size: [0.9, 1.7] },
   volcano: { kinds: ["rock", "vent", "geyser", "bone"], countMul: 1.1, size: [0.8, 1.5] },
 };
+
+/**
+ * How a creature without a drawn animation moves (pivot at the feet): a hop when walking,
+ * breathing when idle, a lunge on attack, a shake when hurt and a fall when fainting.
+ */
+function creatureMotion(opts, pxHeight) {
+  const t = (opts.clock ?? 0) * 0.25;
+  const facing = (opts.dirX ?? 0) < 0 ? -1 : 1;
+  let dx = 0;
+  let dy = 0;
+  let sxk = 1;
+  let syk = 1;
+  let rot = 0;
+  if (opts.anim === "walk") {
+    dy = -Math.abs(Math.sin(t)) * pxHeight * 0.08;
+    sxk = 1 + Math.sin(t * 2) * 0.04;
+    syk = 1 - Math.sin(t * 2) * 0.04;
+  } else if (opts.anim === "attack") {
+    const k = Math.sin(Math.min(1, ((opts.clock ?? 0) % 30) / 30) * Math.PI);
+    dx = facing * k * pxHeight * 0.18;
+    sxk = 1 + k * 0.12;
+    syk = 1 - k * 0.08;
+  } else if (opts.anim === "hurt") {
+    dx = Math.sin(t * 8) * pxHeight * 0.05;
+  } else if (opts.anim === "faint") {
+    rot = facing * Math.min(1, (opts.clock ?? 0) / 40) * (Math.PI / 2);
+  } else {
+    syk = 1 + Math.sin(t * 0.5) * 0.03;
+  }
+  return { dx, dy, sxk, syk, rot, facing };
+}
 
 export class Renderer {
   constructor(canvas) {
@@ -447,10 +478,21 @@ export class Renderer {
 
   drawCreature(species, sx, sy, scale, opts = {}) {
     const pxHeight = worldHeightFor(species) * this.zoom * scale;
+    const ctx = this.ctx;
+    const m = creatureMotion(opts, pxHeight);
 
-    // Preferred path: the original PMD sheet, animated and directional.
+    // Preferred path: the sheet, animated and directional. A walk-only sheet (the generated ones)
+    // borrows the procedural lunge, shake and fall for the animations it doesn't draw.
     if (opts.anim) {
-      const drew = drawSprite(this.ctx, species.id, sx, sy, {
+      const borrow = ["attack", "hurt", "faint"].includes(opts.anim) && !hasAnim(species.id, opts.anim);
+      ctx.save();
+      if (borrow) {
+        ctx.translate(sx + m.dx, sy + m.dy);
+        ctx.rotate(m.rot);
+        ctx.scale(m.sxk, m.syk);
+        ctx.translate(-sx, -sy);
+      }
+      const drew = drawSprite(ctx, species.id, sx, sy, {
         pxHeight,
         anim: opts.anim,
         clock: opts.clock ?? 0,
@@ -460,6 +502,7 @@ export class Renderer {
         alpha: opts.alpha ?? 1,
         tint: opts.tint ?? null,
       });
+      ctx.restore();
       if (drew) return;
     }
 
@@ -467,39 +510,13 @@ export class Renderer {
     // its feet land on the same ground point.
     const sprite = creatureSprite(species);
     const size = pxHeight * (sprite.canvas.height / sprite.originY);
-    const ctx = this.ctx;
     const top = sy - pxHeight;
     const left = sx - size / 2;
     ctx.save();
     ctx.imageSmoothingEnabled = false;
-    // Without a sheet the procedural sprite still moves: a hop when walking, breathing when idle,
-    // a lunge on attack, a shake when hurt and a fall when fainting (pivot at the feet).
-    const t = (opts.clock ?? 0) * 0.25;
-    const facing = (opts.dirX ?? 0) < 0 ? -1 : 1;
-    let dx = 0;
-    let dy = 0;
-    let sxk = 1;
-    let syk = 1;
-    let rot = 0;
-    if (opts.anim === "walk") {
-      dy = -Math.abs(Math.sin(t)) * pxHeight * 0.08;
-      sxk = 1 + Math.sin(t * 2) * 0.04;
-      syk = 1 - Math.sin(t * 2) * 0.04;
-    } else if (opts.anim === "attack") {
-      const k = Math.sin(Math.min(1, ((opts.clock ?? 0) % 30) / 30) * Math.PI);
-      dx = facing * k * pxHeight * 0.18;
-      sxk = 1 + k * 0.12;
-      syk = 1 - k * 0.08;
-    } else if (opts.anim === "hurt") {
-      dx = Math.sin(t * 8) * pxHeight * 0.05;
-    } else if (opts.anim === "faint") {
-      rot = facing * Math.min(1, (opts.clock ?? 0) / 40) * (Math.PI / 2);
-    } else {
-      syk = 1 + Math.sin(t * 0.5) * 0.03;
-    }
-    ctx.translate(sx + dx, sy + dy);
-    ctx.rotate(rot);
-    ctx.scale(sxk * (facing < 0 !== !!opts.flip ? -1 : 1), syk);
+    ctx.translate(sx + m.dx, sy + m.dy);
+    ctx.rotate(m.rot);
+    ctx.scale(m.sxk * (m.facing < 0 !== !!opts.flip ? -1 : 1), m.syk);
     ctx.translate(-sx, -sy);
     if (opts.alpha != null) ctx.globalAlpha = opts.alpha;
     if (opts.tint) {

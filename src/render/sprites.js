@@ -42,6 +42,11 @@ export function hasSprite(id) {
   return !!(META && META[id]);
 }
 
+/** True when the sheet draws this animation itself (a walk-only sheet plays its walk for the rest). */
+export function hasAnim(id, name) {
+  return !!META?.[id]?.anims?.[name];
+}
+
 function loadImage(src) {
   const img = new Image();
   const entry = { img, ready: false };

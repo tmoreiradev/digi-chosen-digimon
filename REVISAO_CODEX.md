@@ -1303,3 +1303,24 @@ frase final nos três idiomas. Suíte **212 / 212**.
   genéricas do gerador.
 - **Verificação:** suíte do fork **17 / 17** (playtest 10/10 no Clássico, 5/5 na Torre); build, `check-bundle` e
   `npm run e2e` OK. Navegador: grade de 24 Digimon com as cores dos portraits e as três folhas animadas.
+
+## 42. Fase 31 — Folhas de andar geradas pelo Codex para os outros 137 Digimon (26/10/2026)
+
+- **Geração:** `scripts/codex-sprites.mjs` chama o Codex CLI (`codex exec`, geração de imagem) por Digimon, com a folha
+  de andar do Guilmon (NSS) como referência de estilo e grade (4x8 células de 32x40, ordem de direções do PMD) e o
+  portrait do próprio Digimon; normaliza com ImageMagick, grava `Walk-Anim.png` + `AnimData.xml` (Idle = cópia do
+  Walk) e regenera `src/data` a cada 5 folhas. Retomável; log em `assets/codex-sprites.log` (fora do Git e de
+  `dist/`). Lote de 135 com 2 em paralelo: 134 de primeira; Kunemon barrado pela moderação e feito na 2.ª tentativa;
+  o 71 saiu com 28 células vazias e foi refeito (o gerador agora reprova folha com célula vazia).
+- **Defeitos achados na revisão visual e corrigidos:** os desenhos saíam fora da grade (pés de uma linha invadindo a
+  célula de baixo, um sprite partido em duas) e com alfa 240–254 mais um "véu" de alfa 1–15 em volta. `scripts/recell.mjs`
+  endurece o alfa (≥128 → 255, senão 0), separa os desenhos em blocos conectados, devolve cada bloco à célula do seu
+  centroide e recoloca cada célula centrada com os pés na penúltima linha; o gerador aplica isso a toda folha nova.
+  Teste com folha sintética (desenho deslocado 25 px + véu) que falha sem o recorte.
+- **Render:** as folhas geradas só têm andar; `drawCreature` passa a emprestar do procedural o avanço no ataque, o
+  tremor no dano e o tombo no desmaio quando a folha não tem a animação (`hasAnim`), e o movimento procedural virou a
+  função `creatureMotion`, usada pelos dois caminhos.
+- **Verificação:** suíte do fork **19 / 19** (novo: recorte e "todo Digimon tem folha de andar de 8 direções"); build,
+  `check-bundle` e `npm run e2e` OK. Revisão visual: pranchas com os 137 primeiros quadros antes/depois do recorte;
+  no navegador, Agumon no mapa e 24 folhas desenhadas pelo `drawSprite` da engine de lado e de frente. Não verifiquei
+  em partida longa o empréstimo de ataque/dano/desmaio (o painel do navegador estava sem foco e o jogo não avançava).

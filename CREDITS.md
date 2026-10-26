@@ -6,5 +6,6 @@
   Chrono Prominence*), **Emmuffin** e **Charry**. A coleção não tem licença unificada; o uso aqui é de fã-jogo sem
   fins lucrativos, com crédito aos autores. Para atualizar: `node scripts/nss.mjs import <pasta do download>` e
   `npm run make:data`.
-- Os demais Digimon no mapa são desenhados pelo renderizador procedural da engine.
+- **Folhas de andar dos outros 137 Digimon:** geradas com o Codex CLI (geração de imagem da OpenAI) a partir da folha
+  do Guilmon acima como referência de estilo e do portrait de cada Digimon (`scripts/codex-sprites.mjs`).
 - Digimon é marca de Bandai / Toei Animation / Akiyoshi Hongo; este projeto não é afiliado a eles.

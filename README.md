@@ -28,10 +28,11 @@ npm run make:data    # regenerate src/data from scripts/make-digimon-data.mjs
   Salamon, Veemon, Hawkmon, Armadillomon, Wormmon, Guilmon, Terriermon, Renamon, Monodramon,
   Impmon), wild Rookies and Champions, Ultimates and the Mega villains (Dark Masters, Daemon,
   MaloMyotismon, Apocalymon…) as bosses; 77 signature attacks; one region (File Island).
-- **Art** — 40x40 portraits for 131 of the 140 Digimon and animated overworld sheets for Guilmon,
+- **Art** — 40x40 portraits for 131 of the 140 Digimon and full animated overworld sheets for Guilmon,
   Gatomon and Gigimon, from NotSpriteCollab (see `CREDITS.md`; `node scripts/nss.mjs import <folder>`).
-  The others are drawn on the map by the procedural renderer, coloured from their portrait and
-  animated (hop, breathe, lunge, shake, fall).
+  The other 137 have an 8-direction walk sheet generated with the Codex CLI in the same PMD style
+  (`node scripts/codex-sprites.mjs`, resumable; `scripts/recell.mjs` re-cuts drawings that drift off
+  the grid); the renderer animates their attack, hurt and faint from the walk frames.
 
 ## Engine and the Pokémon original
 
@@ -43,7 +44,7 @@ effect names here (items, passive kits) are listed there.
 
 ## Known gaps
 
-- Overworld sheets only for Guilmon, Gatomon and Gigimon; the rest are procedural (generic shapes) on the map.
+- Generated sheets have a walk cycle only (idle reuses it); the art is AI-made and uneven in places.
 - No NSS portrait for ExVeemon, Paildramon, Ogremon, Datamon, Phantomon, BlackWarGreymon, Daemon, MaloMyotismon, MarineAngemon.
 - Still one region for all 140 Digimon.
 - Items, vitamins and passive kits still carry the engine's Pokémon names (Leftovers, Blaze…).

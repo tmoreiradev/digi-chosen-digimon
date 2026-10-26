@@ -55,7 +55,8 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 ## 2d. Fork Digimon
 
 - ~~Adventure, 02 e Tamers~~, ~~portraits do NSS~~, ~~procedural com cores do portrait~~ — fases 29–30.
-- Pendentes: sprites de overworld além de Guilmon/Gatomon/Gigimon (arte nova ou reanimação); mais regiões do Digimundo para 140 Digimon; itens/vitaminas/passivas com nomes Digimon; triângulo Vacina/Data/Vírus; Torre fácil demais; portraits ausentes no NSS (9).
+- ~~Sprites de overworld para todos~~ — fase 31 (folhas de andar geradas pelo Codex).
+- Pendentes: animações de ataque/dano/desmaio desenhadas para as folhas geradas (hoje só andar); mais regiões do Digimundo para 140 Digimon; itens/vitaminas/passivas com nomes Digimon; triângulo Vacina/Data/Vírus; Torre fácil demais; portraits ausentes no NSS (9).
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 
