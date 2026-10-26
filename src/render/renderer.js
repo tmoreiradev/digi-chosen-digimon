@@ -472,11 +472,35 @@ export class Renderer {
     const left = sx - size / 2;
     ctx.save();
     ctx.imageSmoothingEnabled = false;
-    if (opts.flip) {
-      ctx.translate(sx, 0);
-      ctx.scale(-1, 1);
-      ctx.translate(-sx, 0);
+    // Without a sheet the procedural sprite still moves: a hop when walking, breathing when idle,
+    // a lunge on attack, a shake when hurt and a fall when fainting (pivot at the feet).
+    const t = (opts.clock ?? 0) * 0.25;
+    const facing = (opts.dirX ?? 0) < 0 ? -1 : 1;
+    let dx = 0;
+    let dy = 0;
+    let sxk = 1;
+    let syk = 1;
+    let rot = 0;
+    if (opts.anim === "walk") {
+      dy = -Math.abs(Math.sin(t)) * pxHeight * 0.08;
+      sxk = 1 + Math.sin(t * 2) * 0.04;
+      syk = 1 - Math.sin(t * 2) * 0.04;
+    } else if (opts.anim === "attack") {
+      const k = Math.sin(Math.min(1, ((opts.clock ?? 0) % 30) / 30) * Math.PI);
+      dx = facing * k * pxHeight * 0.18;
+      sxk = 1 + k * 0.12;
+      syk = 1 - k * 0.08;
+    } else if (opts.anim === "hurt") {
+      dx = Math.sin(t * 8) * pxHeight * 0.05;
+    } else if (opts.anim === "faint") {
+      rot = facing * Math.min(1, (opts.clock ?? 0) / 40) * (Math.PI / 2);
+    } else {
+      syk = 1 + Math.sin(t * 0.5) * 0.03;
     }
+    ctx.translate(sx + dx, sy + dy);
+    ctx.rotate(rot);
+    ctx.scale(sxk * (facing < 0 !== !!opts.flip ? -1 : 1), syk);
+    ctx.translate(-sx, -sy);
     if (opts.alpha != null) ctx.globalAlpha = opts.alpha;
     if (opts.tint) {
       ctx.drawImage(sprite.canvas, left, top, size, size);

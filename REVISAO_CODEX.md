@@ -1285,3 +1285,21 @@ frase final nos três idiomas. Suíte **212 / 212**.
   andar/parado/ataque/dano/desmaio, quadros e linhas preenchendo a imagem, uma duração por quadro, bordas dentro do
   quadro). Suíte do fork **15 / 15**; build, `check-bundle` e `npm run e2e` OK. Navegador: portraits na escolha de
   parceiro e no HUD; as 5 animações dos 3 desenhadas na mesma escala.
+
+## 41. Fase 30 — Adventure, 02 e Tamers; procedural com as cores do portrait (26/10/2026)
+
+- **Elenco:** `scripts/digimon-species.mjs` passa a ser a fonte (lido por `make-digimon-data.mjs` e `nss.mjs`), por
+  chave; os ids seguem a ordem e os 31 primeiros não mudam (teste). 140 Digimon: as linhas de parceiro das três
+  temporadas (17 parceiros, Veemon/Terriermon/Renamon/Monodramon/Impmon como raros), Rookies e Champions selvagens,
+  Ultimates e os Megas vilões como chefes (`legendary`, fora do elenco selvagem). Elos que pulariam estágio
+  (MetalSeadramon, Piedmon, MaloMyotismon, Beelzemon) ficaram sem forma anterior. 77 golpes.
+- **Portraits:** o importador resolve o nome no `index.csv` do NSS (mapa de grafias japonesas em `NSS_NAMES`).
+  Defeito achado e corrigido: o índice tem formas alternativas (Agumon "Black", três do Tailmon em qualquer ordem) e a
+  última linha vencia — o Agumon saía preto. Agora vence a linha cuja forma é o próprio nome; sem ela, a primeira
+  (teste com índice de exemplo). 131 portraits; 9 Digimon sem portrait no NSS (listados no README).
+- **Procedural:** `species.palette` (corpo, barriga, destaque, contorno) extraído do portrait no build — o fundo em
+  degradê é removido por preenchimento a partir das bordas — e usado por `creature.js`; `drawCreature` anima o
+  procedural (salto ao andar, respiração, avanço no ataque, tremor no dano, tombo no desmaio). As formas seguem as
+  genéricas do gerador.
+- **Verificação:** suíte do fork **17 / 17** (playtest 10/10 no Clássico, 5/5 na Torre); build, `check-bundle` e
+  `npm run e2e` OK. Navegador: grade de 24 Digimon com as cores dos portraits e as três folhas animadas.

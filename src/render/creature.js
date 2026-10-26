@@ -24,6 +24,9 @@ function planFor(rng, species) {
 }
 
 function paletteFor(species) {
+  // A content pack can give the colours taken from the species' portrait (species.palette).
+  const p = species.palette;
+  if (p) return { body: p.body, belly: p.belly, accent: p.accent, dark: shade(p.body, -0.5), outline: p.outline, eye: [26, 22, 36] };
   const typeRgb = TYPE_RGB[species.types[0]] ?? [180, 180, 180];
   const base = COLOR_RGB[species.color] ?? typeRgb;
   const secondary = species.types[1] ? TYPE_RGB[species.types[1]] ?? base : base;

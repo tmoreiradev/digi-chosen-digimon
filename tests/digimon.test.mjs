@@ -77,14 +77,16 @@ test("the franchise words read Digimon in every language", () => {
   }
 });
 
-test("NSS art: every Digimon has a portrait; Guilmon, Gatomon and Gigimon walk, idle, attack, get hurt and faint", async () => {
-  const { readPng, NSS_IDS } = await import("../scripts/nss.mjs");
-  for (const p of data.pokemon) {
-    assert.ok(NSS_IDS[p.id], `${p.name} has an NSS id`);
-    assert.equal(data.sprites[p.id]?.portrait, `portraits/${p.id}.png`, `${p.name} portrait`);
+test("NSS art: the portraits NSS has (130+); every starter has one; Guilmon, Gatomon and Gigimon walk, idle, attack, get hurt and faint", async () => {
+  const { readPng } = await import("../scripts/nss.mjs");
+  const withFace = data.pokemon.filter((p) => data.sprites[p.id]?.portrait);
+  assert.ok(withFace.length >= 130, `${withFace.length} of ${data.pokemon.length} Digimon have an NSS portrait`);
+  for (const p of withFace) {
+    assert.equal(data.sprites[p.id].portrait, `portraits/${p.id}.png`);
     const face = readPng(path.join("assets", "portraits", `${p.id}.png`));
     assert.deepEqual([face.w, face.h], [40, 40]);
   }
+  for (const id of [1, 5, 9, 23, 27]) assert.ok(data.sprites[id]?.portrait, `starter ${id} has a portrait`);
   for (const id of [23, 28, 31]) {
     const anims = data.sprites[id].anims;
     for (const name of ["walk", "idle", "attack", "hurt", "faint"]) {
@@ -97,5 +99,37 @@ test("NSS art: every Digimon has a portrait; Guilmon, Gatomon and Gigimon walk, 
       const [top, bottom] = data.spriteBounds[id][name];
       assert.ok(top >= 0 && bottom < a.fh && top < bottom, `${id} ${name}: bounds ${top}-${bottom} inside the frame`);
     }
+  }
+});
+
+test("ids 1–31 never move (saves and the DigiDex store ids); Adventure, 02 and Tamers are all in", () => {
+  const fixed = ["Agumon", "Greymon", "MetalGreymon", "WarGreymon", "Gabumon", "Garurumon", "WereGarurumon", "MetalGarurumon", "Patamon", "Angemon", "MagnaAngemon", "Seraphimon", "Tentomon", "Kabuterimon", "Palmon", "Togemon", "Gomamon", "Ikkakumon", "Kunemon", "Goblimon", "Leomon", "Devimon", "Guilmon", "Growlmon", "WarGrowlmon", "Gallantmon", "Salamon", "Gatomon", "Angewomon", "Magnadramon", "Gigimon"];
+  fixed.forEach((name, i) => assert.equal(data.get(i + 1).name, name, `id ${i + 1}`));
+  for (const name of ["Biyomon", "Phoenixmon", "Veemon", "Imperialdramon", "Hawkmon", "Armadillomon", "Wormmon", "Terriermon", "Renamon", "Sakuyamon", "Impmon", "Beelzemon", "Myotismon", "Piedmon", "Apocalymon", "Daemon"]) {
+    assert.ok(data.pokemon.some((p) => p.name === name), name);
+  }
+  assert.ok(data.rules.roster.length >= 15, "partners from all three seasons");
+});
+
+test("NSS index: a name's main form wins over alternate forms in any order (Black Agumon, Tailmon's forms)", async () => {
+  const os = await import("node:os");
+  const { nssFolders } = await import("../scripts/nss.mjs");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "nss-"));
+  try {
+    fs.writeFileSync(path.join(dir, "index.csv"), [
+      `"Digimon","Forma","NssId","Pasta"`,
+      `"Agumon","Agumon","160","0160"`,
+      `"Agumon","Black","160","0160/0001"`,
+      `"Tailmon","Alternate","417","0417/0002"`,
+      `"Tailmon","Tailmon","417","0417"`,
+      `"Unimon","Shima","327","0327/0001"`,
+    ].join("\r\n"));
+    const folders = nssFolders(dir);
+    assert.equal(folders[1], "0160", "Agumon, not Black Agumon");
+    assert.equal(folders[28], "0417", "Gatomon = Tailmon's main form, listed last");
+    const unimon = data.pokemon.find((p) => p.name === "Unimon").id;
+    assert.equal(folders[unimon], "0327/0001", "no main row: the first one");
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 });

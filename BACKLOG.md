@@ -52,6 +52,11 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 - ~~Separar engine e pacote de conteúdo~~ — fase 27 (`src/content/pack.js`, `docs/PACOTE_DE_CONTEUDO.md`).
 - Pendentes: efeitos de itens/habilidades e reações como dados; faixas de nível da evolução como dado (5 estágios); repositório do fork Digimon (20 espécies + 1 bioma para validar).
 
+## 2d. Fork Digimon
+
+- ~~Adventure, 02 e Tamers~~, ~~portraits do NSS~~, ~~procedural com cores do portrait~~ — fases 29–30.
+- Pendentes: sprites de overworld além de Guilmon/Gatomon/Gigimon (arte nova ou reanimação); mais regiões do Digimundo para 140 Digimon; itens/vitaminas/passivas com nomes Digimon; triângulo Vacina/Data/Vírus; Torre fácil demais; portraits ausentes no NSS (9).
+
 ## 3. Funcionalidades futuras (do README e da especificação)
 
 - Santuários e mercadores ambulantes: o santuário do Clássico (fase 2) e a loja ambulante (fase 5) existem; ~~renovação do estoque~~ feita na fase 20 (24/10).

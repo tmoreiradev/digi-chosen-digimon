@@ -9,21 +9,29 @@ import fs from "node:fs";
 import path from "node:path";
 import zlib from "node:zlib";
 import { fileURLToPath } from "node:url";
+import { SPECIES, NSS_NAMES } from "./digimon-species.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ASSETS = path.join(ROOT, "assets");
 
-/** Game species id → NSS id (the folder numbers of the NSS download). */
-export const NSS_IDS = {
-  1: 160, 2: 161, 3: 162, 4: 163, // Agumon line
-  5: 168, 6: 169, 7: 170, 8: 171, // Gabumon line
-  9: 193, 10: 194, 11: 195, 12: 196, // Patamon line (MagnaAngemon = Holyangemon)
-  13: 186, 14: 187, 15: 177, 16: 178, 17: 182, 18: 183, // Tentomon, Palmon, Gomamon lines
-  19: 431, 20: 387, 21: 263, 22: 502, // Kunemon, Goblimon (Goburimon), Leomon, Devimon
-  23: 405, 24: 406, 25: 407, 26: 408, // Guilmon, Growlmon (Growmon), WarGrowlmon (Megalogrowmon), Gallantmon (Dukemon)
-  27: 416, 28: 417, 29: 418, 30: 466, // Salamon (Plotmon), Gatomon (Tailmon), Angewomon, Magnadramon (Holydramon)
-  31: 681, // Gigimon
-};
+/** NSS folder (4 digits) per game species id, resolved by name through the download's index.csv. */
+export function nssFolders(src) {
+  const norm = (n) => n.toLowerCase().replace(/[^a-z0-9]/g, "");
+  const index = new Map();
+  for (const line of fs.readFileSync(path.join(src, "index.csv"), "utf8").split(/\r?\n/).slice(1)) {
+    const cols = line.split(",").map((c) => c.replace(/"/g, ""));
+    // A name can have alternate forms (Black, Snow…) in any order: the row whose form is the name
+    // itself is the main one; without it, the first row wins.
+    if (!cols[0] || !cols[3]) continue;
+    if (cols[1] === cols[0] || !index.has(norm(cols[0]))) index.set(norm(cols[0]), cols[3]);
+  }
+  const out = {};
+  SPECIES.forEach(([key, name], i) => {
+    const folder = index.get(norm(NSS_NAMES[key] ?? name));
+    if (folder) out[i + 1] = folder;
+  });
+  return out;
+}
 
 /** Engine animation → SpriteCollab animation names, first one present wins. */
 const ANIMS = { walk: ["Walk"], idle: ["Idle"], attack: ["Attack"], hurt: ["Hurt"], charge: ["Charge"], faint: ["Faint", "Laying", "Sleep"] };
@@ -110,11 +118,11 @@ function opaqueRows({ w, h, px }, fh) {
   return bottom < 0 ? [0, fh - 1] : [top, bottom];
 }
 
-/** sprites.json and sprite-bounds.json entries for every species with art under assets/. */
-export function spriteTables() {
+/** sprites.json and sprite-bounds.json entries for every species (by id) with art under assets/. */
+export function spriteTables(ids) {
   const sprites = {};
   const bounds = {};
-  for (const id of Object.keys(NSS_IDS)) {
+  for (const id of ids.map(String)) {
     const entry = {};
     if (fs.existsSync(path.join(ASSETS, "portraits", `${id}.png`))) entry.portrait = `portraits/${id}.png`;
     const dir = path.join(ASSETS, "sprites", id);
@@ -139,8 +147,7 @@ function importFrom(src) {
   let portraits = 0;
   let sheets = 0;
   fs.mkdirSync(path.join(ASSETS, "portraits"), { recursive: true });
-  for (const [id, nss] of Object.entries(NSS_IDS)) {
-    const folder = String(nss).padStart(4, "0");
+  for (const [id, folder] of Object.entries(nssFolders(src))) {
     const face = path.join(src, "portrait", folder, "Normal.png");
     if (fs.existsSync(face)) {
       fs.copyFileSync(face, path.join(ASSETS, "portraits", `${id}.png`));
@@ -156,7 +163,7 @@ function importFrom(src) {
     }
     sheets++;
   }
-  console.log(`assets: ${portraits} portraits, ${sheets} animated sprites`);
+  console.log(`assets: ${portraits} portraits, ${sheets} animated sprites (${SPECIES.length} Digimon)`);
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
@@ -166,4 +173,51 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
     process.exit(1);
   }
   importFrom(src);
+}
+
+/**
+ * Colours of a portrait for the procedural map sprite: the face's background (a gradient) is
+ * flood-filled from the border, stepping between similar neighbours so the fill follows the
+ * gradient and stops at the Digimon's outline; the rest is bucketed and ranked.
+ * Returns { body, belly, accent, outline } as [r, g, b].
+ */
+export function portraitPalette(file) {
+  const { w, h, px } = readPng(file);
+  const at = (x, y) => [px[(y * w + x) * 4], px[(y * w + x) * 4 + 1], px[(y * w + x) * 4 + 2]];
+  const near = (a, b, t = 40) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]) < t;
+  const background = new Uint8Array(w * h);
+  const queue = [];
+  for (let x = 0; x < w; x++) queue.push([x, 0], [x, h - 1]);
+  for (let y = 0; y < h; y++) queue.push([0, y], [w - 1, y]);
+  for (const [x, y] of queue) background[y * w + x] = 1;
+  while (queue.length) {
+    const [x, y] = queue.pop();
+    for (const [nx, ny] of [[x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]]) {
+      if (nx < 0 || ny < 0 || nx >= w || ny >= h || background[ny * w + nx]) continue;
+      if (!near(at(nx, ny), at(x, y), 24)) continue;
+      background[ny * w + nx] = 1;
+      queue.push([nx, ny]);
+    }
+  }
+  const buckets = new Map();
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const c = at(x, y);
+      if (background[y * w + x]) continue;
+      const k = (c[0] >> 4) * 256 + (c[1] >> 4) * 16 + (c[2] >> 4);
+      const e = buckets.get(k) ?? { n: 0, sum: [0, 0, 0] };
+      e.n++;
+      for (let i = 0; i < 3; i++) e.sum[i] += c[i];
+      buckets.set(k, e);
+    }
+  }
+  const ranked = [...buckets.values()].sort((a, b) => b.n - a.n).map((e) => e.sum.map((v) => Math.round(v / e.n)));
+  const lum = (c) => 0.3 * c[0] + 0.59 * c[1] + 0.11 * c[2];
+  const sat = (c) => (Math.max(...c) - Math.min(...c)) / 255;
+  const mid = ranked.filter((c) => lum(c) > 55 && lum(c) < 225);
+  const body = mid.find((c) => sat(c) > 0.18) ?? mid[0] ?? [180, 180, 180];
+  const accent = mid.find((c) => !near(c, body, 120) && sat(c) > 0.18) ?? mid.find((c) => !near(c, body, 90)) ?? body;
+  const belly = ranked.find((c) => lum(c) >= 200) ?? body.map((v) => Math.round(v + (255 - v) * 0.5));
+  const outline = ranked.find((c) => lum(c) < 55) ?? body.map((v) => Math.round(v * 0.3));
+  return { body, belly, accent, outline };
 }
