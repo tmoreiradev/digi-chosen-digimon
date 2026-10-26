@@ -8,6 +8,10 @@
 // The direction -> row mapping and the per-frame `d` durations are ported from the
 // upstream renderer: rows are quantised from atan2(dx, dz) into 8 steps, with row 0
 // facing the camera (+Z).
+//
+// A sprites.json entry can also come straight from a SpriteCollab-style folder: each animation
+// carries its own `file` (`Walk-Anim.png`…, frames at y = row * fh) under <SHEET_DIR>/<id>/, and
+// `portrait` names a face image (40x40) that menus and the HUD prefer.
 
 import { PACK } from "../content/pack.js";
 
@@ -38,6 +42,15 @@ export function hasSprite(id) {
   return !!(META && META[id]);
 }
 
+function loadImage(src) {
+  const img = new Image();
+  const entry = { img, ready: false };
+  img.addEventListener("load", () => { entry.ready = true; });
+  img.addEventListener("error", () => { entry.ready = false; });
+  img.src = src;
+  return entry;
+}
+
 function loadSheet(id) {
   let s = sheets.get(id);
   if (s) return s;
@@ -46,14 +59,33 @@ function loadSheet(id) {
     sheets.set(id, null);
     return null;
   }
-  const img = new Image();
-  const kind = meta.anims && Object.keys(meta.anims).length ? "pmd" : "front";
-  img.src = SPRITE_BASE + (kind === "pmd" ? `${SHEET_DIR}/${id}.png` : meta.fallback);
-  s = { img, meta, kind, ready: false };
-  img.addEventListener("load", () => { s.ready = true; });
-  img.addEventListener("error", () => { s.ready = false; });
+  const anims = meta.anims && Object.keys(meta.anims).length ? meta.anims : null;
+  const perAnim = anims && Object.values(anims).some((a) => a.file);
+  // "files": one image per animation; "pmd": one stacked sheet; "front": a static fallback;
+  // "none": only a portrait (the world falls back to the procedural sprite).
+  const kind = perAnim ? "files" : anims ? "pmd" : meta.fallback ? "front" : "none";
+  s = { meta, kind, ready: false, img: null, files: null, portrait: null };
+  if (kind === "files") {
+    s.files = {};
+    for (const [name, def] of Object.entries(anims)) s.files[name] = loadImage(`${SPRITE_BASE}${SHEET_DIR}/${id}/${def.file}`);
+    s.ready = true; // per animation: drawSprite checks the one it needs
+  } else if (kind !== "none") {
+    const one = loadImage(SPRITE_BASE + (kind === "pmd" ? `${SHEET_DIR}/${id}.png` : meta.fallback));
+    s.img = one.img;
+    Object.defineProperty(s, "ready", { get: () => one.ready });
+  }
+  if (meta.portrait) s.portrait = loadImage(SPRITE_BASE + meta.portrait);
   sheets.set(id, s);
   return s;
+}
+
+/** The image and the y of row 0 for one animation of a loaded sheet (null while it loads). */
+function animImage(s, chosen) {
+  if (s.kind === "files") {
+    const f = s.files[chosen.name];
+    return f?.ready && f.img.naturalWidth ? { img: f.img, y: 0 } : null;
+  }
+  return s.ready && s.img?.naturalWidth ? { img: s.img, y: chosen.def.y ?? 0 } : null;
 }
 
 /** Quantise a facing vector onto the sheet's 8 direction rows. */
@@ -118,7 +150,8 @@ function tintedFrame(img, fx, fy, fw, fh, tint) {
 export function drawSprite(ctx, id, sx, sy, opts = {}) {
   if (!META) return false;
   const s = loadSheet(id);
-  if (!s || !s.ready || !s.img.naturalWidth) return false;
+  if (!s || s.kind === "none" || !s.ready) return false;
+  if (s.kind !== "files" && !s.img.naturalWidth) return false;
 
   const alpha = opts.alpha ?? 1;
   if (alpha <= 0.01) return true;
@@ -147,7 +180,8 @@ export function drawSprite(ctx, id, sx, sy, opts = {}) {
   }
 
   const chosen = animFor(s.meta, opts.anim || "idle");
-  if (!chosen) { ctx.restore(); return false; }
+  const source = chosen && animImage(s, chosen);
+  if (!source) { ctx.restore(); return false; }
   const anim = chosen.def;
 
   const fw = anim.fw;
@@ -156,12 +190,15 @@ export function drawSprite(ctx, id, sx, sy, opts = {}) {
   const rows = Math.max(1, anim.rows ?? 8);
   const row = Math.min(rows - 1, directionRow(opts.dirX ?? 0, opts.dirZ ?? 1));
   const fx = frame * fw;
-  const fy = (anim.y ?? 0) + row * fh;
+  const fy = source.y + row * fh;
 
   // Anchor the lowest opaque pixel of the animation to the ground point, and
   // scale by the visible height so the transparent padding doesn't inflate it.
+  // The scale comes from the standing height (idle, else walk) so every animation keeps the same
+  // pixel size: a lying faint or a wide attack used to be blown up or shrunk to the target height.
   const bb = boundsFor(id, chosen.name) || [0, fh - 1];
-  const visH = Math.max(1, bb[1] - bb[0] + 1);
+  const ref = boundsFor(id, "idle") || bb;
+  const visH = Math.max(1, ref[1] - ref[0] + 1);
   const scale = pxH / visH;
   const pxW = fw * scale;
   const drawH = fh * scale;
@@ -176,10 +213,10 @@ export function drawSprite(ctx, id, sx, sy, opts = {}) {
   }
 
   if (opts.tint) {
-    const c = tintedFrame(s.img, fx, fy, fw, fh, opts.tint);
+    const c = tintedFrame(source.img, fx, fy, fw, fh, opts.tint);
     ctx.drawImage(c, 0, 0, fw, fh, left, top, pxW, drawH);
   } else {
-    ctx.drawImage(s.img, fx, fy, fw, fh, left, top, pxW, drawH);
+    ctx.drawImage(source.img, fx, fy, fw, fh, left, top, pxW, drawH);
   }
 
   ctx.restore();
@@ -189,7 +226,16 @@ export function drawSprite(ctx, id, sx, sy, opts = {}) {
 /** Draw the front-facing idle frame centred in a box (menus, HUD portrait). */
 export function paintSpritePortrait(ctx, id, cx, cy, box) {
   const s = loadSheet(id);
-  if (!s || !s.ready || !s.img.naturalWidth) return false;
+  if (!s) return false;
+  if (s.portrait) {
+    if (!s.portrait.ready || !s.portrait.img.naturalWidth) return false;
+    const img = s.portrait.img;
+    const sc = box / Math.max(img.naturalWidth, img.naturalHeight);
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(img, cx - (img.naturalWidth * sc) / 2, cy - (img.naturalHeight * sc) / 2, img.naturalWidth * sc, img.naturalHeight * sc);
+    return true;
+  }
+  if (s.kind === "none" || s.kind === "files" || !s.ready || !s.img.naturalWidth) return false;
   if (s.kind === "front") {
     const img = s.img;
     const bb = boundsFor(id, "front") || [0, img.naturalHeight - 1];
@@ -244,6 +290,16 @@ export function spriteAspect(id) {
 export function portraitStyle(id, box = 56) {
   const meta = META?.[id];
   if (!meta) return null;
+  if (meta.portrait) {
+    return {
+      width: `${box}px`,
+      height: `${box}px`,
+      backgroundImage: `url("${SPRITE_BASE}${meta.portrait}")`,
+      backgroundSize: `${box}px ${box}px`,
+      backgroundRepeat: "no-repeat",
+      imageRendering: "pixelated",
+    };
+  }
   if (meta.anims && Object.keys(meta.anims).length) {
     const chosen = animFor(meta, "idle");
     if (!chosen) return null;

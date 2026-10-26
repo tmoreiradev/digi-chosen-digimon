@@ -1265,3 +1265,23 @@ frase final nos três idiomas. Suíte **212 / 212**.
   prefixo de save próprio), 22 Digimon gerados por `scripts/make-digimon-data.mjs`, Ilha File, digivolução 12/26/40,
   arte de Pokémon removida (desenho procedural). No fork: `npm test` (conteúdo + playtest + idiomas) **14 / 14**, build,
   `check-bundle` e `npm run e2e` OK; Clássico 9/10 seeds sobrevivem 10 min; Torre fácil demais (anotado no README do fork).
+
+## 40. Fase 29 — Arte do NotSpriteCollab no fork Digimon (26/10/2026)
+
+- **Engine (`src/render/sprites.js`):** uma entrada de `sprites.json` pode vir de uma pasta no estilo SpriteCollab —
+  cada animação com seu `file` (`Walk-Anim.png`…, quadros em `y = linha × fh`) em `<SHEET_DIR>/<id>/` — e `portrait`
+  aponta um rosto 40×40 que o HUD, a escolha de parceiro e a DigiDex preferem. Espécie só com portrait desenha o
+  procedural no mapa. Correção junto: a escala de cada animação passou a vir da altura em pé (idle, senão walk); antes
+  cada animação era escalada pela própria altura visível e o desmaio deitado ficava gigante e o ataque minúsculo
+  (visto no navegador com as folhas do NSS; o Pokémon tinha o mesmo efeito, mais discreto).
+- **`scripts/nss.mjs`:** `import <pasta>` copia os portraits e as pastas de overworld usados (mapa espécie → id NSS)
+  para `assets/portraits` e `assets/sprites/<id>`; `spriteTables()` lê o `AnimData.xml` (com `CopyOf`), decodifica os
+  PNGs (RGBA 8 bits, sem dependência) para contar quadros/linhas e calcular as bordas, e gera `sprites.json` e
+  `sprite-bounds.json` dentro de `make-digimon-data.mjs`.
+- **Conteúdo:** linhas novas Guilmon → Growlmon → WarGrowlmon → Gallantmon e Salamon → Gatomon → Angewomon →
+  Magnadramon (ambas iniciais) e Gigimon selvagem; 10 golpes de assinatura; 31 portraits, 3 folhas animadas
+  (Guilmon, Gatomon, Gigimon). `CREDITS.md` com a autoria (NeroIntruder, Emmuffin, Charry).
+- **Verificação:** teste novo em `tests/digimon.test.mjs` (todo Digimon com portrait 40×40; as 3 folhas com
+  andar/parado/ataque/dano/desmaio, quadros e linhas preenchendo a imagem, uma duração por quadro, bordas dentro do
+  quadro). Suíte do fork **15 / 15**; build, `check-bundle` e `npm run e2e` OK. Navegador: portraits na escolha de
+  parceiro e no HUD; as 5 animações dos 3 desenhadas na mesma escala.

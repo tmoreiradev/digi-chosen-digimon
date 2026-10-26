@@ -76,3 +76,26 @@ test("the franchise words read Digimon in every language", () => {
     setLang(lang);
   }
 });
+
+test("NSS art: every Digimon has a portrait; Guilmon, Gatomon and Gigimon walk, idle, attack, get hurt and faint", async () => {
+  const { readPng, NSS_IDS } = await import("../scripts/nss.mjs");
+  for (const p of data.pokemon) {
+    assert.ok(NSS_IDS[p.id], `${p.name} has an NSS id`);
+    assert.equal(data.sprites[p.id]?.portrait, `portraits/${p.id}.png`, `${p.name} portrait`);
+    const face = readPng(path.join("assets", "portraits", `${p.id}.png`));
+    assert.deepEqual([face.w, face.h], [40, 40]);
+  }
+  for (const id of [23, 28, 31]) {
+    const anims = data.sprites[id].anims;
+    for (const name of ["walk", "idle", "attack", "hurt", "faint"]) {
+      const a = anims[name];
+      assert.ok(a, `${id}: ${name}`);
+      const img = readPng(path.join("assets", "sprites", String(id), a.file));
+      assert.equal(img.w, a.n * a.fw, `${id} ${name}: frames fill the width`);
+      assert.equal(img.h, a.rows * a.fh, `${id} ${name}: rows fill the height`);
+      assert.equal(a.d.length, a.n, `${id} ${name}: one duration per frame`);
+      const [top, bottom] = data.spriteBounds[id][name];
+      assert.ok(top >= 0 && bottom < a.fh && top < bottom, `${id} ${name}: bounds ${top}-${bottom} inside the frame`);
+    }
+  }
+});

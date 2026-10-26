@@ -8,9 +8,9 @@ export const PACK = {
   // localStorage prefix: this fork keeps its saves apart from the Pokémon game's.
   storagePrefix: "digi-chosen-digimon",
   // Sprite folders under assets/ (copied next to the bundle): animated sheets, then static fallbacks.
-  spriteDirs: ["sprites"], // empty for now: the procedural renderer draws every Digimon
+  spriteDirs: ["sprites", "portraits"], // NSS overworld folders (sprites/<id>/) and 40x40 faces; see scripts/nss.mjs
   // Partners every profile starts with (species ids).
-  starters: [1, 5, 9], // Agumon, Gabumon, Patamon
+  starters: [1, 5, 9, 23, 27], // Agumon, Gabumon, Patamon, Guilmon, Salamon
   // The sanctuary's legendary when a biome lists none (species id).
   fallbackLegendary: 22, // Devimon
   // Old Rod: the common and the rare catch it calls up (species ids; the floater shows their names).

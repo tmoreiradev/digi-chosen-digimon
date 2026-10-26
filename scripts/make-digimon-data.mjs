@@ -7,6 +7,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PACK } from "../src/content/pack.js";
+import { spriteTables } from "./nss.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DATA = path.join(ROOT, "src", "data");
@@ -51,6 +52,15 @@ const SPECIES = [
   [20, "goblimon", "Goblimon", 0, ["normal", "fire"], "physical", "green", null, 20, "Virus", "A goblin Digimon that hurls a Goblin Strike fireball."],
   [21, "leomon", "Leomon", 1, ["fighting"], "physical", "yellow", null, 21, "Vaccine", "A lion-warrior Digimon; the Fist of the Beast King is its pride."],
   [22, "devimon", "Devimon", 1, ["dark", "ghost"], "special", "black", null, 22, "Virus", "A fallen-angel Digimon that ruled File Island through the Black Gears."],
+  [23, "guilmon", "Guilmon", 0, ["fire", "dragon"], "physical", "red", null, 23, "Virus", "A reptile Digimon born from a boy's drawing; it fires the Pyro Sphere."],
+  [24, "growlmon", "Growlmon", 1, ["fire", "dragon"], "physical", "red", 23, 23, "Virus", "A dinosaur Digimon whose Pyro Blaster scorches the ground."],
+  [25, "wargrowlmon", "WarGrowlmon", 2, ["fire", "steel"], "physical", "red", 24, 23, "Virus", "A cyborg Digimon; its Atomic Blaster fires from its chest cannons."],
+  [26, "gallantmon", "Gallantmon", 3, ["fire", "fairy"], "physical", "white", 25, 23, "Virus", "A Royal Knight with the lance Gram and the shield Aegis."],
+  [27, "salamon", "Salamon", 0, ["fairy"], "special", "white", null, 27, "Vaccine", "A puppy Digimon whose Puppy Howl puts enemies to sleep."],
+  [28, "gatomon", "Gatomon", 1, ["fairy"], "fast", "white", 27, 27, "Vaccine", "A cat Digimon with the Holy Ring; strikes with the Lightning Paw."],
+  [29, "angewomon", "Angewomon", 2, ["fairy", "flying"], "special", "white", 28, 27, "Vaccine", "An archangel Digimon who looses the Celestial Arrow."],
+  [30, "magnadramon", "Magnadramon", 3, ["fairy", "dragon"], "special", "pink", 29, 27, "Vaccine", "A holy dragon, one of the Four Great Dragons; breathes the Fire Tornado."],
+  [31, "gigimon", "Gigimon", 0, ["fire"], "fast", "red", null, 31, "Virus", "An In-Training Digimon, small and restless, that spits a Hot Bubble."],
 ];
 
 // key, name, type, power, class, archetype (rules.moveOverrides), ailment, chance.
@@ -85,6 +95,16 @@ const MOVES = [
   ["goblin-strike", "Goblin Strike", "fire", 45, "special", "orb", "burn", 10],
   ["beast-king-fist", "Fist of the Beast King", "fighting", 80, "special", "orb", "knock", 20],
   ["death-claw", "Death Claw", "dark", 80, "special", "smite", "healblock", 20],
+  ["pyro-sphere", "Pyro Sphere", "fire", 45, "special", "orb", "burn", 15],
+  ["rock-breaker", "Rock Breaker", "dragon", 45, "physical", "strike", null, 0],
+  ["pyro-blaster", "Pyro Blaster", "fire", 75, "special", "beam", "burn", 20],
+  ["atomic-blaster", "Atomic Blaster", "steel", 95, "special", "beam", null, 0],
+  ["royal-saber", "Royal Saber", "fairy", 110, "physical", "dash", "charm", 15],
+  ["puppy-howl", "Puppy Howl", "fairy", 40, "special", "nova", "sleep", 25],
+  ["lightning-paw", "Lightning Paw", "fighting", 70, "physical", "strike", "stun", 15],
+  ["celestial-arrow", "Celestial Arrow", "fairy", 90, "special", "bolt", "charm", 20],
+  ["fire-tornado", "Fire Tornado", "fire", 110, "special", "vortex", "burn", 25],
+  ["hot-bubble", "Hot Bubble", "fire", 35, "special", "orb", "burn", 10],
 ];
 
 // Playable partners (roster): the starters and the File Island Rookies the player can unlock.
@@ -95,6 +115,8 @@ const ROSTER = [
   { id: 13, role: "Storm Caller", passive: "swarm", kit: ["super-shocker", "electric-thread", "electro-shocker", "claw-attack"], rank: "uncommon" },
   { id: 15, role: "Bramble Healer", passive: "photosynthesis", kit: ["poison-ivy", "needle-spray", "claw-attack", "boom-bubble"], rank: "uncommon" },
   { id: 17, role: "Tide Rider", passive: "torrent", kit: ["marching-fishes", "harpoon-torpedo", "horn-attack", "blue-blaster"], rank: "uncommon" },
+  { id: 23, role: "Wild Tamer", passive: "blaze", kit: ["pyro-sphere", "rock-breaker", "pyro-blaster", "royal-saber"], rank: "common", start: true },
+  { id: 27, role: "Holy Light", passive: "levitate", kit: ["puppy-howl", "lightning-paw", "celestial-arrow", "fire-tornado"], rank: "common", start: true },
 ];
 
 // The ultimate of each species, named after its signature attack.
@@ -104,6 +126,8 @@ const ULTIMATES = {
   9: "Boom Bubble", 10: "Heaven's Knuckle", 11: "Gate of Destiny", 12: "Seven Heavens",
   13: "Super Shocker", 14: "Mega Blaster", 15: "Poison Ivy", 16: "Needle Spray",
   17: "Marching Fishes", 18: "Harpoon Torpedo", 21: "Fist of the Beast King", 22: "Touch of Evil",
+  23: "Pyro Sphere", 24: "Pyro Blaster", 25: "Atomic Blaster", 26: "Royal Saber",
+  27: "Puppy Howl", 28: "Lightning Paw", 29: "Celestial Arrow", 30: "Fire Tornado", 31: "Hot Bubble",
 };
 
 const round = (v) => Math.max(10, Math.round(v));
@@ -161,7 +185,7 @@ rules.biomes = [{
   desc: "The island where the Chosen Children first landed — and where the Black Gears turned its Digimon wild.",
   types: ["fire", "ice", "electric", "grass", "water", "bug", "normal", "fighting"],
   late: ["dark"],
-  residents: [13, 15, 17, 19, 20],
+  residents: [13, 15, 17, 19, 20, 31],
   guardians: [[14, 16], [18, 21], [2, 6]],
   bosses: [14, 18, 2],
   legendaries: [22],
@@ -172,8 +196,9 @@ rules.tower.floors = rules.tower.floors.map((f, i) => ({
   guardian: { ...f.guardian, id: [14, 16, 18, 21, 2, 6, 22][i] ?? 22 },
 }));
 
-const sprites = {}; // no sheets yet: every Digimon is drawn by the procedural renderer
-const spriteBounds = {};
+// Art under assets/ (NSS portraits and overworld folders, see scripts/nss.mjs); species without
+// an overworld folder are drawn by the procedural renderer.
+const { sprites, bounds: spriteBounds } = spriteTables();
 
 const out = { pokemon, moves, learnsets, abilities, types, items, rules, sprites, "sprite-bounds": spriteBounds };
 for (const [name, table] of Object.entries(out)) {
