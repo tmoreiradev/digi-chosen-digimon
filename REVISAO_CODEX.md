@@ -1323,4 +1323,17 @@ frase final nos três idiomas. Suíte **212 / 212**.
 - **Verificação:** suíte do fork **19 / 19** (novo: recorte e "todo Digimon tem folha de andar de 8 direções"); build,
   `check-bundle` e `npm run e2e` OK. Revisão visual: pranchas com os 137 primeiros quadros antes/depois do recorte;
   no navegador, Agumon no mapa e 24 folhas desenhadas pelo `drawSprite` da engine de lado e de frente. Não verifiquei
-  em partida longa o empréstimo de ataque/dano/desmaio (o painel do navegador estava sem foco e o jogo não avançava).
+  em partida longa o empréstimo de ataque/dano/desmaio (o painel do navegador estava sem foco e o jogo não avançava) — feito na fase 32.
+
+## 43. Fase 32 — Ataque, dano e desmaio emprestados às folhas geradas, conferidos (27/10/2026)
+
+- **Como foi visto:** quadros de ataque, dano e desmaio do Greymon (folha gerada) desenhados pelo `drawCreature` real
+  numa tela de teste, com a linha do chão e o eixo dos pés; depois partida ao vivo no navegador (Agumon, nível 2, abates,
+  inimigos com flash de dano e tombo com fade), console sem erros.
+- **Defeitos achados e corrigidos em `creatureMotion`:** (1) o avanço do ataque usava `clock % 30`, mas jogador e
+  aliados passam o relógio de 0 a 120 em 0,22 s — o avanço repetia 4 vezes por ataque; agora é um só, com pico no meio.
+  (2) Avançava só no eixo X (para a direita ao atacar para cima/baixo); agora segue `dirX`/`dirZ`. (3) No desmaio o
+  corpo girava em torno dos pés e metade ficava abaixo do chão; agora sobe conforme tomba. Teste novo que falha no
+  código anterior.
+- **Verificação:** suíte do fork **20 / 20**; build, `check-bundle` e `npm run e2e` OK; quadros redesenhados depois da
+  correção (um avanço só; para baixo avança para baixo; deitado sobre o chão).

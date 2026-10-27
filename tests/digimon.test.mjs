@@ -159,3 +159,15 @@ test("every Digimon walks on the map: an NSS or generated 4x8 sheet with every c
     assert.equal(walk.rows, 8, `${p.name}: 8 directions`);
   }
 });
+
+test("borrowed motion: one lunge per attack toward the facing, and a fainted body lies on the ground", async () => {
+  const { creatureMotion } = await import("../src/render/renderer.js");
+  const at = (clock, dirX, dirZ) => creatureMotion({ anim: "attack", clock, dirX, dirZ }, 100);
+  assert.equal(Math.round(at(0, 1, 0).dx), 0);
+  assert.equal(Math.round(at(120, 1, 0).dx), 0);
+  assert.ok(at(60, 1, 0).dx > 15, "peak in the middle");
+  assert.ok(at(30, 1, 0).dx > 10, "no return to rest a quarter of the way (it used to restart every 30)");
+  assert.ok(at(60, 0, 1).dy > 5 && Math.abs(at(60, 0, 1).dx) < 1e-9, "facing down lunges down");
+  const lying = creatureMotion({ anim: "faint", clock: 60, dirX: 1 }, 100);
+  assert.ok(Math.abs(lying.rot) > 1.5 && lying.dy < -20, "rotated and lifted");
+});

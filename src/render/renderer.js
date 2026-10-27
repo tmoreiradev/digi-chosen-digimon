@@ -28,7 +28,7 @@ const PROP_CONFIG = {
  * How a creature without a drawn animation moves (pivot at the feet): a hop when walking,
  * breathing when idle, a lunge on attack, a shake when hurt and a fall when fainting.
  */
-function creatureMotion(opts, pxHeight) {
+export function creatureMotion(opts, pxHeight) {
   const t = (opts.clock ?? 0) * 0.25;
   const facing = (opts.dirX ?? 0) < 0 ? -1 : 1;
   let dx = 0;
@@ -41,14 +41,17 @@ function creatureMotion(opts, pxHeight) {
     sxk = 1 + Math.sin(t * 2) * 0.04;
     syk = 1 - Math.sin(t * 2) * 0.04;
   } else if (opts.anim === "attack") {
-    const k = Math.sin(Math.min(1, ((opts.clock ?? 0) % 30) / 30) * Math.PI);
-    dx = facing * k * pxHeight * 0.18;
+    // One lunge over the attack (callers run its clock from 0 to 120), toward where it faces.
+    const k = Math.sin(Math.min(1, Math.max(0, (opts.clock ?? 0) / 120)) * Math.PI);
+    dx = (opts.dirX ?? 0) * k * pxHeight * 0.18;
+    dy = (opts.dirZ ?? 0) * k * pxHeight * 0.1;
     sxk = 1 + k * 0.12;
     syk = 1 - k * 0.08;
   } else if (opts.anim === "hurt") {
     dx = Math.sin(t * 8) * pxHeight * 0.05;
   } else if (opts.anim === "faint") {
     rot = facing * Math.min(1, (opts.clock ?? 0) / 40) * (Math.PI / 2);
+    dy = -Math.abs(Math.sin(rot)) * pxHeight * 0.25; // lying down, the body rests on the ground, not half under it
   } else {
     syk = 1 + Math.sin(t * 0.5) * 0.03;
   }
