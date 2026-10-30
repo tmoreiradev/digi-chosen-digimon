@@ -68,10 +68,14 @@ test("the franchise words read Digimon in every language", () => {
     setLang("pt-BR");
     assert.equal(tr("Capture seu primeiro Pokémon."), "Capture seu primeiro Digimon.");
     assert.equal(tr("Pokédex"), "DigiDex");
+    const weak = "Bakemon está enfraquecido! Aperte E para lançar a bola";
+    assert.equal(tr(weak), "Bakemon está enfraquecido! Aperte E para usar o Digivice");
     setLang("en");
+    assert.equal(tr(weak), "Bakemon is weakened! Press E to use the Digivice");
     assert.match(tr("Roguelite survivor · Kanto · offline"), /File Island/);
     setLang("es");
     assert.equal(tr("Pokédex"), "DigiDex");
+    assert.equal(tr(weak), "¡Bakemon está debilitado! Pulsa E para usar el Digivice");
   } finally {
     setLang(lang);
   }
@@ -151,13 +155,36 @@ test("recell: a drawing drifted into the cell below goes back to its own cell, f
   assert.equal(alpha(50, 10), 0, "haze dropped");
 });
 
-test("every Digimon walks on the map: an NSS or generated 4x8 sheet with every cell drawn", () => {
+test("every Digimon walks on the map: an NSS or generated sheet of 8 directions with every cell drawn", async () => {
+  const { readPng } = await import("../scripts/nss.mjs");
   const sprites = JSON.parse(fs.readFileSync("src/data/sprites.json", "utf8"));
   for (const p of data.pokemon) {
     const walk = sprites[p.id]?.anims?.walk;
     assert.ok(walk, `${p.name} has a walk sheet`);
     assert.equal(walk.rows, 8, `${p.name}: 8 directions`);
+    const { w, px } = readPng(path.join("assets", "sprites", String(p.id), walk.file));
+    for (let r = 0; r < walk.rows; r++) {
+      for (let c = 0; c < walk.n; c++) {
+        let n = 0;
+        for (let y = 0; y < walk.fh; y++) for (let x = 0; x < walk.fw; x++) n += px[((r * walk.fh + y) * w + c * walk.fw + x) * 4 + 3] ? 1 : 0;
+        assert.ok(n >= 40, `${p.name} (${p.id}): walk row ${r}, frame ${c} is empty`);
+      }
+    }
   }
+});
+
+test("recell: drawings touching across rows are cut on the grid, and an empty direction borrows its mirror", async () => {
+  const { recellPixels } = await import("../scripts/recell.mjs");
+  const w = 32, h = 320; // one column, 8 rows of 32x40
+  const px = Buffer.alloc(w * h * 4);
+  const put = (x, y) => px.set([90, 90, 200, 255], (y * w + x) * 4);
+  // Rows 0 and 1: two bodies touching at the line (y 5 to 75), one 6-wide blob.
+  for (let y = 5; y <= 75; y++) for (let x = 10; x < 16; x++) put(x, y);
+  // Rows 2..6 drawn (a 10x10 block each, left-leaning in row 2 so the mirror is visible); row 7 empty.
+  for (let r = 2; r < 7; r++) for (let y = 20; y < 30; y++) for (let x = 4; x < 14; x++) put(x, r * 40 + y);
+  const out = recellPixels({ w, h, px });
+  const cell = (r) => { let n = 0; for (let y = 0; y < 40; y++) for (let x = 0; x < 32; x++) n += out[((r * 40 + y) * w + x) * 4 + 3] ? 1 : 0; return n; };
+  for (let r = 0; r < 8; r++) assert.ok(cell(r) >= 40, `row ${r} drawn`);
 });
 
 test("borrowed motion: one lunge per attack toward the facing, and a fainted body lies on the ground", async () => {

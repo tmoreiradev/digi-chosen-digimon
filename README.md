@@ -44,7 +44,9 @@ effect names here (items, passive kits) are listed there.
 
 ## Known gaps
 
-- Generated sheets have a walk cycle only (idle reuses it); the art is AI-made and uneven in places.
+- Generated sheets have a walk cycle only (idle reuses it); the art is AI-made and uneven in places — a few
+  (Tentomon, Togemon, Frigimon…) keep the same pose in every direction.
+- Guardian and totem kits still shout Pokémon move names ("Saraivada!").
 - No NSS portrait for ExVeemon, Paildramon, Ogremon, Datamon, Phantomon, BlackWarGreymon, Daemon, MaloMyotismon, MarineAngemon.
 - Still one region for all 140 Digimon.
 - Items, vitamins and passive kits still carry the engine's Pokémon names (Leftovers, Blaze…).

@@ -1337,3 +1337,23 @@ frase final nos três idiomas. Suíte **212 / 212**.
   código anterior.
 - **Verificação:** suíte do fork **20 / 20**; build, `check-bundle` e `npm run e2e` OK; quadros redesenhados depois da
   correção (um avanço só; para baixo avança para baixo; deitado sobre o chão).
+
+## 44. Fase 33 — Testes das folhas geradas: quadros vazios, chefes, partida longa (29/10/2026)
+
+- **Defeito achado:** o recorte da fase 31 deixou quadros vazios em 19 folhas (quase sempre a linha 7, baixo-esquerda;
+  no Devimon um quadro da linha "direita", e por isso ele sumia ao atacar e desmaiar, que tocam o último quadro).
+  Causa: desenhos que se encostam entre duas linhas viravam um blob só, levado inteiro para uma célula. Correção em
+  `scripts/recell.mjs`: blob maior que 1,25 célula é cortado pela grade; quadro que ainda fique vazio copia outro
+  quadro da linha ou a direção espelhada (8 − r). Recorte refeito a partir das folhas originais do Codex.
+  A conferência da fase 31 só olhou os dois primeiros quadros das duas primeiras linhas, e o teste "every cell drawn"
+  só contava linhas — agora confere cada quadro de cada folha; teste novo de desenhos encostados (falha no antigo).
+- **Texto:** o aviso de captura dizia "Aperte E para lançar a bola" (e "throw a ball"/"lanzar la Poké Ball"); o pacote
+  troca a frase por "usar o Digivice" nas três línguas, inclusive na ajuda. Teste com a frase do aviso (falha no antigo).
+- **Como foi visto:** as 137 folhas inteiras (8 direções × 4 quadros) em pranchas; chefes (Devimon, MetalSeadramon,
+  Apocalymon, Diaboromon, Omnimon) em pé, atacando e desmaiando pelo `drawCreature` real; partida de 4 min na Torre
+  num Edge headless contra o servidor local (script de rascunho, fora do repositório: HP mantido cheio, primeira carta
+  sempre), até o andar 6 — totens Bakemon, Phantomon e LadyDevimon e chefes Myotismon e VenomMyotismon desenhados
+  grandes e com os pés na sombra; nenhum erro na página.
+- **Verificação:** suíte do fork **21 / 21**; build, `check-bundle` e `npm run e2e` OK.
+- **Fica no README (lacunas):** algumas folhas geradas não mudam de pose entre direções; os kits de guardião ainda
+  gritam nomes de golpes Pokémon ("Saraivada!").

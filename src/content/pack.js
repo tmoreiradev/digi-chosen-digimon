@@ -40,9 +40,10 @@ export const PACK = {
   // Word swaps applied to every on-screen text after translation, per language: a fork maps the
   // franchise words the engine's text uses ("Pokémon", "Pokédex", "Poké Bola"…) to its own.
   terms: {
-    "pt-BR": { Pokédex: "DigiDex", "Poké Bola": "Digivice", Pokémon: "Digimon", Kanto: "Ilha File", Evoluiu: "Digievoluiu" },
-    en: { Pokédex: "DigiDex", "Poké Ball": "Digivice", Pokémon: "Digimon", Kanto: "File Island", Evolved: "Digivolved" },
-    es: { Pokédex: "DigiDex", "Poké Ball": "Digivice", Pokémon: "Digimon", Kanto: "Isla File", Evolucionó: "Digievolucionó" },
+    // The capture phrases first: "a bola"/"a ball" has no franchise word for the short swaps to catch.
+    "pt-BR": { "lançar a bola": "usar o Digivice", Pokédex: "DigiDex", "Poké Bola": "Digivice", Pokémon: "Digimon", Kanto: "Ilha File", Evoluiu: "Digievoluiu" },
+    en: { "throw a ball": "use the Digivice", Pokédex: "DigiDex", "Poké Ball": "Digivice", Pokémon: "Digimon", Kanto: "File Island", Evolved: "Digivolved" },
+    es: { "lanzar la Poké Ball": "usar el Digivice", Pokédex: "DigiDex", "Poké Ball": "Digivice", Pokémon: "Digimon", Kanto: "Isla File", Evolucionó: "Digievolucionó" },
   },
 };
 

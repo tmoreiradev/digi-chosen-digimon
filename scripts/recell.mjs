@@ -41,9 +41,20 @@ export function recellPixels({ w, h, px }, fw = 32, fh = 40) {
     }
     let sx = 0;
     let sy = 0;
+    let x0 = w, x1 = 0, y0 = h, y1 = 0;
     for (const p of blob) {
-      sx += p % w;
-      sy += Math.floor(p / w);
+      const x = p % w;
+      const y = Math.floor(p / w);
+      sx += x;
+      sy += y;
+      x0 = Math.min(x0, x); x1 = Math.max(x1, x);
+      y0 = Math.min(y0, y); y1 = Math.max(y1, y);
+    }
+    // Drawings that touch across a cell line form one blob bigger than a cell: cut it on the grid
+    // (moving it whole would leave the neighbour's cell empty).
+    if (x1 - x0 >= fw * 1.25 || y1 - y0 >= fh * 1.25) {
+      for (const p of blob) cells[Math.min(rows - 1, Math.floor(Math.floor(p / w) / fh)) * cols + Math.min(cols - 1, Math.floor((p % w) / fw))].push(p);
+      continue;
     }
     const c = Math.min(cols - 1, Math.floor(sx / blob.length / fw));
     const r = Math.min(rows - 1, Math.floor(sy / blob.length / fh));
@@ -70,7 +81,36 @@ export function recellPixels({ w, h, px }, fw = 32, fh = 40) {
       px.copy(out, (y * w + x) * 4, p * 4, p * 4 + 4);
     }
   });
+  fillEmptyCells(out, w, cols, rows, fw, fh);
   return out;
+}
+
+/** Cells left with (almost) nothing borrow a frame: another frame of the row, else the mirrored row. */
+function fillEmptyCells(px, w, cols, rows, fw, fh) {
+  const count = (c, r) => {
+    let n = 0;
+    for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) n += px[((r * fh + y) * w + c * fw + x) * 4 + 3] ? 1 : 0;
+    return n;
+  };
+  const copy = (fc, fr, tc, tr, mirror) => {
+    for (let y = 0; y < fh; y++) {
+      for (let x = 0; x < fw; x++) {
+        const from = ((fr * fh + y) * w + fc * fw + (mirror ? fw - 1 - x : x)) * 4;
+        px.copy(px, ((tr * fh + y) * w + tc * fw + x) * 4, from, from + 4);
+      }
+    }
+  };
+  const drawn = (c, r) => count(c, r) >= 40;
+  // PMD rows: down, down-right, right, up-right, up, up-left, left, down-left; 8 - r mirrors r.
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (drawn(c, r)) continue;
+      const other = [1, 2, 3].map((k) => (c + k) % cols).find((k) => drawn(k, r));
+      const mr = rows === 8 ? (8 - r) % 8 : -1;
+      if (other != null) copy(other, r, c, r, false);
+      else if (mr >= 0 && drawn(c, mr)) copy(c, mr, c, r, mr !== r);
+    }
+  }
 }
 
 /** Re-cut a sheet file in place (written back as 8-bit RGBA through ImageMagick). */
