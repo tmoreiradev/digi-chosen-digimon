@@ -1519,4 +1519,7 @@ frase final nos três idiomas. Suíte **212 / 212**.
 - **Verificação:** num clone limpo, `npm test` (37/37), build e `check-bundle` OK; os 843 PNGs citados em
   `sprites.json` existem com a mesma caixa de letras em `dist/` (o servidor do Pages diferencia maiúsculas; o Windows
   não); `dist/` servido por HTTP (`makeHandler` do `server.mjs`) jogado num Edge headless — sprites carregam, eventos
-  de zona rodam, sem erro na página. O workflow em si não rodou (só roda no GitHub).
+  de zona rodam, sem erro na página.
+- **No ar (30/10):** repositório tornado público e fonte do Pages em "GitHub Actions" a pedido do dono (pelo Chrome;
+  a confirmação por passkey foi dele). A 1.ª execução (push, antes dos ajustes) falhou como esperado; a 2.ª
+  (`workflow_dispatch`) passou. O site responde 200 com o jogo e os sprites e abre a tela de título no Chrome.
