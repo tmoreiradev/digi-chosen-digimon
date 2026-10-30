@@ -76,6 +76,37 @@ Relatório completo, com os números do bot por parceiro: `docs/PLAYTEST_2026-10
 - **Baixa:** ~~"evolua" no "Como jogar"~~ (fase 43); melhorias de golpe com números pequenos; dust acumula sem uso
   (saiu do HUD).
 
+## 2f. Playtest de 30 min analisado pelo Codex (30/10)
+
+Parecer completo em `reviews/codex-playtest-2026-10-30.md`.
+- **P1:**
+  - o HUD da Torre mostra "Ilha File · Zona 1", sem andar, onda ou inimigos restantes.
+- **P2, correções diretas:**
+  - relógio: a hora do mundo aparece grande e a duração da run pequena;
+  - barra de XP cheia no nível 50 (trocar por "Nível máximo");
+  - a loja vende cura com o HP cheio;
+  - surgem loja e eventos no santuário, durante a luta final;
+  - o indicador de ameaça diz "CALMO" durante a luta contra um chefe;
+  - tela de resultado: "níveis ganhos", "ouro restante" e o dano sem separador de milhar;
+  - eventos de zona com pouca presença na tela;
+  - ícones de portal e altar no minimapa.
+- **P2, a medir antes de mexer:**
+  - o chefe enfraquecido para captura se recupera 25–30 % várias vezes e alonga a luta;
+  - curas garantidas (pickups de 25 %, elites, ultimate) apagam o desgaste nas lutas contra chefes;
+  - longos trechos de baixa pressão no começo das zonas 2 e 3;
+  - o XP vem em rajadas (nível 33 → 44 em 14 s);
+  - limpeza lenta das últimas ondas da Torre;
+  - duração e identidade dos chefes (Myotismon se repete nas zonas 2 e 3);
+  - economia de ouro.
+- **P2, visual:**
+  - aliados e inimigos parecidos;
+  - áreas de ataque inimigo sem contraste;
+  - as cartas descrevem pouco o próprio impacto.
+- **P3:**
+  - banners de captura redundantes, e a troca de aliado com a equipe cheia não é anunciada;
+  - escala de pixel dos chefes e cenário sem variação;
+  - rótulos do resultado.
+
 ## 3. Funcionalidades futuras (do README e da especificação)
 
 - Santuários e mercadores ambulantes: o santuário do Clássico (fase 2) e a loja ambulante (fase 5) existem; ~~renovação do estoque~~ feita na fase 20 (24/10).

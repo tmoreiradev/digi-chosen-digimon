@@ -1670,3 +1670,18 @@ frase final nos três idiomas. Suíte **212 / 212**.
     exatamente ×1,2 no veneno; o invocador congelado ou enfraquecido não chama ninguém e, de volta à luta, chama 6;
     os rótulos viram " gold"/" kills" ao trocar para inglês.
   - Suíte do fork **53 / 53**.
+
+## 57. Fase 46 — Playtest de 30 minutos analisado pelo Codex (30/10/2026)
+
+- **Como foi feito:** o Codex não consegue rodar node nem navegador no sandbox do Windows, então a partida foi
+  gravada aqui e entregue a ele.
+  - Um piloto automático jogou 30 minutos reais no bundle (`dist/digi-chosen.html`, Edge headless, 1280×760,
+    Agumon, Normal). O resultado foi uma vitória no Clássico em 23:19, seguida de 6 min de Torre até o 4.º andar,
+    sem erro na página.
+  - A gravação teve uma captura de tela por minuto, um registro de estado (nível, HP, chefe, evento, banners e
+    cartas) e a tela de resultado.
+  - O Codex recebeu 17 capturas e o registro, e leu o código em modo somente leitura.
+  - Parecer em `reviews/codex-playtest-2026-10-30.md`: 1 achado P1, 18 P2 e 3 P3. Resumo e prioridades no
+    `BACKLOG.md` §2f.
+- **Não verificado:** nada do parecer foi corrigido nesta fase. Os achados de balanceamento vêm de um piloto que
+  foge; ele mesmo os separa dos artefatos do piloto.
