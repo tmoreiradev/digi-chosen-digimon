@@ -31,6 +31,7 @@ export const MODULE_ORDER = [
   "src/game/rules.js",
   "src/data/game-data.js",
   "src/game/director.js",
+  "src/game/zoneevents.js",
   "src/game/boss.js",
   "src/game/capture.js",
   "src/game/scripted.js",

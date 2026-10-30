@@ -25,7 +25,7 @@ test("the pack's species exist: starters are the roster's starters, the fallback
   const data = loadData();
   const rosterStarters = data.rules.roster.filter((r) => r.start).map((r) => r.id).sort((a, b) => a - b);
   assert.deepEqual([...PACK.starters].sort((a, b) => a - b), rosterStarters);
-  for (const id of [PACK.fallbackLegendary, PACK.oldRod.common, PACK.oldRod.rare]) assert.ok(data.get(id), `species ${id}`);
+  for (const id of [PACK.fallbackLegendary, PACK.oldRod.common, PACK.oldRod.rare, PACK.goldenRunner]) assert.ok(data.get(id), `species ${id}`);
   for (const dir of PACK.spriteDirs) assert.ok(fs.existsSync(path.join("assets", dir)), `assets/${dir}`);
   assert.ok(LANG_KEY.startsWith(PACK.storagePrefix + "."), "storage keys use the pack's prefix");
 });

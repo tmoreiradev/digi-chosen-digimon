@@ -583,7 +583,7 @@ export class Renderer {
       dirX,
       dirZ,
       alpha,
-      tint: e.flash > 0 ? `rgba(255,255,255,${e.flash * 0.75})` : e.shiny ? "rgba(255,215,0,0.22)" : null,
+      tint: e.flash > 0 ? `rgba(255,255,255,${e.flash * 0.75})` : e.golden ? "rgba(255,200,0,0.5)" : e.shiny ? "rgba(255,215,0,0.22)" : null,
     });
 
     // Capture prompt: a pulsing ring around a weakened target.
@@ -965,6 +965,7 @@ export class Renderer {
     this.drawTerrain(run);
     this.drawPickups(run);
     this.drawEvents(run);
+    this.drawStormMarks(run);
     this.drawEggs(run);
 
     // Entities sorted by depth.
@@ -985,6 +986,7 @@ export class Renderer {
     this.drawWeather(run);
     this.drawAmbient(run);
     this.drawNightTint(run);
+    this.drawZoneEvent(run);
     this.drawVignette();
     this.drawCompass(run);
   }
@@ -1061,6 +1063,49 @@ export class Renderer {
     g.addColorStop(1, "rgba(6,4,18,0.45)");
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, this.w, this.h);
+  }
+
+  /** Zone event light (src/game/zoneevents.js), fading in and out over a second; the storm's marks on the ground. */
+  drawZoneEvent(run) {
+    const ev = run.zoneEvent?.active;
+    if (!ev) return;
+    const ctx = this.ctx;
+    const k = Math.min(1, ev.t, ev.dur - ev.t);
+    const { w, h } = this;
+    if (ev.kind === "mist") {
+      const g = ctx.createRadialGradient(w / 2, h / 2, h * 0.1, w / 2, h / 2, h * 0.8);
+      g.addColorStop(0, `rgba(200,215,235,${0.12 * k})`);
+      g.addColorStop(1, `rgba(190,205,230,${0.6 * k})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    } else if (ev.kind === "eclipse") {
+      const g = ctx.createRadialGradient(w / 2, h / 2, h * 0.12, w / 2, h / 2, h * 0.75);
+      g.addColorStop(0, `rgba(30,6,20,${0.3 * k})`);
+      g.addColorStop(1, `rgba(8,0,10,${0.82 * k})`);
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+    } else if (ev.kind === "storm") {
+      ctx.fillStyle = `rgba(20,30,70,${0.3 * k})`;
+      ctx.fillRect(0, 0, w, h);
+    }
+  }
+
+  /** The storm's yellow marks, on the ground under the creatures: a bolt falls on each one. */
+  drawStormMarks(run) {
+    const ev = run.zoneEvent?.active;
+    if (ev?.kind !== "storm") return;
+    const ctx = this.ctx;
+    const r = 1.8 * this.zoom; // STRIKE_RADIUS in zoneevents.js
+    for (const m of ev.marks) {
+      const s = this.worldToScreen(m.x, m.z, 0);
+      ctx.strokeStyle = `rgba(255,208,48,${0.5 + 0.5 * Math.abs(Math.sin(m.t * 12))})`;
+      ctx.fillStyle = "rgba(255,208,48,0.18)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.ellipse(s.x, s.y, r, r * DEPTH, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
   }
 
   /** Day/night cycle: the world clock advances one in-game minute per second. */

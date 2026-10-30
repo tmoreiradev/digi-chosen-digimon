@@ -15,7 +15,7 @@ test("pack and tables agree: types, starters, legendary, Old Rod, sprite folder,
   assert.deepEqual(Object.keys(PACK.types).sort(), [...data.types.order].sort());
   const starters = data.rules.roster.filter((r) => r.start).map((r) => r.id).sort((a, b) => a - b);
   assert.deepEqual([...PACK.starters].sort((a, b) => a - b), starters);
-  for (const id of [PACK.fallbackLegendary, PACK.oldRod.common, PACK.oldRod.rare]) assert.ok(data.get(id), `species ${id}`);
+  for (const id of [PACK.fallbackLegendary, PACK.oldRod.common, PACK.oldRod.rare, PACK.goldenRunner]) assert.ok(data.get(id), `species ${id}`);
   for (const dir of PACK.spriteDirs) assert.ok(fs.existsSync(path.join("assets", dir)));
   assert.notEqual(PACK.storagePrefix, "pokebonk-clone", "saves apart from the Pokémon game");
 });

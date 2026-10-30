@@ -1455,3 +1455,36 @@ frase final nos três idiomas. Suíte **212 / 212**.
   respiração preservada; falha no código antigo, que não tinha `cutRaw`) e cobertura exigindo o idle desenhado
   nas 8 direções para os 140; suíte do fork **29 / 29**; build, `check-bundle` e `npm run e2e` OK; revisão visual
   dos 129 idles ao lado do andar; run de 60 s na Torre sem erro na página, Agumon parado no início com o idle.
+
+## 49. Fase 38 — Eventos de zona: Névoa, Tempestade, Eclipse e Numemon dourado (30/10/2026)
+
+- **O que mudou:** `src/game/zoneevents.js` (`ZoneEvents`, em `run.zoneEvent`; o nome `WorldEvents` já é o de
+  baú/loja/altar) com os quatro eventos de mundo do PokéBonk mapeados em `docs/MAPEAMENTO_POKEBONK.md`. A linha do
+  tempo do diretor ganhou um evento por zona: 240–420 s no Clássico, 120–220 s no Infinito. A Torre não tem eventos,
+  porque o diretor não roda lá.
+  - **Névoa espectral (45 s):** 3 + zona inimigos de Vento/Fantasma e XP ×2 nas orbes.
+  - **Tempestade elétrica (40 s):** a cada 1,4 s, uma marca amarela a até 6 u do jogador. 1,2 s depois cai o raio:
+    15 % do HP máximo no jogador que estiver na marca, e dano elétrico nos inimigos em volta.
+  - **Eclipse (40 s):** 3 + zona inimigos de Trevas/Fantasma, um deles shiny.
+  - **Pokémon dourado (25 s):** `PACK.goldenRunner` (Numemon), de elite. Foge do jogador e nunca morde. Solta uma
+    moeda por golpe (no máximo uma a cada 0,15 s) e 12 moedas quando cai. Se o tempo acaba, escapa.
+- **Interface e render:**
+  - o HUD mostra o nome e os segundos restantes ao lado do relógio da zona;
+  - `drawZoneEvent` muda a luz (névoa clara, eclipse escuro, céu de tempestade), com entrada e saída de 1 s;
+  - `drawStormMarks` põe as marcas no chão, sob as criaturas;
+  - o dourado ganha um tom amarelo forte.
+  - Os textos estão em pt-BR, com en/es em `lang-en.js`/`lang-es.js`; "Pokémon" vira "Digimon" por `PACK.terms`.
+- **Fora do escopo:** céu e nuvens próprios por evento (o render é 2D) e o "1.º spawn vira elite após 90 s" do eclipse.
+- **Verificação:**
+  - `tests/zoneevents.test.mjs` (6 testes, agora no `npm test`) cobre:
+    - a linha do tempo nos dois modos;
+    - na névoa, os tipos e o XP ×2, e o fim aos 45 s;
+    - na tempestade, o raio fere quem está na marca e não quem está a 5 u;
+    - no eclipse, um shiny;
+    - no dourado, a fuga, a moeda por golpe com limite, a chuva de moedas e a fuga aos 25 s;
+    - os textos em en/es sem "Pokémon".
+  - Suíte do fork: **35 / 35**. Build, `check-bundle` e `npm run e2e` OK.
+  - `director.test.mjs` (engine, dados Pokémon, fora do `npm test`) tem a mesma falha antes e depois da mudança.
+  - No bundle por `file://` num Edge headless, cada evento foi forçado na partida e capturado em tela, sem erro na
+    página. A névoa e o eclipse mudam a luz, as marcas da tempestade aparecem e o Numemon aparece dourado.
+  - O balanceamento não foi jogado por um humano.

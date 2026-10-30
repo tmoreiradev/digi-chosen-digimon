@@ -22,6 +22,7 @@ import {
 } from "./rules.js";
 import { Director, ZONE_SECS } from "./director.js";
 import { Boss } from "./boss.js";
+import { ZoneEvents } from "./zoneevents.js";
 import { Allies, Capture, CAPTURABLE_TIERS, isBossTier } from "./capture.js";
 import { statusKey, applyStatus, findReaction, applyReaction } from "./combat.js";
 import {
@@ -122,6 +123,7 @@ export class Run {
     this.capture = new Capture(this);
     this.allies = new Allies(this);
     this.events = new WorldEvents(this);
+    this.zoneEvent = new ZoneEvents(this); // mist, storm, eclipse, golden runner (director timeline)
     this.timers = [];
     this.tower = this.mode === "tower" ? new Tower(this) : null;
     this.stateEventPanel = false;
@@ -316,6 +318,7 @@ export class Run {
     this.allies.update(dt);
     this.boss.update(dt);
     this.events.update(dt);
+    this.zoneEvent.update(dt);
     if (this.tower) {
       this.tower.update(dt);
     } else if (this.mode === "classic") {
@@ -1205,6 +1208,7 @@ export class Run {
     if (def?.drain) this.healPlayer(amount * def.drain);
     if (s.lifesteal > 0 && Math.random() < 0.2) this.healPlayer(amount * s.lifesteal);
     itemOnHit(this, e, amount);
+    this.zoneEvent.onHit(e);
 
     // Status application
     if (def?.status && def.statusChance > 0 && Math.random() < def.statusChance * s.statusChance && applyStatus(this, e, def.status)) {
@@ -1415,8 +1419,9 @@ export class Run {
         }
         continue;
       }
-      e.vx = lerp(e.vx, (dx / d) * speed, Math.min(1, 6 * dt));
-      e.vz = lerp(e.vz, (dz / d) * speed, Math.min(1, 6 * dt));
+      const dir = e.flees ? -1 : 1; // the golden runner (zoneevents.js) runs away and never bites
+      e.vx = lerp(e.vx, (dir * dx / d) * speed, Math.min(1, 6 * dt));
+      e.vz = lerp(e.vz, (dir * dz / d) * speed, Math.min(1, 6 * dt));
       e.x += e.vx * dt;
       e.z += e.vz * dt;
       e.x = clamp(e.x, -half, half);
@@ -1428,7 +1433,7 @@ export class Run {
       const touch = e.radius + p.radius;
       // Charmed: common enemies stop attacking, the rest hit 40 % softer.
       const charmed = e.statuses.charm > 0;
-      if (d < touch && e.atkCd <= 0 && !(charmed && e.tier === "normal")) {
+      if (d < touch && e.atkCd <= 0 && !e.flees && !(charmed && e.tier === "normal")) {
         e.atkCd = 0.4;
         this.hitPlayer(e.dmg * this.difficulty.enemyDamage, e); // charm's -40 % applies in hitPlayer
         // push the player away a bit, never out of the arena
@@ -1457,6 +1462,7 @@ export class Run {
     if (this.tower) this.tower.countKill();
     this.player.streak++; // Cell Battery
     itemOnKill(this, e);
+    this.zoneEvent.onKill(e);
 
     const p = this.player;
     this.burst(e.x, e.y + 0.8, e.z, this.typeRgb(e.types[0]), 10, "star");
@@ -1522,7 +1528,7 @@ export class Run {
     this.opts.onPickup?.(pk);
     switch (pk.kind) {
       case "xp":
-        this.addXp(pk.value * p.stats.xpGain);
+        this.addXp(pk.value * p.stats.xpGain * this.zoneEvent.xpMul);
         break;
       case "coin":
         this.stats.gold += p.stats.gold;

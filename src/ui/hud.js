@@ -141,6 +141,8 @@ export class Hud {
     if (run.mode === "classic" && !run.sanctuary && !run.zoneBossSpawned) {
       zoneClock = run.director.finalSwarm ? ` · ${tr("Enxame final!")}` : ` · ⏳ ${fmtTime(Math.max(0, ZONE_SECS - run.stageTime))}`;
     }
+    const ze = run.zoneEvent?.active;
+    if (ze) zoneClock += ` · ${tr(ze.name)} ${Math.ceil(run.zoneEvent.left)}s`;
     this.runTimer.textContent = `${fmtTime(run.time)} · ${tr(run.sanctuary ? "Santuário" : "Zona " + run.stage)}${zoneClock}`;
 
     // Threat meter reflects enemy pressure over the stage.

@@ -8,7 +8,7 @@ sendo o jogo de Pokémon (regra do `AGENTS.md`); aqui só se separa o que é de 
 
 | Peça | Onde | O que é |
 |---|---|---|
-| Manifesto | `src/content/pack.js` (`PACK`) | constantes da franquia que a engine lê: prefixo do `localStorage`, pastas de sprites, iniciais, lendário de reserva, espécies da Old Rod, tipos (cor e nome em pt-BR/es; inglês = chave capitalizada), troca de palavras por idioma |
+| Manifesto | `src/content/pack.js` (`PACK`) | constantes da franquia que a engine lê: prefixo do `localStorage`, pastas de sprites, iniciais, lendário de reserva, espécies da Old Rod, o fujão dourado do evento de zona (`goldenRunner`), tipos (cor e nome em pt-BR/es; inglês = chave capitalizada), troca de palavras por idioma |
 | Tabelas | `src/data/*.json` | espécies, golpes, aprendizado, habilidades, tabela de tipos, itens, regras (`rules.json`), metadados de sprites e limites por quadro |
 | Arte | `assets/<PACK.spriteDirs>` | 1.ª pasta: folhas animadas `<id>.png` no formato PMD (8 direções × quadros); as demais: imagens estáticas citadas em `sprites.json` (`fallback`) |
 | Texto | `src/core/lang-en.js`, `lang-es.js` + `PACK.terms` | o texto da engine é pt-BR com os termos de Pokémon; um fork troca "Pokémon", "Pokédex", "Poké Bola"… por `PACK.terms` (aplicado depois da tradução, em todos os idiomas) e traduz as frases próprias |

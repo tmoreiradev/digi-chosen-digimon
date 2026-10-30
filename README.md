@@ -30,6 +30,9 @@ npm run make:data    # regenerate src/data from scripts/make-digimon-data.mjs
   MaloMyotismon, Apocalymon…) as bosses; 77 signature attacks; six regions (File Island, Server
   Continent, Net Ocean, Freezeland, Spiral Mountain, Infinity Mountain), each with its own wild cast,
   guardians and Mega villains. Vaccine beats Virus, Virus beats Data, Data beats Vaccine (±10 % damage).
+- **Zone events** — once per zone (`src/game/zoneevents.js`): Spectral Mist (XP ×2, Wind/Ghost foes),
+  Thunderstorm (lightning on yellow marks), Eclipse (Darkness/Ghost foes, one shiny) and a golden Numemon that
+  flees and drops coins on every hit.
 - **Art** — 40x40 portraits for all 140 Digimon (131 from NotSpriteCollab, 9 generated with the Codex CLI) and full animated overworld sheets for Guilmon,
   Gatomon and Gigimon, from NotSpriteCollab (see `CREDITS.md`; `node scripts/nss.mjs import <folder>`).
   The other 137 have 8-direction walk, idle (breathing), attack, hurt and faint sheets generated with the

@@ -15,6 +15,8 @@ export const PACK = {
   fallbackLegendary: 22, // Devimon
   // Old Rod: the common and the rare catch it calls up (species ids; the floater shows their names).
   oldRod: { common: 17, rare: 18 }, // Gomamon, Ikkakumon
+  // The golden runner of the zone event (src/game/zoneevents.js): flees and drops coins (species id).
+  goldenRunner: 104, // Numemon
   // Elemental types: colour (0xRRGGBB) and name per interface language (English defaults to the
   // capitalised key). The type chart itself is data (types.json).
   types: {

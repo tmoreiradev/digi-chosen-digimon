@@ -137,6 +137,8 @@ export class Director {
     this.timeline.push({ t: 520, kind: "stampede", done: false });
     this.timeline.push({ t: this.stage === 1 ? 330 : 270, kind: "elitewave", done: false });
     this.timeline.push({ t: 450, kind: "elitewave", done: false });
+    // One zone event (mist, storm, eclipse or golden runner) mid-zone; an endless zone lasts 300 s.
+    this.timeline.push({ t: this.run.mode === "classic" ? this.rng.range(240, 420) : this.rng.range(120, 220), kind: "zoneEvent", done: false });
     this.timeline.sort((a, b) => a.t - b.t);
   }
 
@@ -233,6 +235,9 @@ export class Director {
     switch (kind) {
       case "card":
         this.addCard();
+        break;
+      case "zoneEvent":
+        run.zoneEvent.startRandom();
         break;
       case "alpha": {
         const card = this.cards.length ? this.rng.pick(this.cards) : null;
