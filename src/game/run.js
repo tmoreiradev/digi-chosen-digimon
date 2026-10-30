@@ -433,8 +433,9 @@ export class Run {
 
     // Movement
     const speed = 4.6 * p.stats.moveSpeed * itemMoveMul(this) * (p.statuses.para > 0 ? 0.55 : 1) * (p.statuses.root > 0 ? 0.25 : 1);
-    let mx = 0;
-    let mz = 0;
+    // Keys give a direction; the touch joystick (ui/touch.js) an analog vector up to length 1.
+    let mx = input.moveX ?? 0;
+    let mz = input.moveZ ?? 0;
     if (input.left) mx -= 1;
     if (input.right) mx += 1;
     if (input.up) mz -= 1;
@@ -444,10 +445,12 @@ export class Run {
     if (p.adrenalineT > 0) p.adrenalineT -= dt;
     if (p.fluteT > 0) p.fluteT -= dt;
     if (len > 0) {
-      mx /= len;
-      mz /= len;
-      p.facingX = mx;
-      p.facingZ = mz;
+      if (len > 1) {
+        mx /= len;
+        mz /= len;
+      }
+      p.facingX = mx / Math.min(1, len);
+      p.facingZ = mz / Math.min(1, len);
     }
 
     const targetVx = mx * speed;

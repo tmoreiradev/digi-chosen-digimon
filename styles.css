@@ -137,6 +137,11 @@ kbd {
   position: fixed;
   inset: 0;
   z-index: 30;
+  pointer-events: none; /* empty during a run: touches go through to the joystick and buttons */
+}
+
+#screens > * {
+  pointer-events: auto;
 }
 
 .screen {
@@ -1420,8 +1425,6 @@ kbd {
   .pokedex-search input {
     width: 100%;
   }
-}
-
   .event-panel {
     width: 90vw;
     max-height: 80vh;
@@ -1602,4 +1605,127 @@ kbd {
   font-size: 13px;
   margin-top: 4px;
   opacity: 0.9;
+}
+
+/* ----- touch controls (src/ui/touch.js) ----- */
+.touch {
+  display: none;
+}
+.touch.on {
+  display: block;
+}
+.touch-zone {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 55%;
+  z-index: 25; /* above the canvas and HUD text, under panels (60+) */
+  touch-action: none;
+}
+.touch-base {
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  margin: -56px 0 0 -56px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  background: rgba(20, 16, 40, 0.25);
+  display: none;
+}
+.touch-base.on {
+  display: block;
+}
+.touch-knob {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 48px;
+  height: 48px;
+  margin: -24px 0 0 -24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.55);
+}
+.touch-actions {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  bottom: calc(120px + env(safe-area-inset-bottom));
+  z-index: 26;
+  display: grid;
+  grid-template-columns: 64px 64px;
+  gap: 10px;
+}
+.touch-top {
+  position: fixed;
+  right: max(14px, env(safe-area-inset-right));
+  top: 252px; /* under the minimap and the gold/dust/kills counters */
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.touch-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: rgba(30, 24, 60, 0.6);
+  color: #fff;
+  font: 700 22px system-ui, sans-serif;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.touch-btn:active {
+  background: rgba(255, 255, 255, 0.35);
+}
+.touch-top .touch-btn {
+  width: 44px;
+  height: 44px;
+  font-size: 16px;
+}
+.touch-btn.t-ult {
+  border-color: #ffd030;
+}
+
+/* Phones in portrait: the clock block goes under the player card, the move bar shrinks to fit. */
+@media (max-width: 600px) {
+  .hud-top {
+    top: 112px;
+    min-width: 0;
+    width: calc(100% - 140px);
+    left: 14px;
+    transform: none;
+    text-align: left;
+  }
+  .hud-regionline {
+    justify-content: flex-start;
+  }
+  .touch-top {
+    top: 206px;
+  }
+  .slot {
+    width: 72px;
+  }
+  .hud-ult {
+    min-width: 84px;
+  }
+}
+
+/* Phones in landscape: counters under the player card, map/pause beside the minimap, actions in the corner. */
+@media (max-height: 500px) {
+  .hud-res-wrap {
+    top: 108px;
+    left: 14px;
+    right: auto;
+    display: flex;
+  }
+  .touch-top {
+    top: 14px;
+    right: 132px;
+    flex-direction: row;
+  }
+  .touch-actions {
+    bottom: calc(14px + env(safe-area-inset-bottom));
+  }
 }

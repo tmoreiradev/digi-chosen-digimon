@@ -7,6 +7,7 @@ import { DIFFICULTIES } from "./game/rules.js";
 import { Tower } from "./game/tower.js";
 import { Renderer } from "./render/renderer.js";
 import { ZoneMap } from "./ui/zonemap.js";
+import { TouchControls } from "./ui/touch.js";
 import { initSprites } from "./render/sprites.js";
 import { Hud } from "./ui/hud.js";
 import { LevelUpPanel } from "./ui/levelup.js";
@@ -34,6 +35,8 @@ const input = {
   ultPressed: false,
   capture: false,
   capturePressed: false,
+  moveX: 0, // touch joystick (ui/touch.js), -1..1
+  moveZ: 0,
 };
 
 const KEY_MAP = {
@@ -93,6 +96,14 @@ async function boot() {
     if (ctx) state.music.ensure(ctx);
   });
 
+  state.touch = new TouchControls(input, {
+    onPause: () => {
+      if (!state.levelup.active && !state.run?.stateEventPanel && !state.zoneMap.active) togglePause();
+    },
+    onMap: () => {
+      if (!state.paused && !state.levelup.active && !state.run?.stateEventPanel && state.run?.state === "running") openZoneMap();
+    },
+  });
   state.screens.showTitle();
   // Expose the live state for debugging and automated playtests.
   globalThis.__PB__ = state;
@@ -343,6 +354,7 @@ const STEP = 1 / 60;
 
 function loop(now) {
   requestAnimationFrame(loop);
+  state.touch?.show(state.mode === "game" && state.run?.state === "running" && !state.paused && !state.levelup.active && !state.run.stateEventPanel);
   const dt = Math.min(0.1, (now - (state.lastTime || now)) / 1000);
   state.lastTime = now;
 

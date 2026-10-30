@@ -1523,3 +1523,41 @@ frase final nos três idiomas. Suíte **212 / 212**.
 - **No ar (30/10):** repositório tornado público e fonte do Pages em "GitHub Actions" a pedido do dono (pelo Chrome;
   a confirmação por passkey foi dele). A 1.ª execução (push, antes dos ajustes) falhou como esperado; a 2.ª
   (`workflow_dispatch`) passou. O site responde 200 com o jogo e os sprites e abre a tela de título no Chrome.
+
+## 52. Fase 41 — Controles de toque (30/10/2026)
+
+- **O que mudou:**
+  - `src/ui/touch.js` (`TouchControls`):
+    - joystick flutuante na metade esquerda da tela, que nasce onde o dedo toca;
+    - botões à direita para pular, dash, ultimate e interagir (E), além de mapa e pausa.
+  - Eles escrevem no mesmo `input` do teclado. O movimento analógico vai em `input.moveX` e `input.moveZ`.
+    `Run.updatePlayer` soma esses valores às teclas e só normaliza acima de 1, então meio curso do joystick dá meia
+    velocidade.
+  - Os controles só aparecem durante a run, sem pausa, sem cartas e sem painel aberto, e só em aparelho de toque
+    (`pointer: coarse` ou o primeiro `touchstart`).
+  - "Como jogar" ganhou uma linha sobre o toque (en/es incluídos).
+- **Achado 1:** uma `}` sobrando no `styles.css` (o `.event-panel` estava fora do seu `@media`) fazia o navegador
+  descartar o bloco seguinte, com as regras de HUD para tela estreita. No celular, o minimapa ficava com 132 px e a
+  barra de golpes passava da borda. Corrigido.
+- **Achado 2:** o `#screens` (camada dos menus) cobre a tela inteira mesmo vazio durante a partida e engolia os
+  toques. Agora ele tem `pointer-events: none` e só os filhos recebem eventos.
+- **Layout no celular:**
+  - em pé (≤ 600 px de largura): o bloco de relógio e região vai para baixo do cartão do jogador, e a barra de
+    golpes encolhe;
+  - deitado (≤ 500 px de altura): os contadores ficam sob o cartão, mapa e pausa ao lado do minimapa, e as ações
+    no canto.
+  - O `setPointerCapture` é protegido para o caso de o dedo sair no mesmo quadro.
+- **Verificação:**
+  - Testes novos em `tests/touch.test.mjs`, agora no `npm test`:
+    - vetor do joystick (zona morta, limite 1, direção);
+    - o jogador anda pelo vetor, com meia velocidade a meio curso; esse teste falha no `run.js` antigo;
+    - `styles.css` fecha todos os blocos; esse teste falha no CSS antigo.
+  - Suíte do fork **40 / 40**. Build, `check-bundle` e `npm run e2e` OK.
+  - No navegador do app, com emulação de celular (375×812 e 812×375, toque ativo), servido por `npm start`:
+    - os controles aparecem só na partida;
+    - um toque mantido no lado esquerdo moveu o Digimon 1,9 u em 0,8 s, e ele parou ao soltar;
+    - o botão de pulo fez o Digimon pular, e o de pausa abriu a pausa;
+    - as cartas de nível e a pausa cabem na tela em pé e respondem ao toque;
+    - o layout foi conferido em capturas de tela, em pé e deitado.
+- **Não verificado:** os toques foram eventos de ponteiro sintéticos, sem nenhum aparelho físico; o único erro no
+  console veio desses eventos. Sem mando (gamepad).

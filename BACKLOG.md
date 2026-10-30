@@ -67,7 +67,7 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 ## 2e. Playtest do site publicado (30/10)
 
 Relatório completo, com os números do bot por parceiro: `docs/PLAYTEST_2026-10-30.md`. Prioridades:
-- **Alta:** controles de toque e de mando; o Clássico parece fácil (o bot vence 47/51, sempre no nível 50); a Torre
+- **Alta:** ~~controles de toque~~ (fase 41; mando ainda não); o Clássico parece fácil (o bot vence 47/51, sempre no nível 50); a Torre
   varia muito por parceiro (Hawkmon 0/3, Gabumon e Renamon estouram o tempo); o golpe inicial `bolt` de Terriermon e
   Gabumon.
 - **Média:** aviso no altar do guardião; ritmo do começo; plug-ins de tipo que o parceiro não usa; tela de resultado

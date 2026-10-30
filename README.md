@@ -19,7 +19,8 @@ npm run make:data    # regenerate src/data from scripts/make-digimon-data.mjs
 
 Online: every push to `main` runs `.github/workflows/pages.yml` (tests, build, bundle check) and publishes
 `dist/` at https://tmoreiradev.github.io/digi-chosen-digimon/ — once the repository is public and
-Settings → Pages → Source is "GitHub Actions".
+Settings → Pages → Source is "GitHub Actions". On a phone or tablet the run shows touch controls (`src/ui/touch.js`):
+drag on the left half to move, buttons on the right for jump, dash, ultimate and interact, plus map and pause.
 
 ## What is here
 

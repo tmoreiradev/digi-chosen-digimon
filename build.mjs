@@ -49,6 +49,7 @@ export const MODULE_ORDER = [
   "src/ui/account.js",
   "src/ui/screens.js",
   "src/ui/zonemap.js",
+  "src/ui/touch.js",
   "src/audio/sfx.js",
   "src/audio/music.js",
   "src/main.js",

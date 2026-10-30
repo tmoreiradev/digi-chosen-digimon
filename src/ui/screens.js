@@ -89,7 +89,8 @@ export class Screens {
             el("li", {}, el("kbd", {}, "M"), " — mapa da zona (clique num ícone para segui-lo)"),
             el("li", {}, el("kbd", {}, "1"), el("kbd", {}, "2"), el("kbd", {}, "3"), " — escolher um upgrade ao subir de nível"),
             el("li", {}, el("kbd", {}, "E"), " — abrir baú/loja/altar, acordar o guardião no altar dele ou lançar a bola num alfa enfraquecido (captura)"),
-            el("li", {}, el("kbd", {}, "F"), " re-sortear · ", el("kbd", {}, "X"), " pular · ", el("kbd", {}, "Z"), " banir")
+            el("li", {}, el("kbd", {}, "F"), " re-sortear · ", el("kbd", {}, "X"), " pular · ", el("kbd", {}, "Z"), " banir"),
+            el("li", {}, "Na tela de toque: arraste no lado esquerdo para mover; os botões à direita pulam, dão dash, soltam a ultimate e interagem (E).")
           ),
           el("p", { class: "muted" }, "Seu Pokémon ataca sozinho. Colete as orbes azuis de XP para subir de nível, escolha upgrades e evolua antes que a horda te engula."),
           el("button", { class: "btn big red", onclick: () => this.showTitle() }, "Voltar")
