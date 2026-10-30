@@ -1651,3 +1651,22 @@ frase final nos três idiomas. Suíte **212 / 212**.
   - Suíte do fork **49 / 49**. Build, `check-bundle` e `npm run e2e` OK.
   - No navegador do app, em captura de tela: o invocador com a barra "Kokuwamon · Invocador" e o portal violeta ao
     lado do Digimon depois do guardião.
+
+## 56. Fase 45 — Correções da revisão do Codex (4c3e468..3826b81) (30/10/2026)
+
+- **Revisão:** `npm run review:codex -- 4c3e468..HEAD`, nas 9 fases desta sessão. Veredito: **Aprovado com
+  ressalvas**. Relatório em `reviews/codex-2026-10-30-23-20-4c3e468..HEAD.md`. Os quatro achados procediam:
+  1. **`statusDamage` sem efeito:** o Brasão da Bondade (Wormmon) e os upgrades de status prometiam mais dano de
+     status, mas a queimadura e o veneno ignoravam o valor. Agora o dano ao longo do tempo é multiplicado por ele
+     em `hitEnemy`.
+  2. **Invocador:** chamava reforços mesmo enfraquecido para captura, congelado ou dormindo. A invocação foi para
+     depois dessas verificações em `Boss.update`, então a regra de que um chefe parado não luta vale para ela também.
+  3. **Rótulos do HUD:** "ouro" e "abates" eram traduzidos só ao montar o HUD. Agora são refeitos quando o idioma
+     muda, como o resto do cartão.
+  4. **Teste das passivas fraco:** um teste novo confere, para cada parceiro, que cada atributo anunciado muda na
+     direção certa e que o bônus de tipo bate.
+- **Verificação:**
+  - `tests/review-fixes.test.mjs` (agora no `npm test`). Os três primeiros falham no código antigo: Bondade dá
+    exatamente ×1,2 no veneno; o invocador congelado ou enfraquecido não chama ninguém e, de volta à luta, chama 6;
+    os rótulos viram " gold"/" kills" ao trocar para inglês.
+  - Suíte do fork **53 / 53**.

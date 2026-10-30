@@ -67,10 +67,12 @@ export class Hud {
     // Left: gold and kills, each with its name (the dust counter is gone: nothing spends dust yet).
     this.gold = el("b", {});
     this.kills = el("b", {});
+    this.goldLabel = el("small", {});
+    this.killsLabel = el("small", {});
     this.root.append(
       el("div", { class: "hud-res-wrap" },
-        el("div", { class: "hud-res" }, "◈ ", this.gold, el("small", {}, " ouro")),
-        el("div", { class: "hud-res" }, "☠ ", this.kills, el("small", {}, " abates")))
+        el("div", { class: "hud-res" }, "◈ ", this.gold, this.goldLabel),
+        el("div", { class: "hud-res" }, "☠ ", this.kills, this.killsLabel))
     );
 
     // Bottom-left: move slots + ult
@@ -118,6 +120,8 @@ export class Hud {
       this.lastSpecies = p.speciesId;
       this.lastNickname = p.nickname;
       this.lastLang = getLang();
+      this.goldLabel.textContent = tr(" ouro");
+      this.killsLabel.textContent = tr(" abates");
       this.name.textContent = p.nickname ?? p.species.name;
       this.name.style.color = p.nickname ? "#ffd700" : "";
       this.shinyBadge.style.display = p.shiny ? "inline" : "none";

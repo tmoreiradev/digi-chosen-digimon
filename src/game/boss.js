@@ -174,17 +174,6 @@ export class Boss {
   }
 
   update(dt) {
-    // A Classic summoner calls 6 of the zone's species around itself now and every 7 s while it lives.
-    if (this.alive && this.summonT !== Infinity && (this.summonT -= dt) <= 0) {
-      this.summonT = 7;
-      const run = this.run;
-      const e = this.enemy;
-      const cards = run.director.cards;
-      for (let i = 0; i < 6 && cards.length; i++) {
-        const a = (i / 6) * Math.PI * 2;
-        run.spawnEnemy(run.rng.pick(cards).id, e.x + Math.cos(a) * 3, e.z + Math.sin(a) * 3, "swarm");
-      }
-    }
     if (!this.alive) {
       if (this.index >= 0 && !this.dead) {
         this.dead = true;
@@ -213,6 +202,18 @@ export class Boss {
       this.active = null;
       this.nextMove = null;
       return;
+    }
+
+    // A Classic summoner calls 6 of the zone's species around itself now and every 7 s while it fights
+    // (here, after the down and stopped checks: a weakened, frozen or sleeping summoner calls no one).
+    if (this.summonT !== Infinity && (this.summonT -= dt) <= 0) {
+      this.summonT = 7;
+      const run = this.run;
+      const cards = run.director.cards;
+      for (let i = 0; i < 6 && cards.length; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        run.spawnEnemy(run.rng.pick(cards).id, e.x + Math.cos(a) * 3, e.z + Math.sin(a) * 3, "swarm");
+      }
     }
 
     // Phases advance on HP thresholds.

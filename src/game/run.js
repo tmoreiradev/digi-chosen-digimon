@@ -1238,8 +1238,9 @@ export class Run {
     // Status application
     if (def?.status && def.statusChance > 0 && Math.random() < def.statusChance * s.statusChance && applyStatus(this, e, def.status)) {
       const key = statusKey(def.status);
-      if (key === "burn") e.burnDps = Math.max(e.burnDps ?? 0, dotBase * 0.06);
-      if (key === "poison") e.poisonDps = Math.max(e.poisonDps ?? 0, dotBase * 0.05);
+      // statusDamage (Crest of Kindness, status upgrades) scales the damage over time.
+      if (key === "burn") e.burnDps = Math.max(e.burnDps ?? 0, dotBase * 0.06 * s.statusDamage);
+      if (key === "poison") e.poisonDps = Math.max(e.poisonDps ?? 0, dotBase * 0.05 * s.statusDamage);
     }
 
     // Flinch (King's Rock): a chance to stop the target for half a second; bosses shrug it off.
