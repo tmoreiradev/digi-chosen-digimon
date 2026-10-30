@@ -1,11 +1,11 @@
 // Generates art with the Codex CLI (image generation) and drops it into assets/ in the layouts the
 // engine reads (SpriteCollab folders, 40x40 portraits).
 //
-//   node scripts/codex-sprites.mjs [--kind walk|portrait|action] [--only id,id] [--redo] [--workers 2] [--limit n]
+//   node scripts/codex-sprites.mjs [--kind walk|portrait|action|idle] [--only id,id] [--redo] [--workers 2] [--limit n]
 //
 // walk: 4x8 walk sheet (32x40 cells) from Guilmon's NSS sheet (style, grid, direction order) and the
 //   Digimon's portrait. action: 6x8 sheet from the Digimon's own walk sheet, cut into Attack (4 frames),
-//   Hurt and Faint. portrait: 40x40 face from two NSS portraits and the Digimon's walk sheet.
+//   Hurt and Faint. idle: 2x8 breathing sheet (rest, breath in) from the walk sheet, looped. portrait: 40x40 face from two NSS portraits and the Digimon's walk sheet.
 // Resumable: species that already have the art are skipped unless --redo (the old art stays when a
 // redo fails: every result is checked in a temp folder before it reaches assets/).
 // Every 5 sheets (and at the end) it regenerates src/data, so the game picks them up as they land.
@@ -17,7 +17,7 @@ import { spawn, execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { SPECIES, ROSTER } from "./digimon-species.mjs";
 import { readPng } from "./nss.mjs";
-import { recellFile } from "./recell.mjs";
+import { recellFile, cutRaw, writeRgba } from "./recell.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ASSETS = path.join(ROOT, "assets");
@@ -50,22 +50,29 @@ const rootOf = (key) => {
   return k;
 };
 const spriteDir = (id) => path.join(ASSETS, "sprites", String(id));
+// NSS folders draw their own idle and actions (and a Charge); generated ones need a walk sheet first.
+const nss = (id) => fs.existsSync(path.join(spriteDir(id), "Charge-Anim.png"));
 const has = {
   walk: (id) => fs.existsSync(path.join(spriteDir(id), "AnimData.xml")),
   portrait: (id) => fs.existsSync(path.join(ASSETS, "portraits", `${id}.png`)),
-  // NSS folders draw their own actions (they have an Idle-Anim.png); generated ones need a walk sheet first.
   action: (id) => fs.existsSync(path.join(spriteDir(id), "Attack-Anim.png")) || !fs.existsSync(path.join(spriteDir(id), "Walk-Anim.png")),
+  idle: (id) => fs.existsSync(path.join(spriteDir(id), "Idle-Anim.png")) || !fs.existsSync(path.join(spriteDir(id), "Walk-Anim.png")),
 }[kind];
 const queue = ids
   .filter((s) => (only ? only.has(s.id) : true))
   .filter((s) => (redo ? true : !has(s.id)))
-  .filter((s) => kind !== "action" || !fs.existsSync(path.join(spriteDir(s.id), "Idle-Anim.png")))
+  .filter((s) => !["action", "idle"].includes(kind) || !nss(s.id))
   .sort((a, b) => Number(!partnerFamilies.has(rootOf(a.key))) - Number(!partnerFamilies.has(rootOf(b.key))) || a.id - b.id)
   .slice(0, limit);
 
 const WALK_ANIMS = `    <Anim><Name>Walk</Name><Index>0</Index><FrameWidth>32</FrameWidth><FrameHeight>40</FrameHeight>
       <Durations><Duration>8</Duration><Duration>10</Duration><Duration>8</Duration><Duration>10</Duration></Durations></Anim>
-    <Anim><Name>Idle</Name><Index>1</Index><CopyOf>Walk</CopyOf></Anim>
+`;
+// Idle-Anim.png holds [rest, breath in]; the frames play rest, in, rest, in at a slow pace.
+const IDLE_ANIMS = `    <Anim><Name>Idle</Name><Index>1</Index><FrameWidth>32</FrameWidth><FrameHeight>40</FrameHeight>
+      <Durations><Duration>24</Duration><Duration>16</Duration></Durations></Anim>
+`;
+const IDLE_COPY = `    <Anim><Name>Idle</Name><Index>1</Index><CopyOf>Walk</CopyOf></Anim>
 `;
 const ACTION_ANIMS = `    <Anim><Name>Attack</Name><Index>2</Index><FrameWidth>32</FrameWidth><FrameHeight>40</FrameHeight>
       <Durations><Duration>4</Duration><Duration>4</Duration><Duration>6</Duration><Duration>8</Duration></Durations></Anim>
@@ -74,6 +81,11 @@ const ACTION_ANIMS = `    <Anim><Name>Attack</Name><Index>2</Index><FrameWidth>3
     <Anim><Name>Faint</Name><Index>4</Index><FrameWidth>32</FrameWidth><FrameHeight>40</FrameHeight>
       <Durations><Duration>30</Duration></Durations></Anim>
 `;
+/** AnimData for a generated folder: the sheets it has decide which anims are drawn. */
+const animsFor = (id) =>
+  WALK_ANIMS +
+  (fs.existsSync(path.join(spriteDir(id), "Idle-Anim.png")) ? IDLE_ANIMS : IDLE_COPY) +
+  (fs.existsSync(path.join(spriteDir(id), "Attack-Anim.png")) ? ACTION_ANIMS : "");
 const animData = (anims) => `<?xml version="1.0"?>
 <AnimData>
   <ShadowSize>1</ShadowSize>
@@ -93,6 +105,14 @@ function promptFor(s, refs) {
       `The third attached image is ${s.name}'s walk sheet in this game: match its colours and features.`,
       `Draw ${s.name}'s portrait in exactly that style: head and shoulders, facing slightly toward the viewer, neutral expression, recognisably ${s.name} as in the Digimon anime and games.`,
       save("portrait.png", "40x40"),
+    ].join("\n\n");
+  }
+  if (kind === "idle") {
+    return [
+      intro,
+      `The attached image is ${s.name}'s walk sheet in this game: 4 frames across and 8 rows, one per facing direction in this order: ${DIRECTIONS}. Each cell is 32x40 pixels.`,
+      `Create ${s.name}'s IDLE sheet for a cute all-ages game, in exactly the same style, colours, size and facing per row: 2 columns and the same 8 rows, cells of 32x40 (64x320 PNG), transparent background. Column 1: ${s.name} standing still at rest, feet together on the ground, the same pose as the walk sheet's first frame. Column 2: the very same pose a tiny bit taller, as if taking a calm breath — the head one pixel higher, ears, wings or tail lifted slightly; nothing else changes, so the two frames loop smoothly. Keep the whole body inside each cell, feet near the bottom.`,
+      save("idle.png", "64x320"),
     ].join("\n\n");
   }
   if (kind === "action") {
@@ -145,6 +165,23 @@ function emptyCells({ w, h, px }, fw, fh) {
   return n;
 }
 
+/** Lowest share of opaque pixels the two frames of a row share (an idle whose frames differ flickers). */
+function frameOverlap({ w, px }, fw, fh, rows) {
+  let min = 1;
+  for (let r = 0; r < rows; r++) {
+    let a = 0, b = 0, both = 0;
+    for (let y = 0; y < fh; y++) {
+      for (let x = 0; x < fw; x++) {
+        const p = px[((r * fh + y) * w + x) * 4 + 3] > 0;
+        const q = px[((r * fh + y) * w + fw + x) * 4 + 3] > 0;
+        a += p; b += q; both += p && q;
+      }
+    }
+    min = Math.min(min, both / Math.max(1, a, b));
+  }
+  return min;
+}
+
 const toPng32 = (src, size, out) =>
   execFileSync("magick", [src, "-filter", "point", "-resize", `${size}!`, "-define", "png:color-type=6", "-depth", "8", `PNG32:${out}`]);
 
@@ -162,23 +199,32 @@ async function one(s) {
     ref(path.join(ASSETS, "portraits", "1.png"), "style1.png"); // Agumon (NSS)
     ref(path.join(ASSETS, "portraits", "23.png"), "style2.png"); // Guilmon (NSS)
     ref(walkSheet, "sheet.png");
-  } else if (kind === "action") {
+  } else if (kind === "action" || kind === "idle") {
     ref(walkSheet, "sheet.png");
   } else {
     ref(REFERENCE, "reference.png");
     ref(path.join(ASSETS, "portraits", `${s.id}.png`), "portrait.png");
   }
   const code = await runCodex(dir, promptFor(s, refs), refs);
-  const made = path.join(dir, { walk: "walk.png", portrait: "portrait.png", action: "action.png" }[kind]);
+  // The idle is cut from the raw art: Codex's own 64x320 squeezes the model's wide cells to half width.
+  const made = path.join(dir, { walk: "walk.png", portrait: "portrait.png", action: "action.png", idle: "raw.png" }[kind]);
   if (!fs.existsSync(made)) {
     log(`FAIL ${kind} ${s.id} ${s.name}: nothing produced (codex exit ${code}; see ${dir})`);
     return false;
   }
   // The engine's PNG reader wants 8-bit RGBA: normalise whatever Codex saved (palette, 16-bit…), check, then copy.
-  const size = { walk: "128x320", portrait: "40x40", action: "192x320" }[kind];
+  const size = { walk: "128x320", portrait: "40x40", action: "192x320", idle: "64x320" }[kind];
   const out = path.join(dir, "out.png");
-  toPng32(made, size, out);
-  if (kind !== "portrait") recellFile(out);
+  let reached = 1;
+  if (kind === "idle") {
+    execFileSync("magick", [made, "-define", "png:color-type=6", "-depth", "8", `PNG32:${out}`]);
+    const cut = cutRaw(readPng(out), readPng(walkSheet), 2, 8);
+    reached = cut.reached;
+    writeRgba(out, 64, 320, cut.px);
+  } else {
+    toPng32(made, size, out);
+    if (kind !== "portrait") recellFile(out);
+  }
   const img = readPng(out);
   let opaque = 0;
   for (let i = 3; i < img.px.length; i += 4) opaque += img.px[i] > 0 ? 1 : 0;
@@ -186,6 +232,15 @@ async function one(s) {
   const area = img.w * img.h;
   if (opaque < area * (kind === "portrait" ? 0.3 : 0.05) || opaque > area * (kind === "portrait" ? 1 : 0.8) || empty > 0) {
     log(`FAIL ${kind} ${s.id} ${s.name}: bad image (${img.w}x${img.h}, ${opaque} opaque px, ${empty} empty cells; see ${dir})`);
+    return false;
+  }
+  const overlap = kind === "idle" ? frameOverlap(img, 32, 40, 8) : 1;
+  if (reached < 0.85) {
+    log(`FAIL ${kind} ${s.id} ${s.name}: too wide for the walk's height (${Math.round(reached * 100)}%; see ${dir})`);
+    return false;
+  }
+  if (overlap < 0.75) {
+    log(`FAIL ${kind} ${s.id} ${s.name}: the two frames differ (overlap ${overlap.toFixed(2)}; see ${dir})`);
     return false;
   }
   if (kind === "portrait") {
@@ -196,12 +251,14 @@ async function one(s) {
     crop(0, 128, "Attack-Anim.png");
     crop(128, 32, "Hurt-Anim.png");
     crop(160, 32, "Faint-Anim.png");
-    fs.writeFileSync(path.join(spriteDir(s.id), "AnimData.xml"), animData(WALK_ANIMS + ACTION_ANIMS));
+    fs.writeFileSync(path.join(spriteDir(s.id), "AnimData.xml"), animData(animsFor(s.id)));
+  } else if (kind === "idle") {
+    fs.copyFileSync(out, path.join(spriteDir(s.id), "Idle-Anim.png"));
+    fs.writeFileSync(path.join(spriteDir(s.id), "AnimData.xml"), animData(animsFor(s.id)));
   } else {
     fs.mkdirSync(spriteDir(s.id), { recursive: true });
     fs.copyFileSync(out, walkSheet);
-    const actions = fs.existsSync(path.join(spriteDir(s.id), "Attack-Anim.png"));
-    fs.writeFileSync(path.join(spriteDir(s.id), "AnimData.xml"), animData(WALK_ANIMS + (actions ? ACTION_ANIMS : "")));
+    fs.writeFileSync(path.join(spriteDir(s.id), "AnimData.xml"), animData(animsFor(s.id)));
   }
   fs.rmSync(dir, { recursive: true, force: true });
   log(`OK ${kind} ${s.id} ${s.name}`);

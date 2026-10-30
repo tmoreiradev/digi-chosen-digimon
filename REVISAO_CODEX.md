@@ -1430,3 +1430,28 @@ frase final nos três idiomas. Suíte **212 / 212**.
 - **Verificação:** o teste de cobertura agora exige todo quadro de andar, ataque, dano e desmaio desenhado para os 140;
   suíte do fork **28 / 28**; build, `check-bundle` e `npm run e2e` OK; navegador: `hasAnim` verdadeiro para
   ataque/dano/desmaio e uma run de 90 s na Torre sem erro na página, com o Agumon na pose do Pepper Breath.
+
+## 48. Fase 37 — Folhas de respiração parada (idle) geradas (30/10/2026)
+
+- **O que mudou:** `codex-sprites.mjs --kind idle` gera uma folha de 2 quadros (repouso, inspirando) × 8 direções a
+  partir da folha de andar; o AnimData de cada pasta gerada agora sai das folhas que ela tem (`animsFor`). As pastas do
+  NSS passam a ser reconhecidas pelo `Charge-Anim.png` (antes era o `Idle-Anim.png`, que as geradas agora têm).
+  **129 dos 137** Digimon gerados têm idle próprio; 8 seguem com o ciclo de andar parado (lista no BACKLOG).
+- **Achado 1 — tamanho:** o Codex desenhava o parado ~10 % menor que o andar; como a escala do sprite vem do idle,
+  o Digimon "cresceria" ao começar a andar. **Achado 2 — achatado:** a revisão do primeiro lote mediu largura e
+  altura de cada idle contra o andar e achou 56 de 122 com metade da largura: o modelo de imagem não faz folhas 1:5
+  (entrega ~793×1983, quadros largos) e o Codex espremia isso em 64×320. **Achado 3 — fragmentos:** recortar a arte
+  bruta numa grade regular trazia pedaços dos vizinhos (os desenhos cruzam as linhas da grade).
+- **Correção:** `cutRaw` (`scripts/recell.mjs`) recorta o `raw.png` do modelo: cada desenho conectado vai para a
+  célula do seu centroide, ciscos (< 3 % do maior desenho da célula) saem, e cada linha é escalada inteira, sem
+  distorcer, até a altura mediana da mesma linha no andar, pés na linha de sempre. Portões: altura alcançada ≥ 85 %
+  (desenho largo demais encolheria), sobreposição dos 2 quadros ≥ 75 % (sem pisca), nenhuma célula vazia. 19 idles
+  saíram das pastas temporárias das tentativas falhas, sem nova chamada ao Codex; 51 foram regenerados; 4 idles
+  achatados que não passaram na regeneração foram removidos (voltam ao ciclo de andar).
+- **Moderação:** o primeiro pedido ("breathing in — the chest…") foi barrado na saída; virou "cute all-ages game".
+- **Teste do triângulo instável:** falhou 1 vez em 4 (crítico ou esquiva sorteados no golpe medido); agora fixa o
+  sorteio (`withRandom`), 6/6 depois.
+- **Verificação:** testes novos — recorte da arte bruta (proporção mantida, mesma altura do andar, pés no lugar,
+  respiração preservada; falha no código antigo, que não tinha `cutRaw`) e cobertura exigindo o idle desenhado
+  nas 8 direções para os 140; suíte do fork **29 / 29**; build, `check-bundle` e `npm run e2e` OK; revisão visual
+  dos 129 idles ao lado do andar; run de 60 s na Torre sem erro na página, Agumon parado no início com o idle.

@@ -8,7 +8,7 @@
   `npm run make:data`.
 - **Folhas de andar dos outros 137 Digimon:** geradas com o Codex CLI (geração de imagem da OpenAI) a partir da folha
   do Guilmon acima como referência de estilo e do portrait de cada Digimon (`scripts/codex-sprites.mjs`).
-- **Folhas de ação (ataque, dano, desmaio) desses 137 e os portraits de ExVeemon, Paildramon, Ogremon, Datamon,
+- **Folhas de ação (ataque, dano, desmaio) e de respiração parada desses 137 e os portraits de ExVeemon, Paildramon, Ogremon, Datamon,
   Phantomon, BlackWarGreymon, Daemon, MaloMyotismon e MarineAngemon:** também geradas com o Codex CLI, a partir da
   folha de andar de cada um (e dos portraits do NSS como referência de estilo).
 - Digimon é marca de Bandai / Toei Animation / Akiyoshi Hongo; este projeto não é afiliado a eles.

@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { PACK } from "../src/content/pack.js";
 import { tr, setLang, getLang } from "../src/core/lang.js";
-import { loadData, makeRun } from "./_helpers.mjs";
+import { loadData, makeRun, withRandom } from "./_helpers.mjs";
 
 const data = loadData();
 
@@ -155,11 +155,11 @@ test("recell: a drawing drifted into the cell below goes back to its own cell, f
   assert.equal(alpha(50, 10), 0, "haze dropped");
 });
 
-test("every Digimon walks, attacks, gets hurt and faints on the map: 8 directions with every cell drawn", async () => {
+test("every Digimon walks, stands, attacks, gets hurt and faints on the map: 8 directions with every cell drawn", async () => {
   const { readPng } = await import("../scripts/nss.mjs");
   const sprites = JSON.parse(fs.readFileSync("src/data/sprites.json", "utf8"));
   for (const p of data.pokemon) {
-    for (const kind of ["walk", "attack", "hurt", "faint"]) {
+    for (const kind of ["walk", "idle", "attack", "hurt", "faint"]) {
       const a = sprites[p.id]?.anims?.[kind];
       assert.ok(a, `${p.name} has a ${kind} sheet`);
       assert.equal(a.rows, 8, `${p.name}: 8 directions`);
@@ -274,7 +274,7 @@ test("Vaccine beats Virus, Virus beats Data, Data beats Vaccine — both ways, F
   const hit = (attr) => {
     const e = run.spawnEnemy(byAttr(attr), 30, 30);
     e.hp = e.maxHp = 1e9;
-    run.hitEnemy(e, 100, { cls: "physical", type: "normal" }, true);
+    withRandom(0.99, () => run.hitEnemy(e, 100, { cls: "physical", type: "normal" }, true)); // no crit roll
     return 1e9 - e.hp;
   };
   const vsVirus = hit("virus");
@@ -285,7 +285,7 @@ test("Vaccine beats Virus, Virus beats Data, Data beats Vaccine — both ways, F
     p.hp = p.maxHp = 1e6;
     p.iframes = 0;
     const src = run.spawnEnemy(byAttr(attr), 40, 40);
-    run.hitPlayer(100, src);
+    withRandom(0.99, () => run.hitPlayer(100, src)); // no dodge roll
     return 1e6 - p.hp;
   };
   assert.ok(hurt("virus") < hurt("data"), "a Virus hurts a Vaccine less than a Data does");
@@ -330,4 +330,28 @@ test("recell: an empty frame borrows its nearest neighbour, left first (an attac
   const out = recellPixels({ w, h, px });
   const red = (c) => { for (let y = 0; y < 40; y++) for (let x = 0; x < 32; x++) { const i = (y * w + c * 32 + x) * 4; if (out[i + 3]) return out[i] > 150; } return false; };
   assert.ok(red(2) && red(3), "frames 3 and 4 copy the attack frame before them");
+});
+
+test("idle from raw art: each drawing keeps its shape and stands as tall as the walk, feet on the same row", async () => {
+  const { cutRaw } = await import("../scripts/recell.mjs");
+  // The walk: one row of 4 frames 10 px wide, 30 px tall, feet on row 38.
+  const walk = { w: 128, h: 40, px: Buffer.alloc(128 * 40 * 4) };
+  for (let c = 0; c < 4; c++) for (let y = 9; y <= 38; y++) for (let x = 11; x < 21; x++) walk.px.set([200, 100, 0, 255], (y * 128 + c * 32 + x) * 4);
+  // The raw art: 2 wide cells of 400x250, each drawing 60 x 180 (1:3), the second 6 px taller (breathing in).
+  const raw = { w: 800, h: 250, px: Buffer.alloc(800 * 250 * 4) };
+  for (let c = 0; c < 2; c++) for (let y = 40 - c * 6; y < 220; y++) for (let x = 170; x < 230; x++) raw.px.set([0, 90, 200, 255], (y * 800 + c * 400 + x) * 4);
+  const { px, reached } = cutRaw(raw, walk, 2, 1);
+  assert.equal(reached, 1);
+  const extent = (c) => {
+    const xs = [], ys = [];
+    for (let y = 0; y < 40; y++) for (let x = 0; x < 32; x++) if (px[(y * 64 + c * 32 + x) * 4 + 3]) { xs.push(x); ys.push(y); }
+    return { w: Math.max(...xs) - Math.min(...xs) + 1, h: Math.max(...ys) - Math.min(...ys) + 1, feet: Math.max(...ys) };
+  };
+  const rest = extent(0);
+  const breath = extent(1);
+  assert.equal(rest.h, 30, "as tall as the walk");
+  assert.equal(rest.w, 10, "1:3 kept (squeezing the raw art into 64 px would make it 5 wide)");
+  assert.equal(rest.feet, 38);
+  assert.equal(breath.feet, 38);
+  assert.equal(breath.h, 31, "the breath keeps its extra height, at the same scale");
 });
