@@ -155,19 +155,21 @@ test("recell: a drawing drifted into the cell below goes back to its own cell, f
   assert.equal(alpha(50, 10), 0, "haze dropped");
 });
 
-test("every Digimon walks on the map: an NSS or generated sheet of 8 directions with every cell drawn", async () => {
+test("every Digimon walks, attacks, gets hurt and faints on the map: 8 directions with every cell drawn", async () => {
   const { readPng } = await import("../scripts/nss.mjs");
   const sprites = JSON.parse(fs.readFileSync("src/data/sprites.json", "utf8"));
   for (const p of data.pokemon) {
-    const walk = sprites[p.id]?.anims?.walk;
-    assert.ok(walk, `${p.name} has a walk sheet`);
-    assert.equal(walk.rows, 8, `${p.name}: 8 directions`);
-    const { w, px } = readPng(path.join("assets", "sprites", String(p.id), walk.file));
-    for (let r = 0; r < walk.rows; r++) {
-      for (let c = 0; c < walk.n; c++) {
-        let n = 0;
-        for (let y = 0; y < walk.fh; y++) for (let x = 0; x < walk.fw; x++) n += px[((r * walk.fh + y) * w + c * walk.fw + x) * 4 + 3] ? 1 : 0;
-        assert.ok(n >= 40, `${p.name} (${p.id}): walk row ${r}, frame ${c} is empty`);
+    for (const kind of ["walk", "attack", "hurt", "faint"]) {
+      const a = sprites[p.id]?.anims?.[kind];
+      assert.ok(a, `${p.name} has a ${kind} sheet`);
+      assert.equal(a.rows, 8, `${p.name}: 8 directions`);
+      const { w, px } = readPng(path.join("assets", "sprites", String(p.id), a.file));
+      for (let r = 0; r < a.rows; r++) {
+        for (let c = 0; c < a.n; c++) {
+          let n = 0;
+          for (let y = 0; y < a.fh; y++) for (let x = 0; x < a.fw; x++) n += px[((r * a.fh + y) * w + c * a.fw + x) * 4 + 3] ? 1 : 0;
+          assert.ok(n >= 40, `${p.name} (${p.id}): ${kind} row ${r}, frame ${c} is empty`);
+        }
       }
     }
   }
@@ -314,4 +316,18 @@ test("six regions of the Digital World: every Mega villain rules exactly one, ca
   } finally {
     setLang(lang);
   }
+});
+
+test("recell: an empty frame borrows its nearest neighbour, left first (an attack frame, not the faint column)", async () => {
+  const { recellPixels } = await import("../scripts/recell.mjs");
+  const w = 192, h = 40; // one row of an action sheet: 4 attack frames, hurt, faint
+  const px = Buffer.alloc(w * h * 4);
+  const block = (c, colour) => { for (let y = 20; y < 30; y++) for (let x = 10; x < 20; x++) px.set([...colour, 255], (y * w + c * 32 + x) * 4); };
+  block(0, [200, 0, 0]);
+  block(1, [210, 0, 0]);
+  block(4, [0, 0, 200]); // hurt
+  block(5, [0, 200, 0]); // faint
+  const out = recellPixels({ w, h, px });
+  const red = (c) => { for (let y = 0; y < 40; y++) for (let x = 0; x < 32; x++) { const i = (y * w + c * 32 + x) * 4; if (out[i + 3]) return out[i] > 150; } return false; };
+  assert.ok(red(2) && red(3), "frames 3 and 4 copy the attack frame before them");
 });

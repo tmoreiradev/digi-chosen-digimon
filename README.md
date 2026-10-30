@@ -30,11 +30,11 @@ npm run make:data    # regenerate src/data from scripts/make-digimon-data.mjs
   MaloMyotismon, Apocalymon…) as bosses; 77 signature attacks; six regions (File Island, Server
   Continent, Net Ocean, Freezeland, Spiral Mountain, Infinity Mountain), each with its own wild cast,
   guardians and Mega villains. Vaccine beats Virus, Virus beats Data, Data beats Vaccine (±10 % damage).
-- **Art** — 40x40 portraits for 131 of the 140 Digimon and full animated overworld sheets for Guilmon,
+- **Art** — 40x40 portraits for all 140 Digimon (131 from NotSpriteCollab, 9 generated with the Codex CLI) and full animated overworld sheets for Guilmon,
   Gatomon and Gigimon, from NotSpriteCollab (see `CREDITS.md`; `node scripts/nss.mjs import <folder>`).
-  The other 137 have an 8-direction walk sheet generated with the Codex CLI in the same PMD style
-  (`node scripts/codex-sprites.mjs`, resumable; `scripts/recell.mjs` re-cuts drawings that drift off
-  the grid); the renderer animates their attack, hurt and faint from the walk frames.
+  The other 137 have 8-direction walk, attack, hurt and faint sheets generated with the Codex CLI in the
+  same PMD style (`node scripts/codex-sprites.mjs --kind walk|action|portrait`, resumable;
+  `scripts/recell.mjs` re-cuts drawings that drift off the grid).
 
 ## Engine and the Pokémon original
 
@@ -46,9 +46,8 @@ effect names here (items, passive kits) are listed there.
 
 ## Known gaps
 
-- Generated sheets have a walk cycle only (idle reuses it); the art is AI-made and uneven in places — a few
-  (Tentomon, Togemon, Frigimon…) keep the same pose in every direction.
-- No NSS portrait for ExVeemon, Paildramon, Ogremon, Datamon, Phantomon, BlackWarGreymon, Daemon, MaloMyotismon, MarineAngemon.
+- Generated sheets have no idle cycle (idle reuses the walk); the art is AI-made and uneven in places — some
+  action sheets keep a stray speck of the move's effect in a neighbouring frame.
 - Passive kits keep the engine's keys (blaze, torrent…); their names never reach the screen.
 - Balance is bot-tuned only: the tower bot wins 3 of 5 seeds in 8.5–10 min (level 25–38); Classic: 10 of 10 seeds
   survive 10 min (level 24–35).

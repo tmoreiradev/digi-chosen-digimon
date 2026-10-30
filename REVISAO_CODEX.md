@@ -1412,3 +1412,21 @@ frase final nos três idiomas. Suíte **212 / 212**.
 - **Verificação:** suíte do fork **27 / 27** (novos: triângulo nos dois sentidos — falha sem o gancho na engine —,
   regiões, playtest por região); build, `check-bundle` e `npm run e2e` OK; navegador: tela de regiões com os 6 nomes e
   textos em pt, cartões com Vacina/Dados, run no Continente Server com o chão de deserto.
+
+## 47. Fase 36 — Lote de arte: folhas de ação, portraits e Numemon (30/10/2026)
+
+- **Lote:** com o Codex de volta, `codex-sprites.mjs` gerou os 9 portraits que o NSS não tem (o do Paildramon na
+  segunda tentativa; a primeira não produziu imagem), refez a folha de andar do Numemon (104) e gerou folhas de ação para
+  os 137 Digimon de folha gerada (136 + Agumon refeito), sem nenhuma falha. `sprites.json` passa a ter
+  `attack`/`hurt`/`faint` desenhados para os 140; o movimento emprestado do andar só sobra para quem não tem folha.
+- **Moderação e prompt:** o primeiro pedido de ação ("attack/hurt/fainted") foi barrado pela moderação da OpenAI; o
+  prompt virou uma folha de poses de jogo para todas as idades (golpe especial, recuo de surpresa, deitado
+  dormindo). Portraits pedem fundo em degradê pastel (o primeiro do ExVeemon veio branco).
+- **Correção no recorte:** `recell` preenchia um quadro de ataque vazio com o primeiro quadro desenhado da linha — às
+  vezes o desmaio. Agora usa o vizinho mais próximo, esquerda primeiro. Teste novo, que falha no código antigo.
+- **Revisão visual:** mosaico das 137 folhas (ataque + dano + desmaio, 8 direções) e dos 9 portraits, olhado um a um:
+  todas viram, com o golpe de cada um; poucas (45, 76, 89, 106) trazem um resto de efeito num quadro vizinho — no
+  BACKLOG.
+- **Verificação:** o teste de cobertura agora exige todo quadro de andar, ataque, dano e desmaio desenhado para os 140;
+  suíte do fork **28 / 28**; build, `check-bundle` e `npm run e2e` OK; navegador: `hasAnim` verdadeiro para
+  ataque/dano/desmaio e uma run de 90 s na Torre sem erro na página, com o Agumon na pose do Pepper Breath.

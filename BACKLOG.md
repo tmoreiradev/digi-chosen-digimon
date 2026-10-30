@@ -58,9 +58,8 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 - ~~Sprites de overworld para todos~~ — fase 31 (folhas de andar geradas pelo Codex).
 - ~~Itens/vitaminas com nomes Digimon~~, ~~Torre fácil demais~~ — fase 34.
 - ~~Mais regiões do Digimundo~~, ~~triângulo Vacina/Data/Vírus~~ — fase 35.
-- Pendentes (arte pelo Codex, bloqueada por limite de uso e login expirado em 30/10): folhas de ação
-  (`--kind action`), portraits ausentes no NSS (9, `--kind portrait`), refazer a folha do Numemon (104, dois desenhos num
-  quadro: `--kind walk --redo --only 104`). Clássico talvez fácil (10/10 seeds sobrevivem 10 min — validar com humano).
+- ~~Folhas de ação, portraits ausentes, Numemon~~ — fase 36. Arte com resíduos de efeito em alguns quadros (45, 76, 89,
+  106): refazer com `--kind action --redo --only <id>` se incomodar em jogo. Clássico talvez fácil (10/10 seeds sobrevivem 10 min — validar com humano).
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 

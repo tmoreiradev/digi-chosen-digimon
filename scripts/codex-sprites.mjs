@@ -58,7 +58,7 @@ const has = {
 }[kind];
 const queue = ids
   .filter((s) => (only ? only.has(s.id) : true))
-  .filter((s) => (redo && kind !== "action" ? true : !has(s.id)))
+  .filter((s) => (redo ? true : !has(s.id)))
   .filter((s) => kind !== "action" || !fs.existsSync(path.join(spriteDir(s.id), "Idle-Anim.png")))
   .sort((a, b) => Number(!partnerFamilies.has(rootOf(a.key))) - Number(!partnerFamilies.has(rootOf(b.key))) || a.id - b.id)
   .slice(0, limit);
@@ -89,7 +89,7 @@ function promptFor(s, refs) {
   if (kind === "portrait") {
     return [
       intro,
-      `The first two attached images are 40x40 face portraits from the same fan collection: a close-up of the head and shoulders, bold dark outline, flat pixel shading, a soft gradient background.`,
+      `The first two attached images are 40x40 face portraits from the same fan collection: a close-up of the head and shoulders, bold dark outline, flat pixel shading, a soft pastel gradient background (never plain white).`,
       `The third attached image is ${s.name}'s walk sheet in this game: match its colours and features.`,
       `Draw ${s.name}'s portrait in exactly that style: head and shoulders, facing slightly toward the viewer, neutral expression, recognisably ${s.name} as in the Digimon anime and games.`,
       save("portrait.png", "40x40"),
@@ -99,7 +99,7 @@ function promptFor(s, refs) {
     return [
       intro,
       `The attached image is ${s.name}'s walk sheet in this game: 4 frames across and 8 rows, one per facing direction in this order: ${DIRECTIONS}. Each cell is 32x40 pixels.`,
-      `Create ${s.name}'s ACTION sheet in exactly the same style, colours and size: 6 columns and the same 8 rows (directions in the same order), cells of 32x40 (192x320 PNG), transparent background. Columns 1-4: an attack, winding up then striking or lunging toward the row's direction (a claw swipe, a bite, a punch or a breath, whatever fits ${s.name}). Column 5: hurt, flinching back with eyes squeezed shut. Column 6: fainted, lying flat on the ground. Keep the whole body inside each cell, feet near the bottom.`,
+      `Create ${s.name}'s POSE sheet for a cute all-ages game, in exactly the same style, colours and size: 6 columns and the same 8 rows (directions in the same order), cells of 32x40 (192x320 PNG), transparent background. Columns 1-4: ${s.name}'s signature special move, powering up then releasing it toward the row's direction (a dash, a spin or a glowing breath, whatever fits ${s.name}). Column 5: knocked back in surprise, eyes shut. Column 6: resting, lying down on the ground asleep. Keep the whole body inside each cell, feet near the bottom.`,
       save("action.png", "192x320"),
     ].join("\n\n");
   }

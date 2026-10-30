@@ -105,7 +105,9 @@ function fillEmptyCells(px, w, cols, rows, fw, fh) {
   for (let r = 0; r < rows; r++) {
     for (let c = 0; c < cols; c++) {
       if (drawn(c, r)) continue;
-      const other = [1, 2, 3].map((k) => (c + k) % cols).find((k) => drawn(k, r));
+      // The nearest frame, left first: an action sheet's empty attack frame takes the attack before it,
+      // never the hurt or faint columns further right.
+      const other = [-1, 1, -2, 2, -3, 3, -4, 4, -5, 5].map((k) => c + k).find((k) => k >= 0 && k < cols && drawn(k, r));
       const mr = rows === 8 ? (8 - r) % 8 : -1;
       if (other != null) copy(other, r, c, r, false);
       else if (mr >= 0 && drawn(c, mr)) copy(c, mr, c, r, mr !== r);
