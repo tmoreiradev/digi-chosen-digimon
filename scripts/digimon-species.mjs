@@ -255,7 +255,7 @@ export const MOVES = [
   ["gargo-laser", "Gargo Laser", "steel", 75, "special", "barrage", null, 0],
   ["rapid-fire", "Rapid Fire", "steel", 90, "special", "homing", null, 0],
   ["mega-barrage", "Mega Barrage", "steel", 115, "special", "meteor", null, 0],
-  ["diamond-storm", "Diamond Storm", "psychic", 45, "special", "barrage", null, 0],
+  ["diamond-storm", "Diamond Storm", "psychic", 45, "special", "smite", null, 0],
   ["fox-tail-inferno", "Fox Tail Inferno", "fire", 75, "special", "orbit", "burn", 20],
   ["talisman-of-light", "Talisman of Light", "psychic", 90, "special", "beam", "confusion", 20],
   ["amethyst-mandala", "Amethyst Mandala", "psychic", 110, "special", "nova", "charm", 20],

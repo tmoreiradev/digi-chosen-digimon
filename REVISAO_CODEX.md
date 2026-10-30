@@ -1561,3 +1561,34 @@ frase final nos três idiomas. Suíte **212 / 212**.
     - o layout foi conferido em capturas de tela, em pé e deitado.
 - **Não verificado:** os toques foram eventos de ponteiro sintéticos, sem nenhum aparelho físico; o único erro no
   console veio desses eventos. Sem mando (gamepad).
+
+## 53. Fase 42 — Balanceamento do playtest: início dos parceiros, Torre e Clássico (30/10/2026)
+
+- **Início dos parceiros:** o bot mediu o nível aos 3 e aos 6 min (4 seeds) de cada parceiro.
+  - Terriermon e Renamon ficavam no nível ~7 aos 3 min, contra 10–12 dos outros. Com isso matavam menos, ficavam
+    cercados e coletavam menos XP: o Terriermon pegava só 44 % das orbes.
+  - `bolt` (Gabumon, Terriermon, Salamon, Wormmon) passou para dano 16 e perfuração 1 (era 13 e 0).
+  - Diamond Storm (Renamon) trocou `barrage` por `smite`. Com `barrage` dano 6 ou 7, o Renamon seguia atrás.
+  - Agora os 17 ficam entre 10,3 e 12,5 aos 3 min e entre 20,8 e 25,3 aos 6 min.
+- **Torre:** o Myotismon do andar 5 era um chefe completo (dano ×2,2) e o andar matava 10 de 51 runs do bot,
+  incluindo o Hawkmon em todas. Os dados de dano por fonte apontaram para ele. Agora ele é um totem:
+  - nenhuma morte no andar 5;
+  - 33 vitórias, 7 mortes (todas nos andares 6–7) e 11 runs ainda vivas no limite de 15 min da medição, que não é
+    um limite do jogo.
+  - Gabumon, Veemon, Hawkmon e Renamon continuam lentos na Torre.
+- **Clássico, não alterado:** três tentativas nas zonas 2–3, medidas com 8 parceiros × 2 seeds, e todas revertidas:
+  - dano dos inimigos ×1,4;
+  - HP dos inimigos ×1,6/×1,8;
+  - velocidade dos inimigos ×1,2/×1,3.
+  - Nenhuma mudou o perigo para o bot: a mediana do HP mínimo ficou em ~88–90 % nas zonas 2–3. O bot foge o tempo
+    todo e os inimigos não o alcançam, então ele não serve para medir a dificuldade do Clássico. Isso precisa de uma
+    pessoa jogando. O perigo real dele é o santuário (mediana de 72–78 %).
+- **Onde ficou:** os ajustes estão no gerador (`scripts/make-digimon-data.mjs`, `scripts/digimon-species.mjs`) e
+  saem em `src/data/rules.json`.
+- **Verificação:**
+  - `tests/balance.test.mjs` (agora no `npm test`), os dois testes falhando com os dados antigos:
+    - Terriermon e Renamon na média do nível ≥ 9 aos 3 min, em 3 seeds (antes: Terriermon 6/6/7);
+    - Hawkmon passa do andar 5 (antes: morto no andar 5).
+  - Suíte do fork **42 / 42**. Build, `check-bundle` e `npm run e2e` OK.
+  - Telemetria final: no Clássico, 48 vitórias em 51 (antes 47); na Torre, 33 vitórias em 51 (antes 30) e nenhuma
+    morte no andar 5 (antes 10).

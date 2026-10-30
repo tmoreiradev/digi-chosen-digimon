@@ -91,6 +91,9 @@ rules.weatherMoves = {};
 rules.trapMoves = [];
 rules.roster = roster;
 rules.abilityKits = { ...rules.abilityKits, ...PASSIVES }; // the partner lines' own passives
+// Balance (playtest of 30/10): a single-target bolt opened Terriermon's runs too slowly (level 7 at 3 min against
+// 11-12 for the rest); +3 damage and one pierce put it level with the others.
+Object.assign(rules.archetypes.bolt, { dmg: 16, pierce: 1 });
 // Vaccine beats Virus, Virus beats Data, Data beats Vaccine; Free is neutral.
 rules.attributes = { beats: { vaccine: "virus", virus: "data", data: "vaccine" }, mult: 1.1 }; // 1.2 made the tower (mostly Virus) easy again
 // Item names: Digimon names over the engine's keys (effects stay keyed); type boosters by element.
@@ -137,6 +140,9 @@ rules.tower.floors = rules.tower.floors.map((f, i) => ({
   pool: (REGION.tower[i] ?? REGION.tower[0]).map(id),
   guardian: { ...f.guardian, id: id(REGION.towerGuardians[i] ?? REGION.towerGuardians.at(-1)) },
 }));
+// Balance (playtest of 30/10): floor 5's Myotismon as a full boss was a wall (10 of 51 bot runs died there,
+// Hawkmon all 3); as a totem the castle still peaks on floors 6–7.
+rules.tower.floors[4].guardian.kind = "totem";
 
 // Art under assets/ (NSS portraits and overworld folders, see scripts/nss.mjs); species without
 // an overworld folder are drawn by the procedural renderer.

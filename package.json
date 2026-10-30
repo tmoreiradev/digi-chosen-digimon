@@ -8,7 +8,7 @@
     "start": "node server.mjs",
     "dev": "node server.mjs 8080",
     "build": "node build.mjs",
-    "test": "node --test tests/digimon.test.mjs tests/playtest.test.mjs tests/lang.test.mjs tests/zoneevents.test.mjs tests/touch.test.mjs",
+    "test": "node --test tests/digimon.test.mjs tests/playtest.test.mjs tests/lang.test.mjs tests/zoneevents.test.mjs tests/touch.test.mjs tests/balance.test.mjs",
     "check:bundle": "node scripts/check-bundle.mjs",
     "review:codex": "node scripts/codex-review.mjs",
     "e2e": "node scripts/e2e-bundle.mjs",

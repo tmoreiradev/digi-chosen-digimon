@@ -67,9 +67,10 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 ## 2e. Playtest do site publicado (30/10)
 
 Relatório completo, com os números do bot por parceiro: `docs/PLAYTEST_2026-10-30.md`. Prioridades:
-- **Alta:** ~~controles de toque~~ (fase 41; mando ainda não); o Clássico parece fácil (o bot vence 47/51, sempre no nível 50); a Torre
-  varia muito por parceiro (Hawkmon 0/3, Gabumon e Renamon estouram o tempo); o golpe inicial `bolt` de Terriermon e
-  Gabumon.
+- **Alta:** ~~controles de toque~~ (fase 41; mando ainda não); ~~golpe inicial de Terriermon e Renamon~~ e ~~parede
+  do andar 5 da Torre~~ (fase 42). O Clássico parece fácil, mas o bot não consegue medir isso, porque foge e nunca é
+  alcançado (fase 42). Precisa de uma pessoa jogando antes de mexer. Gabumon, Veemon, Hawkmon e Renamon continuam
+  lentos na Torre.
 - **Média:** aviso no altar do guardião; ritmo do começo; plug-ins de tipo que o parceiro não usa; tela de resultado
   ("UPGRADES" conta só itens, sem causa da morte nem build); build na pausa; loja apertada em 720 px; rótulos dos
   contadores do HUD.
