@@ -78,8 +78,9 @@ const BIOME_ES = {
   graveyard: { name: "Torre Lavanda", desc: "Niebla, lápidas y susurros. Aquí los fantasmas nunca descansan." },
   volcano: { name: "Isla Volcán", desc: "Ríos de lava y ceniza. Solo los más fuertes sobreviven al calor." },
 };
-export const biomeName = (b) => (en() ? b?.name : pick(BIOME_PT, null, BIOME_ES)[b?.id]?.name ?? b?.name) ?? "";
-export const biomeDesc = (b) => (en() ? b?.desc : pick(BIOME_PT, null, BIOME_ES)[b?.id]?.desc ?? b?.desc) ?? "";
+// A content pack's region may carry its own pt/es text (`biome.pt`, `biome.es`); the tables above are the fallback.
+export const biomeName = (b) => (en() ? b?.name : pick(b?.pt, null, b?.es)?.name ?? pick(BIOME_PT, null, BIOME_ES)[b?.id]?.name ?? b?.name) ?? "";
+export const biomeDesc = (b) => (en() ? b?.desc : pick(b?.pt, null, b?.es)?.desc ?? pick(BIOME_PT, null, BIOME_ES)[b?.id]?.desc ?? b?.desc) ?? "";
 
 export const MODE_PT = { classic: "Clássico", endless: "Infinito", tower: "Torre" };
 

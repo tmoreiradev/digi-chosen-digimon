@@ -27,7 +27,9 @@ npm run make:data    # regenerate src/data from scripts/make-digimon-data.mjs
   and Tamers — 17 partner lines (Agumon, Gabumon, Patamon, Tentomon, Palmon, Gomamon, Biyomon,
   Salamon, Veemon, Hawkmon, Armadillomon, Wormmon, Guilmon, Terriermon, Renamon, Monodramon,
   Impmon), wild Rookies and Champions, Ultimates and the Mega villains (Dark Masters, Daemon,
-  MaloMyotismon, Apocalymon…) as bosses; 77 signature attacks; one region (File Island).
+  MaloMyotismon, Apocalymon…) as bosses; 77 signature attacks; six regions (File Island, Server
+  Continent, Net Ocean, Freezeland, Spiral Mountain, Infinity Mountain), each with its own wild cast,
+  guardians and Mega villains. Vaccine beats Virus, Virus beats Data, Data beats Vaccine (±10 % damage).
 - **Art** — 40x40 portraits for 131 of the 140 Digimon and full animated overworld sheets for Guilmon,
   Gatomon and Gigimon, from NotSpriteCollab (see `CREDITS.md`; `node scripts/nss.mjs import <folder>`).
   The other 137 have an 8-direction walk sheet generated with the Codex CLI in the same PMD style
@@ -47,8 +49,6 @@ effect names here (items, passive kits) are listed there.
 - Generated sheets have a walk cycle only (idle reuses it); the art is AI-made and uneven in places — a few
   (Tentomon, Togemon, Frigimon…) keep the same pose in every direction.
 - No NSS portrait for ExVeemon, Paildramon, Ogremon, Datamon, Phantomon, BlackWarGreymon, Daemon, MaloMyotismon, MarineAngemon.
-- Still one region for all 140 Digimon.
 - Passive kits keep the engine's keys (blaze, torrent…); their names never reach the screen.
 - Balance is bot-tuned only: the tower bot wins 3 of 5 seeds in 8.5–10 min (level 25–38); Classic: 10 of 10 seeds
   survive 10 min (level 24–35).
-- Vaccine / Data / Virus is only flavour text for now.

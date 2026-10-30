@@ -254,3 +254,64 @@ test("tower floors are named for Digimon in every language", async () => {
     setLang(lang);
   }
 });
+
+test("Vaccine beats Virus, Virus beats Data, Data beats Vaccine — both ways, Free neutral", async () => {
+  const { attributeMult } = await import("../src/game/rules.js");
+  const r = data.rules;
+  assert.equal(attributeMult(r, "vaccine", "virus"), 1.1);
+  assert.equal(attributeMult(r, "virus", "data"), 1.1);
+  assert.equal(attributeMult(r, "data", "vaccine"), 1.1);
+  assert.equal(attributeMult(r, "virus", "vaccine"), 1 / 1.1);
+  assert.equal(attributeMult(r, "free", "virus"), 1);
+  assert.equal(attributeMult({}, "vaccine", "virus"), 1, "a pack without the table is neutral");
+  for (const p of data.pokemon) assert.ok(["vaccine", "data", "virus", "free"].includes(p.attribute), p.name);
+
+  // In play: Agumon (Vaccine) hits a Virus harder than a Data, and a Virus hits Agumon softer.
+  const { run } = makeRun();
+  const byAttr = (a) => data.pokemon.find((p) => p.attribute === a && !p.legendary && p.types.join() === "fire").id;
+  const hit = (attr) => {
+    const e = run.spawnEnemy(byAttr(attr), 30, 30);
+    e.hp = e.maxHp = 1e9;
+    run.hitEnemy(e, 100, { cls: "physical", type: "normal" }, true);
+    return 1e9 - e.hp;
+  };
+  const vsVirus = hit("virus");
+  const vsData = hit("data");
+  assert.ok(Math.abs(vsVirus / vsData - 1.21) < 0.03, `Vaccine vs Virus / vs Data = ${(vsVirus / vsData).toFixed(3)}`);
+  const hurt = (attr) => {
+    const p = run.player;
+    p.hp = p.maxHp = 1e6;
+    p.iframes = 0;
+    const src = run.spawnEnemy(byAttr(attr), 40, 40);
+    run.hitPlayer(100, src);
+    return 1e6 - p.hp;
+  };
+  assert.ok(hurt("virus") < hurt("data"), "a Virus hurts a Vaccine less than a Data does");
+});
+
+test("six regions of the Digital World: every Mega villain rules exactly one, cast and text in place", async () => {
+  const { biomeName, biomeDesc } = await import("../src/core/i18n.js");
+  const biomes = data.rules.biomes;
+  assert.deepEqual(biomes.map((b) => b.id), ["forest", "desert", "coast", "glacier", "graveyard", "volcano"]);
+  const rulers = biomes.flatMap((b) => b.legendaries);
+  const villains = data.pokemon.filter((p) => p.legendary).map((p) => p.id);
+  assert.deepEqual([...rulers].sort((a, b) => a - b), [...villains].sort((a, b) => a - b), "each legendary in one region");
+  for (const b of biomes) {
+    for (const id of b.residents) assert.equal(data.get(id).evoStage, 0, `${b.id}: resident ${data.get(id).name} is a Rookie family`);
+    for (const zone of b.guardians) for (const id of zone) assert.ok(data.get(id).evoStage >= 1 && !data.get(id).legendary, `${b.id}: guardian ${id}`);
+    assert.equal(b.guardians.length, 3);
+  }
+  const lang = getLang();
+  try {
+    for (const code of ["pt-BR", "en", "es"]) {
+      setLang(code);
+      const names = biomes.map((b) => biomeName(b));
+      assert.equal(new Set(names).size, 6, `${code}: six names`);
+      for (const b of biomes) assert.doesNotMatch(biomeName(b) + biomeDesc(b), /Lavand|Lavender|Pokémon|Torre Lav/, `${code}: ${b.id}`);
+    }
+    setLang("pt-BR");
+    assert.equal(biomeName(biomes[1]), "Continente Server");
+  } finally {
+    setLang(lang);
+  }
+});

@@ -77,6 +77,11 @@ export const ES = {
   "Raro": "Raro",
   "Épico": "Épico",
   "Lendário": "Legendario",
+  // Digimon attributes (the Digimon pack's abilities.json)
+  "Vacina": "Vacuna",
+  "Dados": "Datos",
+  "Vírus": "Virus",
+  "Livre": "Libre",
   // results and pause
   "Vitória!": "¡Victoria!",
   "Você desmaiou": "Te has debilitado",

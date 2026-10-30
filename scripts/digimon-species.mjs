@@ -319,7 +319,88 @@ export const REGION = {
     ["myotismon", "ladydevimon", "arukenimon", "mummymon", "cherrymon"],
   ],
   bosses: ["kuwagamon", "etemon", "myotismon"],
-  legendaries: ["devimon", "venommyotismon", "piedmon", "machinedramon", "metalseadramon", "puppetmon", "metaletemon", "apocalymon", "blackwargreymon", "daemon", "malomyotismon", "beelzemon", "diaboromon", "omnimon"],
+  legendaries: ["devimon", "omnimon"], // the other Mega villains rule the regions below
   tower: [["kunemon", "goblimon"], ["gazimon", "demidevimon", "candlemon"], ["bakemon", "numemon", "raremon"], ["meramon", "darktyrannomon"], ["phantomon", "ladydevimon"], ["mummymon", "arukenimon"], ["myotismon", "skullgreymon"]],
   towerGuardians: ["bakemon", "devidramon", "phantomon", "ladydevimon", "myotismon", "venommyotismon", "piedmon"],
 };
+
+// The other regions of the Digital World, one per biome the engine draws (forest is File Island,
+// above). Residents are families (the generator takes their root); `types`/`late` feed the director's
+// wild pools; guardians per zone, the zone bosses and the sanctuary's legendaries are keys.
+export const REGIONS = [
+  {
+    biome: "desert",
+    name: "Server Continent", desc: "Endless dunes and a rusted colosseum. Etemon's network still hums under the sand.",
+    pt: { name: "Continente Server", desc: "Dunas sem fim e um coliseu enferrujado. A rede do Etemon ainda zumbe sob a areia." },
+    es: { name: "Continente Server", desc: "Dunas sin fin y un coliseo oxidado. La red de Etemon aún zumba bajo la arena." },
+    types: ["ground", "rock", "fighting", "steel"], late: ["dark"],
+    residents: ["gotsumon", "armadillomon", "gazimon", "goblimon", "toyagumon", "kokuwamon", "monodramon", "impmon", "elecmon", "terriermon"],
+    guardians: [
+      ["monochromon", "drimogemon", "golemon", "centarumon", "tankmon", "ogremon", "kokatorimon"],
+      ["etemon", "mamemon", "metalmamemon", "giromon", "andromon"],
+      ["etemon", "megadramon", "datamon", "cyberdramon"],
+    ],
+    bosses: ["monochromon", "etemon", "megadramon"],
+    legendaries: ["metaletemon", "machinedramon", "beelzemon"],
+  },
+  {
+    biome: "coast",
+    name: "Net Ocean", desc: "Reefs, wrecked ferries and storms over a sea of data. Something huge sleeps in the deep.",
+    pt: { name: "Oceano da Rede", desc: "Recifes, balsas naufragadas e tempestades sobre um mar de dados. Algo enorme dorme no fundo." },
+    es: { name: "Océano de la Red", desc: "Arrecifes, ferris hundidos y tormentas sobre un mar de datos. Algo enorme duerme en el fondo." },
+    types: ["water", "electric", "flying"], late: ["ice"],
+    residents: ["gomamon", "betamon", "otamamon", "gizamon", "tentomon", "kunemon", "elecmon", "biyomon", "hawkmon"],
+    guardians: [
+      ["seadramon", "shellmon", "gesomon", "ikkakumon", "gekomon", "kabuterimon", "birdramon"],
+      ["zudomon", "megakabuterimon", "garudamon", "silphymon", "okuwamon"],
+      ["zudomon", "okuwamon", "megadramon", "arukenimon"],
+    ],
+    bosses: ["seadramon", "zudomon", "okuwamon"],
+    legendaries: ["metalseadramon", "daemon"],
+  },
+  {
+    biome: "glacier",
+    name: "Freezeland", desc: "Snowfields under the aurora, where Frigimon keep the cold and the clowns keep their toys.",
+    pt: { name: "Terra Gelada", desc: "Campos de neve sob a aurora, onde os Frigimon guardam o frio e os palhaços guardam seus brinquedos." },
+    es: { name: "Tierra Helada", desc: "Campos de nieve bajo la aurora, donde los Frigimon guardan el frío y los payasos sus juguetes." },
+    types: ["ice", "fairy", "psychic"], late: ["dark"],
+    residents: ["gabumon", "salamon", "kudamon", "lopmon", "calumon", "patamon", "renamon", "wormmon", "floramon"],
+    guardians: [
+      ["frigimon", "mojyamon", "garurumon", "unimon", "angemon", "gatomon", "kyubimon"],
+      ["weregarurumon", "angewomon", "magnaangemon", "taomon", "rapidmon"],
+      ["weregarurumon", "ladydevimon", "cherrymon", "phantomon"],
+    ],
+    bosses: ["frigimon", "weregarurumon", "ladydevimon"],
+    legendaries: ["piedmon", "diaboromon"],
+  },
+  {
+    biome: "graveyard",
+    name: "Spiral Mountain", desc: "The Dark Masters twisted the world into one mountain. Fog, ruins and voices that never rest.",
+    pt: { name: "Montanha Espiral", desc: "Os Mestres das Trevas torceram o mundo numa só montanha. Névoa, ruínas e vozes que nunca descansam." },
+    es: { name: "Montaña Espiral", desc: "Los Amos Oscuros retorcieron el mundo en una sola montaña. Niebla, ruinas y voces que nunca descansan." },
+    types: ["ghost", "dark", "poison"], late: ["grass"],
+    residents: ["demidevimon", "candlemon", "impmon", "gazimon", "kunemon", "gizamon", "lopmon", "floramon"],
+    guardians: [
+      ["bakemon", "raremon", "numemon", "woodmon", "darktyrannomon", "devidramon", "vegiemon"],
+      ["skullgreymon", "myotismon", "mummymon", "pumpkinmon", "cherrymon", "phantomon"],
+      ["myotismon", "ladydevimon", "arukenimon", "mummymon", "phantomon"],
+    ],
+    bosses: ["devidramon", "myotismon", "phantomon"],
+    legendaries: ["venommyotismon", "puppetmon", "malomyotismon", "apocalymon"],
+  },
+  {
+    biome: "volcano",
+    name: "Infinity Mountain", desc: "Lava runs down the old peak of File Island. Dragons nest in the heat.",
+    pt: { name: "Montanha Infinita", desc: "Lava escorre pelo velho pico da Ilha File. Dragões fazem ninho no calor." },
+    es: { name: "Montaña Infinita", desc: "La lava baja por el viejo pico de la Isla File. Los dragones anidan en el calor." },
+    types: ["fire", "dragon", "rock"], late: ["steel"],
+    residents: ["agumon", "guilmon", "gigimon", "veemon", "monodramon", "biyomon", "candlemon", "toyagumon", "hawkmon"],
+    guardians: [
+      ["meramon", "tyrannomon", "greymon", "birdramon", "growlmon", "strikedramon", "darktyrannomon"],
+      ["metalgreymon", "wargrowlmon", "skullgreymon", "megadramon", "cyberdramon"],
+      ["skullgreymon", "megadramon", "cyberdramon", "dinobeemon"],
+    ],
+    bosses: ["meramon", "skullgreymon", "megadramon"],
+    legendaries: ["blackwargreymon"],
+  },
+];

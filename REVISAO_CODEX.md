@@ -1385,3 +1385,30 @@ frase final nos três idiomas. Suíte **212 / 212**.
 - **Verificação:** suíte do fork **24 / 24**; build, `check-bundle` e `npm run e2e` OK; no navegador, a carta de
   nível mostrou Fishing Pole / Mystery Meat / Speed Chip, e a descrição da vara ainda citava Magikarp — corrigido e
   coberto pelo teste.
+
+## 46. Fase 35 — Regiões do Digimundo, triângulo de atributos e preparo da arte nova (30/10/2026)
+
+- **Regiões:** a engine desenha 6 biomas e o fork usava só a floresta. `REGIONS` em `digimon-species.mjs` veste os
+  outros 5: Continente Server (deserto, Etemon), Oceano da Rede (costa), Terra Gelada (geleira), Montanha Espiral
+  (cemitério, Mestres das Trevas) e Montanha Infinita (vulcão, dragões), cada uma com tipos selvagens, residentes,
+  guardiões por zona, chefes e os vilões Mega repartidos (cada um governa uma região só — teste). O visual de cada
+  bioma (chão, névoa, adereços) foi copiado uma vez do `rules.json` do jogo Pokémon; o gerador acha o bioma pelo id e
+  troca só o conteúdo. Na engine, `biomeName`/`biomeDesc` aceitam `biome.pt`/`biome.es` dos dados antes dos
+  dicionários por id (que diziam "Torre Lavanda" para o cemitério). Playtest novo: uma run de 600 s por região, sem
+  quebra de invariante nem morte antes de 4 min (Montanha Infinita morreu aos 356 s com o multiplicador 1.2; com 1.1
+  sobrevive).
+- **Atributos:** `species.attribute` (vaccine/data/virus/free) e `rules.attributes`; `attributeMult` na engine nos dois
+  sentidos (`hitEnemy` e `hitPlayer`); sem tabela, neutro. O cartão do parceiro mostra o atributo (Vacina/Dados/Vírus/
+  Livre, traduzidos) no lugar de "Digicore". Multiplicador medido na Torre (quase toda Vírus, contra um Agumon Vacina):
+  1.2 voltou a 5/5 vitórias; 1.15 também; **1.1** devolveu o ponto da fase 34 (3 vitórias, 1 viva, 1 morte).
+- **Arte (não gerada):** `codex-sprites.mjs` ganhou `--kind portrait|action` e `--redo`, com cada resultado validado numa
+  pasta temporária antes de chegar a `assets/` (uma regeneração falha não apaga a arte atual) e o lote tolerante a falha
+  do gerador. A folha de ação tem 6 colunas × 8 direções (4 de ataque, dano, desmaio) e é cortada em
+  `Attack/Hurt/Faint-Anim.png`. O teste com Agumon e ExVeemon não gerou nada: **o Codex atingiu o limite de uso
+  (libera 30/10 03:07) e o login expirou** — fica no BACKLOG.
+- **Revisão das folhas (item "refazer as fracas"):** a suspeita de folhas que não viram foi checada quadro a quadro e
+  estava errada (miniaturas pequenas demais): todas viram. Varredura de "dois desenhos num quadro" achou só o Numemon
+  (104), a refazer quando o Codex voltar.
+- **Verificação:** suíte do fork **27 / 27** (novos: triângulo nos dois sentidos — falha sem o gancho na engine —,
+  regiões, playtest por região); build, `check-bundle` e `npm run e2e` OK; navegador: tela de regiões com os 6 nomes e
+  textos em pt, cartões com Vacina/Dados, run no Continente Server com o chão de deserto.

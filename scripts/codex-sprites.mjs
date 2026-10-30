@@ -1,10 +1,13 @@
-// Generates overworld walk sheets with the Codex CLI (image generation) for every Digimon that has
-// no sheet yet, and drops them into assets/sprites/<id>/ in the SpriteCollab layout the engine reads.
+// Generates art with the Codex CLI (image generation) and drops it into assets/ in the layouts the
+// engine reads (SpriteCollab folders, 40x40 portraits).
 //
-//   node scripts/codex-sprites.mjs [--only id,id] [--workers 2] [--limit n]
+//   node scripts/codex-sprites.mjs [--kind walk|portrait|action] [--only id,id] [--redo] [--workers 2] [--limit n]
 //
-// Reference: Guilmon's NSS walk sheet (style, 4x8 grid of 32x40 cells, direction order) plus the
-// Digimon's own portrait when it has one. Resumable: species with an AnimData.xml are skipped.
+// walk: 4x8 walk sheet (32x40 cells) from Guilmon's NSS sheet (style, grid, direction order) and the
+//   Digimon's portrait. action: 6x8 sheet from the Digimon's own walk sheet, cut into Attack (4 frames),
+//   Hurt and Faint. portrait: 40x40 face from two NSS portraits and the Digimon's walk sheet.
+// Resumable: species that already have the art are skipped unless --redo (the old art stays when a
+// redo fails: every result is checked in a temp folder before it reaches assets/).
 // Every 5 sheets (and at the end) it regenerates src/data, so the game picks them up as they land.
 // Needs `codex` and ImageMagick's `magick` on PATH (dev-time only; the game stays dependency-free).
 import fs from "node:fs";
@@ -30,6 +33,8 @@ const opt = (name, def) => {
 const only = opt("--only", "") ? new Set(opt("--only").split(",").map(Number)) : null;
 const workers = Number(opt("--workers", 2));
 const limit = Number(opt("--limit", Infinity));
+const kind = opt("--kind", "walk");
+const redo = args.includes("--redo");
 
 const log = (line) => {
   fs.appendFileSync(LOG, `${new Date().toISOString()} ${line}\n`);
@@ -44,30 +49,66 @@ const rootOf = (key) => {
   for (let row = SPECIES.find((s) => s[0] === k); row?.[7]; row = SPECIES.find((s) => s[0] === k)) k = row[7];
   return k;
 };
+const spriteDir = (id) => path.join(ASSETS, "sprites", String(id));
+const has = {
+  walk: (id) => fs.existsSync(path.join(spriteDir(id), "AnimData.xml")),
+  portrait: (id) => fs.existsSync(path.join(ASSETS, "portraits", `${id}.png`)),
+  // NSS folders draw their own actions (they have an Idle-Anim.png); generated ones need a walk sheet first.
+  action: (id) => fs.existsSync(path.join(spriteDir(id), "Attack-Anim.png")) || !fs.existsSync(path.join(spriteDir(id), "Walk-Anim.png")),
+}[kind];
 const queue = ids
   .filter((s) => (only ? only.has(s.id) : true))
-  .filter((s) => !fs.existsSync(path.join(ASSETS, "sprites", String(s.id), "AnimData.xml")))
+  .filter((s) => (redo && kind !== "action" ? true : !has(s.id)))
+  .filter((s) => kind !== "action" || !fs.existsSync(path.join(spriteDir(s.id), "Idle-Anim.png")))
   .sort((a, b) => Number(!partnerFamilies.has(rootOf(a.key))) - Number(!partnerFamilies.has(rootOf(b.key))) || a.id - b.id)
   .slice(0, limit);
 
-const ANIMDATA = `<?xml version="1.0"?>
+const WALK_ANIMS = `    <Anim><Name>Walk</Name><Index>0</Index><FrameWidth>32</FrameWidth><FrameHeight>40</FrameHeight>
+      <Durations><Duration>8</Duration><Duration>10</Duration><Duration>8</Duration><Duration>10</Duration></Durations></Anim>
+    <Anim><Name>Idle</Name><Index>1</Index><CopyOf>Walk</CopyOf></Anim>
+`;
+const ACTION_ANIMS = `    <Anim><Name>Attack</Name><Index>2</Index><FrameWidth>32</FrameWidth><FrameHeight>40</FrameHeight>
+      <Durations><Duration>4</Duration><Duration>4</Duration><Duration>6</Duration><Duration>8</Duration></Durations></Anim>
+    <Anim><Name>Hurt</Name><Index>3</Index><FrameWidth>32</FrameWidth><FrameHeight>40</FrameHeight>
+      <Durations><Duration>12</Duration></Durations></Anim>
+    <Anim><Name>Faint</Name><Index>4</Index><FrameWidth>32</FrameWidth><FrameHeight>40</FrameHeight>
+      <Durations><Duration>30</Duration></Durations></Anim>
+`;
+const animData = (anims) => `<?xml version="1.0"?>
 <AnimData>
   <ShadowSize>1</ShadowSize>
   <Anims>
-    <Anim><Name>Walk</Name><Index>0</Index><FrameWidth>32</FrameWidth><FrameHeight>40</FrameHeight>
-      <Durations><Duration>8</Duration><Duration>10</Duration><Duration>8</Duration><Duration>10</Duration></Durations></Anim>
-    <Anim><Name>Idle</Name><Index>1</Index><CopyOf>Walk</CopyOf></Anim>
-  </Anims>
+${anims}  </Anims>
 </AnimData>
 `;
+const DIRECTIONS = "down (facing the viewer), down-right, right (side view), up-right, up (seen from behind, no face visible), up-left, left (side view), down-left";
 
-function promptFor(s, hasPortrait) {
+function promptFor(s, refs) {
+  const intro = `You are making fan-game pixel art of the Digimon ${s.name} (${STAGES[s.stage]} level). ${s.flavor}`;
+  const save = (file, size) => `Use image generation for the art, save the raw image as raw.png, then produce ${file} at exactly ${size} with transparency using nearest-neighbour resizing (ImageMagick 'magick' is available). No text, grid lines or margins. Reply briefly with what you produced.`;
+  if (kind === "portrait") {
+    return [
+      intro,
+      `The first two attached images are 40x40 face portraits from the same fan collection: a close-up of the head and shoulders, bold dark outline, flat pixel shading, a soft gradient background.`,
+      `The third attached image is ${s.name}'s walk sheet in this game: match its colours and features.`,
+      `Draw ${s.name}'s portrait in exactly that style: head and shoulders, facing slightly toward the viewer, neutral expression, recognisably ${s.name} as in the Digimon anime and games.`,
+      save("portrait.png", "40x40"),
+    ].join("\n\n");
+  }
+  if (kind === "action") {
+    return [
+      intro,
+      `The attached image is ${s.name}'s walk sheet in this game: 4 frames across and 8 rows, one per facing direction in this order: ${DIRECTIONS}. Each cell is 32x40 pixels.`,
+      `Create ${s.name}'s ACTION sheet in exactly the same style, colours and size: 6 columns and the same 8 rows (directions in the same order), cells of 32x40 (192x320 PNG), transparent background. Columns 1-4: an attack, winding up then striking or lunging toward the row's direction (a claw swipe, a bite, a punch or a breath, whatever fits ${s.name}). Column 5: hurt, flinching back with eyes squeezed shut. Column 6: fainted, lying flat on the ground. Keep the whole body inside each cell, feet near the bottom.`,
+      save("action.png", "192x320"),
+    ].join("\n\n");
+  }
   return [
-    `You are making a fan-game sprite of the Digimon ${s.name} (${STAGES[s.stage]} level). ${s.flavor}`,
-    `The first attached image (reference.png) is a Pokémon-Mystery-Dungeon-style walk sheet of Guilmon: 4 frames across, 8 rows, one per facing direction in this order: down, down-right, right, up-right, up, up-left, left, down-left. Each cell is 32x40 pixels, transparent background, dark outline, about 15 colours.`,
-    hasPortrait ? `The second attached image is ${s.name}'s face portrait: match its colours and features exactly.` : `Draw ${s.name} as it looks in the Digimon anime and games.`,
-    `Create the SAME KIND of sheet for ${s.name}: full body, recognisably ${s.name}, the same pixel style and the same 4x8 grid of 32x40 cells (128x320 PNG), transparent background, a walking cycle in every row facing that row's direction, with the legs (or wings) clearly moving between frames. Large Digimon are drawn smaller so the whole body fits inside each cell, feet near the bottom of the cell.`,
-    `Use image generation for the art, save the raw image as raw.png, then produce walk.png at exactly 128x320 with transparency using nearest-neighbour resizing (ImageMagick 'magick' is available). No text, grid lines or margins. Reply briefly with what you produced.`,
+    intro,
+    `The first attached image (reference.png) is a Pokémon-Mystery-Dungeon-style walk sheet of Guilmon: 4 frames across, 8 rows, one per facing direction in this order: ${DIRECTIONS}. Each cell is 32x40 pixels, transparent background, dark outline, about 15 colours.`,
+    refs.includes("portrait.png") ? `The second attached image is ${s.name}'s face portrait: match its colours and features exactly.` : `Draw ${s.name} as it looks in the Digimon anime and games.`,
+    `Create the SAME KIND of sheet for ${s.name}: full body, recognisably ${s.name}, the same pixel style and the same 4x8 grid of 32x40 cells (128x320 PNG), transparent background, a walking cycle in every row with the legs (or wings) clearly moving between frames. Every row must really turn ${s.name} toward its direction, like the reference: front view in row 1, side views in rows 3 and 7, the back (no face) in row 5, three-quarter views in between. Large Digimon are drawn smaller so the whole body fits inside each cell, feet near the bottom of the cell.`,
+    save("walk.png", "128x320"),
   ].join("\n\n");
 }
 
@@ -91,51 +132,92 @@ function runCodex(dir, prompt, images) {
   });
 }
 
-/** Generate one sheet; true when assets/sprites/<id>/ got a valid one. */
-async function one(s) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `digi-${s.id}-`));
-  fs.copyFileSync(REFERENCE, path.join(dir, "reference.png"));
-  const images = ["reference.png"];
-  const portrait = path.join(ASSETS, "portraits", `${s.id}.png`);
-  if (fs.existsSync(portrait)) {
-    fs.copyFileSync(portrait, path.join(dir, "portrait.png"));
-    images.push("portrait.png");
+/** Cells (fw x fh) with fewer than 40 opaque pixels. */
+function emptyCells({ w, h, px }, fw, fh) {
+  let n = 0;
+  for (let cy = 0; cy < h; cy += fh) {
+    for (let cx = 0; cx < w; cx += fw) {
+      let c = 0;
+      for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) c += px[((cy + y) * w + cx + x) * 4 + 3] > 0 ? 1 : 0;
+      n += c < 40 ? 1 : 0;
+    }
   }
-  const code = await runCodex(dir, promptFor(s, images.length > 1), images);
-  const walk = path.join(dir, "walk.png");
-  if (!fs.existsSync(walk)) {
-    log(`FAIL ${s.id} ${s.name}: no walk.png (codex exit ${code}; see ${dir})`);
+  return n;
+}
+
+const toPng32 = (src, size, out) =>
+  execFileSync("magick", [src, "-filter", "point", "-resize", `${size}!`, "-define", "png:color-type=6", "-depth", "8", `PNG32:${out}`]);
+
+/** Generate one piece of art; true when it reached assets/. */
+async function one(s) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), `digi-${kind}-${s.id}-`));
+  const refs = [];
+  const ref = (from, as) => {
+    if (!fs.existsSync(from)) return;
+    fs.copyFileSync(from, path.join(dir, as));
+    refs.push(as);
+  };
+  const walkSheet = path.join(spriteDir(s.id), "Walk-Anim.png");
+  if (kind === "portrait") {
+    ref(path.join(ASSETS, "portraits", "1.png"), "style1.png"); // Agumon (NSS)
+    ref(path.join(ASSETS, "portraits", "23.png"), "style2.png"); // Guilmon (NSS)
+    ref(walkSheet, "sheet.png");
+  } else if (kind === "action") {
+    ref(walkSheet, "sheet.png");
+  } else {
+    ref(REFERENCE, "reference.png");
+    ref(path.join(ASSETS, "portraits", `${s.id}.png`), "portrait.png");
+  }
+  const code = await runCodex(dir, promptFor(s, refs), refs);
+  const made = path.join(dir, { walk: "walk.png", portrait: "portrait.png", action: "action.png" }[kind]);
+  if (!fs.existsSync(made)) {
+    log(`FAIL ${kind} ${s.id} ${s.name}: nothing produced (codex exit ${code}; see ${dir})`);
     return false;
   }
-  // The engine's PNG reader wants 8-bit RGBA: normalise whatever Codex saved (palette, 16-bit…).
-  const dest = path.join(ASSETS, "sprites", String(s.id));
-  fs.mkdirSync(dest, { recursive: true });
-  const out = path.join(dest, "Walk-Anim.png");
-  execFileSync("magick", [walk, "-filter", "point", "-resize", "128x320!", "-define", "png:color-type=6", "-depth", "8", `PNG32:${out}`]);
-  recellFile(out);
+  // The engine's PNG reader wants 8-bit RGBA: normalise whatever Codex saved (palette, 16-bit…), check, then copy.
+  const size = { walk: "128x320", portrait: "40x40", action: "192x320" }[kind];
+  const out = path.join(dir, "out.png");
+  toPng32(made, size, out);
+  if (kind !== "portrait") recellFile(out);
   const img = readPng(out);
   let opaque = 0;
-  let emptyCells = 0;
   for (let i = 3; i < img.px.length; i += 4) opaque += img.px[i] > 0 ? 1 : 0;
-  for (let cell = 0; cell < 32; cell++) {
-    let n = 0;
-    for (let y = 0; y < 40; y++) for (let x = 0; x < 32; x++) n += img.px[((Math.floor(cell / 4) * 40 + y) * 128 + (cell % 4) * 32 + x) * 4 + 3] > 0 ? 1 : 0;
-    emptyCells += n < 40 ? 1 : 0;
-  }
-  if (img.w !== 128 || img.h !== 320 || opaque < 2000 || opaque > 128 * 320 * 0.8 || emptyCells > 0) {
-    fs.rmSync(dest, { recursive: true, force: true });
-    log(`FAIL ${s.id} ${s.name}: bad sheet (${img.w}x${img.h}, ${opaque} opaque px, ${emptyCells} empty cells; see ${dir})`);
+  const empty = kind === "portrait" ? 0 : emptyCells(img, 32, 40);
+  const area = img.w * img.h;
+  if (opaque < area * (kind === "portrait" ? 0.3 : 0.05) || opaque > area * (kind === "portrait" ? 1 : 0.8) || empty > 0) {
+    log(`FAIL ${kind} ${s.id} ${s.name}: bad image (${img.w}x${img.h}, ${opaque} opaque px, ${empty} empty cells; see ${dir})`);
     return false;
   }
-  fs.writeFileSync(path.join(dest, "AnimData.xml"), ANIMDATA);
+  if (kind === "portrait") {
+    fs.copyFileSync(out, path.join(ASSETS, "portraits", `${s.id}.png`));
+  } else if (kind === "action") {
+    const crop = (x, w, name) =>
+      execFileSync("magick", [out, "-crop", `${w}x320+${x}+0`, "+repage", "-define", "png:color-type=6", `PNG32:${path.join(spriteDir(s.id), name)}`]);
+    crop(0, 128, "Attack-Anim.png");
+    crop(128, 32, "Hurt-Anim.png");
+    crop(160, 32, "Faint-Anim.png");
+    fs.writeFileSync(path.join(spriteDir(s.id), "AnimData.xml"), animData(WALK_ANIMS + ACTION_ANIMS));
+  } else {
+    fs.mkdirSync(spriteDir(s.id), { recursive: true });
+    fs.copyFileSync(out, walkSheet);
+    const actions = fs.existsSync(path.join(spriteDir(s.id), "Attack-Anim.png"));
+    fs.writeFileSync(path.join(spriteDir(s.id), "AnimData.xml"), animData(WALK_ANIMS + (actions ? ACTION_ANIMS : "")));
+  }
   fs.rmSync(dir, { recursive: true, force: true });
-  log(`OK ${s.id} ${s.name}`);
+  log(`OK ${kind} ${s.id} ${s.name}`);
   return true;
 }
 
-const regenerate = () => execFileSync(process.execPath, [path.join(ROOT, "scripts", "make-digimon-data.mjs")], { stdio: "inherit" });
+// A failed regeneration (the generator being edited meanwhile) must not stop a long batch.
+const regenerate = () => {
+  try {
+    execFileSync(process.execPath, [path.join(ROOT, "scripts", "make-digimon-data.mjs")], { stdio: "inherit" });
+  } catch (e) {
+    log(`WARN data not regenerated: ${e.message.split("\n")[0]}`);
+  }
+};
 
-log(`start: ${queue.length} Digimon to draw, ${workers} at a time`);
+log(`start ${kind}: ${queue.length} Digimon, ${workers} at a time`);
 let done = 0;
 let ok = 0;
 const pending = [...queue];
@@ -149,4 +231,4 @@ await Promise.all(
   })
 );
 regenerate();
-log(`end: ${ok} of ${queue.length} sheets made`);
+log(`end ${kind}: ${ok} of ${queue.length} made`);

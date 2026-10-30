@@ -31,6 +31,18 @@ export function effectiveness(types, type, targetTypes) {
   return clamp(mult, 0.4, 1.8);
 }
 
+/**
+ * A content pack's attribute triangle (`rules.attributes`: { beats: { a: b }, mult }): the winner deals
+ * `mult`, the loser 1 / mult. Species without an attribute, or packs without the table, are neutral.
+ */
+export function attributeMult(rules, attacker, defender) {
+  const t = rules?.attributes;
+  if (!t || !attacker || !defender) return 1;
+  if (t.beats[attacker] === defender) return t.mult;
+  if (t.beats[defender] === attacker) return 1 / t.mult;
+  return 1;
+}
+
 /* ------------------------------------------------------- move archetypes */
 
 const ARCHETYPE_REGEXES = [

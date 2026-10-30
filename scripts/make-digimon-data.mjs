@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PACK } from "../src/content/pack.js";
 import { spriteTables, portraitPalette } from "./nss.mjs";
-import { SPECIES, MOVES, ROSTER, ULTIMATES, REGION, LEGENDARY } from "./digimon-species.mjs";
+import { SPECIES, MOVES, ROSTER, ULTIMATES, REGION, REGIONS, LEGENDARY } from "./digimon-species.mjs";
 import { ITEM_NAMES } from "./digimon-items.mjs";
 
 // ids follow the order of SPECIES (the first 31 are fixed); families are the root of each line.
@@ -43,6 +43,7 @@ function statsFor(stage, lean) {
   return base;
 }
 
+const ATTRIBUTES = ["vaccine", "data", "virus", "free"];
 const pokemon = SPECIES.map(([key, name, stage, types, lean, color, attribute, from, flavor]) => {
   const stats = statsFor(stage, lean);
   return {
@@ -52,8 +53,10 @@ const pokemon = SPECIES.map(([key, name, stage, types, lean, color, attribute, f
     gen: 1, color,
     legendary: legendary.has(key), mythical: false, baby: false,
     captureRate: [120, 60, 25, 5][stage],
-    abilities: [1], hidden: null,
+    hidden: null,
     evoFrom: from ? id(from) : null, evoLevel: null, evoStage: stage, family: id(rootOf(key)),
+    attribute: attribute.toLowerCase(),
+    abilities: [ATTRIBUTES.indexOf(attribute.toLowerCase()) + 1],
     flavor: `${attribute}. ${flavor}`,
   };
 });
@@ -76,7 +79,8 @@ function rosterOf(p) {
 
 const types = JSON.parse(fs.readFileSync(path.join(DATA, "types.json"), "utf8")); // the chart stays
 for (const [k, t] of Object.entries(PACK.types)) if (t.en) types.names[k] = t.en; // element names
-const abilities = { 1: { key: "digicore", name: "Digicore", desc: "A Digimon's data core." } };
+// The partner card shows a species' first "ability": here its attribute (pt-BR names, translated by lang-en/es).
+const abilities = Object.fromEntries(ATTRIBUTES.map((key, i) => [i + 1, { key, name: ["Vacina", "Dados", "Vírus", "Livre"][i], desc: "" }]));
 const items = JSON.parse(fs.readFileSync(path.join(DATA, "items.json"), "utf8")); // item effects are engine keys
 
 const rules = JSON.parse(fs.readFileSync(path.join(DATA, "rules.json"), "utf8"));
@@ -86,6 +90,8 @@ rules.boostMoves = [];
 rules.weatherMoves = {};
 rules.trapMoves = [];
 rules.roster = roster;
+// Vaccine beats Virus, Virus beats Data, Data beats Vaccine; Free is neutral.
+rules.attributes = { beats: { vaccine: "virus", virus: "data", data: "vaccine" }, mult: 1.1 }; // 1.2 made the tower (mostly Virus) easy again
 // Item names: Digimon names over the engine's keys (effects stay keyed); type boosters by element.
 const itemName = (key) => ITEM_NAMES[key] ?? (rules.typeItems[key] ? `${types.names[rules.typeItems[key]]} Plug-in` : null);
 for (const u of [...rules.upgrades, ...rules.vitamins]) u.name = itemName(u.key) ?? u.name;
@@ -93,18 +99,31 @@ for (const [key, it] of Object.entries(items)) it.name = itemName(key) ?? it.nam
 rules.ultimateBySpecies = Object.fromEntries(Object.entries(ULTIMATES).map(([k, v]) => [id(k), v]));
 // Rookie → Champion at 12, Ultimate at 26, Mega at 40 (the level cap is 50).
 rules.evolution = { levelByStage: { 1: 12, 2: 26, 3: 40 } };
-const forest = rules.biomes.find((b) => b.id === "forest");
-rules.biomes = [{
-  ...forest,
-  name: "File Island",
-  desc: "The island where the Chosen Children first landed — and where the Black Gears turned its Digimon wild.",
-  types: ["fire", "ice", "electric", "grass", "water", "bug", "normal", "fighting"],
-  late: ["dark"],
-  residents: [...new Set(REGION.residents.map((k) => id(rootOf(k))))], // families
-  guardians: REGION.guardians.map((zone) => zone.map(id)),
-  bosses: REGION.bosses.map(id),
-  legendaries: REGION.legendaries.map(id),
-}];
+// One region per biome the engine draws: the biome keeps its look (ground, fog, props) and takes the
+// region's name, text, wild types and cast. File Island is the forest.
+const regionOf = (biome, r) => {
+  const look = rules.biomes.find((b) => b.id === biome);
+  if (!look) throw new Error(`no ${biome} biome in rules.json to dress as ${r.name}`);
+  return {
+    ...look,
+    name: r.name, desc: r.desc, pt: r.pt, es: r.es,
+    types: r.types, late: r.late,
+    residents: [...new Set(r.residents.map((k) => id(rootOf(k))))], // families
+    guardians: r.guardians.map((zone) => zone.map(id)),
+    bosses: r.bosses.map(id),
+    legendaries: r.legendaries.map(id),
+  };
+};
+rules.biomes = [
+  regionOf("forest", {
+    ...REGION,
+    name: "File Island",
+    desc: "The island where the Chosen Children first landed — and where the Black Gears turned its Digimon wild.",
+    types: ["fire", "ice", "electric", "grass", "water", "bug", "normal", "fighting"],
+    late: ["dark"],
+  }),
+  ...REGIONS.map((r) => regionOf(r.biome, r)),
+];
 // Floors told in Myotismon's castle instead of the Pokémon Tower (only names reach the screen today).
 const FLOOR_TEXT = {
   0: { name: "Vestibule", sub: "A Bakemon greets you: \"The castle does not sleep tonight...\"" },
@@ -130,4 +149,4 @@ const out = { pokemon, moves, learnsets, abilities, types, items, rules, sprites
 for (const [name, table] of Object.entries(out)) {
   fs.writeFileSync(path.join(DATA, `${name}.json`), JSON.stringify(table));
 }
-console.log(`src/data: ${pokemon.length} Digimon, ${moves.length} attacks, ${roster.length} partners, 1 region`);
+console.log(`src/data: ${pokemon.length} Digimon, ${moves.length} attacks, ${roster.length} partners, ${rules.biomes.length} regions`);

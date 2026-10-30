@@ -206,7 +206,7 @@ export class Screens {
         el("div", { class: "pc-name" }, species.name),
         el("div", { class: "pc-role" }, entry.role),
         el("div", { class: "pc-types" }, ...species.types.map((t) => el("span", { class: "chip", style: { background: typeCss(t) } }, typeName(t)))),
-        el("div", { class: "pc-passive" }, el("b", {}, this.data.abilities[String(species.abilities[0])]?.name ?? "—")),
+        el("div", { class: "pc-passive" }, el("b", {}, tr(this.data.abilities[String(species.abilities[0])]?.name ?? "—"))),
         el("div", { class: "pc-stats" },
           ...["hp", "atk", "def", "spa", "spd", "spe"].map((k) =>
             el("span", { class: "pc-stat" }, el("i", {}, k.toUpperCase()), String(species.stats[k]))

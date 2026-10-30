@@ -9,6 +9,7 @@ import {
   clampStats,
   describeUpgrade,
   effectiveness,
+  attributeMult,
   enemyDamage,
   enemyHpCurve,
   enemySpeed,
@@ -1162,6 +1163,7 @@ export class Run {
 
     const eff = effectiveness(this.data.types, dtype, e.types);
     amount *= eff;
+    amount *= attributeMult(this.rules, p.species.attribute, e.species.attribute);
     if (eff > 1.01) amount *= s.superEffective;
 
     if (this.weather === "rain" && (dtype === "water" || dtype === "electric")) amount *= 1.3;
@@ -1238,6 +1240,7 @@ export class Run {
       const eff = effectiveness(this.data.types, source.types[0], p.types);
       dmg *= clamp(eff, 0.5, 1.6);
     }
+    dmg *= attributeMult(this.rules, source?.species?.attribute, p.species.attribute);
     // Upstream armour curve: 1 - armor / (armor + 45).
     const armor = p.stats.armor * itemArmorMul(this);
     dmg *= 1 - armor / (armor + 45);

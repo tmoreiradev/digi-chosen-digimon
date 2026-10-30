@@ -48,6 +48,8 @@ peças as mesmas chaves (ou isto vira tabela de dados numa fase futura):
 | Captura (fórmula com `captureRate`/255, "Poké Bola") | `src/game/capture.js`, `rules.capture` | Digivice: mesma fórmula, outro nome |
 | Evolução por nível e `evoStage` | `rules.js` (`evolutionPlan`), `run.js` (`tryEvolve`) | Digivolução: os 5 estágios cabem em `evoStage` 0–4; `rules.evolution.levelByStage` (fase 28) fixa o nível de cada estágio — sem ele valem as faixas 16–30 / 36–50 |
 | Nome da ultimate | `run.js` (`ultimateName`) | `rules.ultimateBySpecies` (fase 28) dá o nome por espécie; sem ele, nome por tipo |
+| Atributos (triângulo Vacina/Data/Vírus) | `rules.js` (`attributeMult`), `run.js` | `species.attribute` + `rules.attributes` { beats, mult } (fase 35); sem a tabela, neutro |
+| Texto das regiões | `i18n.js` (`biomeName`/`biomeDesc`) | `biome.pt`/`biome.es` { name, desc } nos dados (fase 35); sem eles, os dicionários da engine por id |
 | Nome global dos dados no bundle (`__POKEBONK_DATA__`) | `build.mjs`, `game-data.js`, `sprites.js` | pode ficar; não aparece ao jogador |
 
 ## Plano do fork Digimon (resumo)

@@ -69,3 +69,13 @@ test("the tower can be climbed through play: seven floors, waves and guardians",
   assert.equal(s.state, "victory");
   for (let floor = 1; floor <= 7; floor++) assert.ok(calls.banners.some((b) => b.startsWith(`${floor}F`)), `floor ${floor} entered`);
 });
+
+test("every region of the Digital World plays: no invariant breaks, no early death", () => {
+  for (const [i, biomeId] of ["forest", "desert", "coast", "glacier", "graveyard", "volcano"].entries()) {
+    const { run, input, calls } = makeRun({ opts: { biomeId } });
+    const s = playRun({ run, input, calls, seed: 51 + i, maxSeconds: 600 });
+    log(`region ${biomeId}: ${s.state} at ${Math.round(s.time)}s, level ${s.level}, ${s.kills} kills, stage ${s.stage}`);
+    assert.deepEqual(s.invariantFailures, [], biomeId);
+    assert.ok(s.time > 240, `${biomeId}: never dies in the first four minutes (died at ${Math.round(s.time)}s)`);
+  }
+});
