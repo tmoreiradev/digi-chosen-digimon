@@ -46,9 +46,9 @@ effect names here (items, passive kits) are listed there.
 
 - Generated sheets have a walk cycle only (idle reuses it); the art is AI-made and uneven in places — a few
   (Tentomon, Togemon, Frigimon…) keep the same pose in every direction.
-- Guardian and totem kits still shout Pokémon move names ("Saraivada!").
 - No NSS portrait for ExVeemon, Paildramon, Ogremon, Datamon, Phantomon, BlackWarGreymon, Daemon, MaloMyotismon, MarineAngemon.
 - Still one region for all 140 Digimon.
-- Items, vitamins and passive kits still carry the engine's Pokémon names (Leftovers, Blaze…).
-- The tower is too easy with this roster (bot wins in ~7 min); Classic: 9 of 10 bot seeds survive 10 min.
+- Passive kits keep the engine's keys (blaze, torrent…); their names never reach the screen.
+- Balance is bot-tuned only: the tower bot wins 3 of 5 seeds in 8.5–10 min (level 25–38); Classic: 10 of 10 seeds
+  survive 10 min (level 24–35).
 - Vaccine / Data / Virus is only flavour text for now.

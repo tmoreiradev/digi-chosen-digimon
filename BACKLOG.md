@@ -56,7 +56,8 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 
 - ~~Adventure, 02 e Tamers~~, ~~portraits do NSS~~, ~~procedural com cores do portrait~~ — fases 29–30.
 - ~~Sprites de overworld para todos~~ — fase 31 (folhas de andar geradas pelo Codex).
-- Pendentes: animações de ataque/dano/desmaio desenhadas para as folhas geradas (hoje só andar); mais regiões do Digimundo para 140 Digimon; itens/vitaminas/passivas com nomes Digimon; triângulo Vacina/Data/Vírus; Torre fácil demais; portraits ausentes no NSS (9).
+- ~~Itens/vitaminas com nomes Digimon~~, ~~Torre fácil demais~~ — fase 34.
+- Pendentes: animações de ataque/dano/desmaio desenhadas para as folhas geradas (hoje só andar); refazer as folhas que não mudam de pose entre direções; mais regiões do Digimundo para 140 Digimon; triângulo Vacina/Data/Vírus; portraits ausentes no NSS (9); Clássico talvez fácil (10/10 seeds do bot sobrevivem 10 min — validar com humano).
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 

@@ -1357,3 +1357,31 @@ frase final nos três idiomas. Suíte **212 / 212**.
 - **Verificação:** suíte do fork **21 / 21**; build, `check-bundle` e `npm run e2e` OK.
 - **Fica no README (lacunas):** algumas folhas geradas não mudam de pose entre direções; os kits de guardião ainda
   gritam nomes de golpes Pokémon ("Saraivada!").
+
+## 45. Fase 34 — Itens com nomes Digimon e a Torre equilibrada (29/10/2026)
+
+- **Nomes:** `scripts/digimon-items.mjs` dá nome Digimon (estilo Digimon World: chips, disks, floppies, crests) às
+  chaves de item da engine; o gerador grava em `rules.upgrades`, `rules.vitamins` e `items.json`, e os 18
+  amplificadores de tipo viram "<elemento> Plug-in". Na engine, a carta de item usava a chave por extenso
+  (`quick-claw` → "Quick Claw"): agora usa `name` quando existe (contrato atualizado). Os textos que a engine
+  soletra — "Doce Raro"/"Rare Candy"/"Caramelo Raro" da loja, os avisos de Focus Sash/Band (no espanhol "Banda/Cinta
+  Focus") e o Magikarp/Gyarados da vara (Gomamon/Ikkakumon, os do `PACK.oldRod`) — trocam por `PACK.terms`.
+  Varredura de todas as strings de tela contra as 151 espécies e os 151 itens do jogo Pokémon: o resto está em
+  textos de reserva que nunca aparecem (descrições em espanhol do `rules.json` cobertas pelos dicionários; passivas,
+  cujo nome não vai à tela) ou em chaves antigas de dicionário. "Saraivada!" dos guardiões é o padrão "volley"
+  (rajada), não um nome Pokémon — a lacuna do README estava errada e saiu.
+- **Torre:** o andar 6 deixa de ser "Marowak's Shadow" e vira "Wizardmon's Memory" (pt/es nos dicionários); os
+  subtítulos dos andares 1, 3 e 6 contam o castelo do Myotismon (hoje não vão à tela).
+- **Equilíbrio da Torre — causa achada:** 15 % de cada onda são elites e cada elite soltava um Doce Raro garantido;
+  o bot chegava ao nível 50 no andar 3 de 7 (141–254 s) e vencia 5/5 em 349–495 s. Cortar o XP de abate pela
+  metade quase não mudou isso (medido). Correção em `tower.js`: as elites das ondas são `freeElite` como as do
+  diretor do Clássico (15 % de doce). Medição com o bot honesto (sementes 31–35, 600 s): 3 vitórias em 512–584 s,
+  1 viva no andar 6, 1 morte no andar 5 (299 s); nível final 25–38, o mesmo ritmo do Clássico. Referência do jogo
+  Pokémon (fase 7): 2 vitórias ~550 s e 3 vivas no andar 7. Subir as curvas dos andares (+1 estágio) foi medido e
+  descartado: com o fix, 2 mortes. Clássico sem mudança (10/10 sobrevivem 10 min, nível 24–35).
+- **Testes novos (falham no código antigo):** cartas, vitaminas e itens segurados sem nome Pokémon e a carta mostra o
+  nome dos dados; loja, avisos e vara nas três línguas; elites das ondas da Torre são `freeElite`; andares sem nome
+  Pokémon em nenhuma língua. `tests/lang.test.mjs` passa a esperar "Bought XP Chip".
+- **Verificação:** suíte do fork **24 / 24**; build, `check-bundle` e `npm run e2e` OK; no navegador, a carta de
+  nível mostrou Fishing Pole / Mystery Meat / Speed Chip, e a descrição da vara ainda citava Magikarp — corrigido e
+  coberto pelo teste.

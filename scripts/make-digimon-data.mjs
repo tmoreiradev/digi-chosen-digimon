@@ -9,6 +9,7 @@ import { fileURLToPath } from "node:url";
 import { PACK } from "../src/content/pack.js";
 import { spriteTables, portraitPalette } from "./nss.mjs";
 import { SPECIES, MOVES, ROSTER, ULTIMATES, REGION, LEGENDARY } from "./digimon-species.mjs";
+import { ITEM_NAMES } from "./digimon-items.mjs";
 
 // ids follow the order of SPECIES (the first 31 are fixed); families are the root of each line.
 const ID = new Map(SPECIES.map((s, i) => [s[0], i + 1]));
@@ -85,6 +86,10 @@ rules.boostMoves = [];
 rules.weatherMoves = {};
 rules.trapMoves = [];
 rules.roster = roster;
+// Item names: Digimon names over the engine's keys (effects stay keyed); type boosters by element.
+const itemName = (key) => ITEM_NAMES[key] ?? (rules.typeItems[key] ? `${types.names[rules.typeItems[key]]} Plug-in` : null);
+for (const u of [...rules.upgrades, ...rules.vitamins]) u.name = itemName(u.key) ?? u.name;
+for (const [key, it] of Object.entries(items)) it.name = itemName(key) ?? it.name;
 rules.ultimateBySpecies = Object.fromEntries(Object.entries(ULTIMATES).map(([k, v]) => [id(k), v]));
 // Rookie → Champion at 12, Ultimate at 26, Mega at 40 (the level cap is 50).
 rules.evolution = { levelByStage: { 1: 12, 2: 26, 3: 40 } };
@@ -100,8 +105,15 @@ rules.biomes = [{
   bosses: REGION.bosses.map(id),
   legendaries: REGION.legendaries.map(id),
 }];
+// Floors told in Myotismon's castle instead of the Pokémon Tower (only names reach the screen today).
+const FLOOR_TEXT = {
+  0: { name: "Vestibule", sub: "A Bakemon greets you: \"The castle does not sleep tonight...\"" },
+  2: { name: "Mist Room", sub: "A thick fog fills the hall. Something in it is watching you." },
+  5: { name: "Wizardmon's Memory", sub: "A fallen friend's spirit lingers here. Light the candles and give it peace." },
+};
 rules.tower.floors = rules.tower.floors.map((f, i) => ({
   ...f,
+  ...FLOOR_TEXT[i],
   pool: (REGION.tower[i] ?? REGION.tower[0]).map(id),
   guardian: { ...f.guardian, id: id(REGION.towerGuardians[i] ?? REGION.towerGuardians.at(-1)) },
 }));

@@ -41,9 +41,11 @@ export const PACK = {
   // franchise words the engine's text uses ("Pokémon", "Pokédex", "Poké Bola"…) to its own.
   terms: {
     // The capture phrases first: "a bola"/"a ball" has no franchise word for the short swaps to catch.
-    "pt-BR": { "lançar a bola": "usar o Digivice", Pokédex: "DigiDex", "Poké Bola": "Digivice", Pokémon: "Digimon", Kanto: "Ilha File", Evoluiu: "Digievoluiu" },
-    en: { "throw a ball": "use the Digivice", Pokédex: "DigiDex", "Poké Ball": "Digivice", Pokémon: "Digimon", Kanto: "File Island", Evolved: "Digivolved" },
-    es: { "lanzar la Poké Ball": "usar el Digivice", Pokédex: "DigiDex", "Poké Ball": "Digivice", Pokémon: "Digimon", Kanto: "Isla File", Evolucionó: "Digievolucionó" },
+    // Item names the engine's banners and shop spell out (the cards read the names in the data), and
+    // the Fishing Pole's catch (PACK.oldRod: Gomamon, sometimes Ikkakumon).
+    "pt-BR": { "lançar a bola": "usar o Digivice", Magikarp: "Gomamon", Gyarados: "Ikkakumon", "Doce Raro": "XP Chip", "Focus Sash": "Last Stand Chip", "Focus Band": "Guts Band", Pokédex: "DigiDex", "Poké Bola": "Digivice", Pokémon: "Digimon", Kanto: "Ilha File", Evoluiu: "Digievoluiu" },
+    en: { "throw a ball": "use the Digivice", "a Gyarados": "an Ikkakumon", Magikarp: "Gomamon", Gyarados: "Ikkakumon", "Rare Candy": "XP Chip", "Focus Sash": "Last Stand Chip", "Focus Band": "Guts Band", Pokédex: "DigiDex", "Poké Ball": "Digivice", Pokémon: "Digimon", Kanto: "File Island", Evolved: "Digivolved" },
+    es: { "lanzar la Poké Ball": "usar el Digivice", Magikarp: "Gomamon", Gyarados: "Ikkakumon", "Caramelo Raro": "XP Chip", "Banda Focus": "Last Stand Chip", "Cinta Focus": "Guts Band", Pokédex: "DigiDex", "Poké Ball": "Digivice", Pokémon: "Digimon", Kanto: "Isla File", Evolucionó: "Digievolucionó" },
   },
 };
 

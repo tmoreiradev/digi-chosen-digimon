@@ -59,7 +59,7 @@ test("spot checks: fixed text, patterns, nested parts and composites", () => {
   setLang("en");
   assert.equal(tr("Pausado"), "Paused");
   assert.equal(tr("Zona 2 limpa!"), "Zone 2 cleared!");
-  assert.equal(tr("Comprou Doce Raro por 92G."), "Bought Rare Candy for 92G.");
+  assert.equal(tr("Comprou Doce Raro por 92G."), "Bought XP Chip for 92G."); // the pack names Rare Candy XP Chip
   assert.equal(tr("+12% de dano"), "+12% damage");
   assert.equal(tr("+12% quantidade de inimigos · +10% ganho de XP · +5 sorte"), "+12% enemy count · +10% XP gain · +5 luck");
   assert.equal(tr("Scyther: Saraivada!"), "Scyther: Volley!");

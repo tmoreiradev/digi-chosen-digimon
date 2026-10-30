@@ -1709,7 +1709,7 @@ export class Run {
         options.push({
           kind: "item",
           key: chosen.key,
-          title: chosen.key.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+          title: chosen.name ?? chosen.key.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()), // a content pack names its items
           sub: describeUpgrade(chosen),
           lines: [],
           icon: "item",

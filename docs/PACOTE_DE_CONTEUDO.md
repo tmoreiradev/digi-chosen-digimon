@@ -41,7 +41,7 @@ peças as mesmas chaves (ou isto vira tabela de dados numa fase futura):
 
 | Ponto | Arquivo | Como um fork lida hoje |
 |---|---|---|
-| Efeitos de 38 itens roteirizados e 13 seguráveis, por chave (`metronome`, `leftovers`, `eviolite`…) | `src/game/scripted.js`, `run.js` | os itens do fork usam essas chaves como "efeito" e mudam nome/descrição/ícone nos dados |
+| Efeitos de 38 itens roteirizados e 13 seguráveis, por chave (`metronome`, `leftovers`, `eviolite`…) | `src/game/scripted.js`, `run.js` | os itens do fork usam essas chaves como "efeito" e mudam nome/descrição/ícone nos dados; a carta de item mostra `upgrades[].name` (fase 34; sem ele, a chave por extenso) |
 | Habilidades passivas por chave (`blaze`, `torrent`…) | `rules.abilityKits` | mesmos nomes de chave ou kits novos no `rules.json` |
 | Reações elementais por tipo e estado | `src/game/combat.js` (`REACTIONS`) | mapear os elementos do fork para as chaves de tipo (ou tornar a tabela dado) |
 | Itens da loja (Poção, Doce Raro…) | `src/game/events.js` (`SHOP_ITEMS`) | texto via `PACK.terms`/dicionários |

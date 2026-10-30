@@ -135,7 +135,9 @@ export class Tower {
       let z = p.z + Math.sin(angle) * r;
       x = clamp(x, -half, half);
       z = clamp(z, -half, half);
-      run.spawnEnemy(speciesId, x, z, tier, scale);
+      const e = run.spawnEnemy(speciesId, x, z, tier, scale);
+      // 15 % of every wave is elite: a sure candy each put the player at the level cap by floor 3.
+      if (e && tier === "elite") e.freeElite = true;
     }
     this.waveCount = 0;
   }

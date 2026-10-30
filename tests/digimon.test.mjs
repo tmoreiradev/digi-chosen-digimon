@@ -198,3 +198,59 @@ test("borrowed motion: one lunge per attack toward the facing, and a fainted bod
   const lying = creatureMotion({ anim: "faint", clock: 60, dirX: 1 }, 100);
   assert.ok(Math.abs(lying.rot) > 1.5 && lying.dy < -20, "rotated and lifted");
 });
+
+test("items read as Digimon: cards, vitamins, held items, the shop and the item banners carry no Pokémon item name", async () => {
+  const { HELD_ITEMS } = await import("../src/game/scripted.js");
+  const { itemDesc } = await import("../src/core/i18n.js");
+  const plain = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, "");
+  // The Pokémon item names are the keys spelled out ("quick-claw" → "Quick Claw", "kings-rock" → "King’s Rock").
+  const pokemonName = (key, name) => plain(name) === plain(key);
+  for (const u of [...data.rules.upgrades, ...data.rules.vitamins]) {
+    assert.ok(u.name && !pokemonName(u.key, u.name), `${u.key}: "${u.name}"`);
+  }
+  for (const key of HELD_ITEMS) assert.ok(!pokemonName(key, data.items[key].name), `held ${key}: "${data.items[key].name}"`);
+  assert.equal(data.rules.upgrades.find((u) => u.key === "charcoal").name, "Fire Plug-in");
+
+  // The level-up card shows that name, not the key.
+  const { run } = makeRun();
+  const seen = new Set();
+  for (let i = 0; i < 200; i++) for (const c of run.rollChoices()) if (c.kind === "item") seen.add(c.title);
+  assert.ok(seen.size > 5, "item cards rolled");
+  for (const title of seen) assert.ok(data.rules.upgrades.some((u) => u.name === title), `card "${title}"`);
+
+  const lang = getLang();
+  try {
+    for (const [code, candy] of [["pt-BR", "Doce Raro"], ["en", "Doce Raro"], ["es", "Doce Raro"]]) {
+      setLang(code);
+      assert.equal(tr(candy), "XP Chip", code);
+      assert.match(tr("Focus Sash! Sobreviveu com 1 HP"), /^¡?Last Stand Chip!/, code);
+      assert.match(tr("Focus Band! Sobreviveu com 1 HP"), /^¡?Guts Band!/, code);
+      assert.match(tr(itemDesc("old-rod", {})), /Gomamon.*Ikkakumon/, `${code}: the Fishing Pole catches Digimon`);
+    }
+  } finally {
+    setLang(lang);
+  }
+});
+
+test("tower: wave elites drop a candy only sometimes (a sure one each put the player at the level cap by floor 3)", () => {
+  const { run } = makeRun({ mode: "tower" });
+  run.tower.spawnWave(run);
+  const elites = run.enemies.filter((e) => e.tier === "elite");
+  assert.ok(elites.length >= 3, `a wave has elites (got ${elites.length})`);
+  for (const e of elites) assert.equal(e.freeElite, true);
+});
+
+test("tower floors are named for Digimon in every language", async () => {
+  const { towerFloorName } = await import("../src/core/i18n.js");
+  const lang = getLang();
+  try {
+    for (const code of ["pt-BR", "en", "es"]) {
+      setLang(code);
+      for (const f of data.rules.tower.floors) assert.doesNotMatch(tr(towerFloorName(f.name)), /Marowak|Silph|Pokémon/, `${code}: ${f.name}`);
+    }
+    setLang("pt-BR");
+    assert.equal(towerFloorName("Wizardmon's Memory"), "Memória de Wizardmon");
+  } finally {
+    setLang(lang);
+  }
+});

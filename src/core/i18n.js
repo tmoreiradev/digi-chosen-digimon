@@ -132,11 +132,13 @@ export const TOWER_FLOOR_PT = {
   "Candles Out": "Velas Apagadas",
   "Purified Zone": "Zona Purificada",
   "Marowak's Shadow": "Sombra de Marowak",
+  "Wizardmon's Memory": "Memória de Wizardmon",
   "The Summit": "O Cume",
 };
 const TOWER_FLOOR_ES = {
   Vestibule: "Vestíbulo", "Hall of Headstones": "Sala de las Lápidas", "Mist Room": "Sala de la Niebla",
-  "Candles Out": "Velas Apagadas", "Purified Zone": "Zona Purificada", "Marowak's Shadow": "La Sombra de Marowak", "The Summit": "La Cima",
+  "Candles Out": "Velas Apagadas", "Purified Zone": "Zona Purificada", "Marowak's Shadow": "La Sombra de Marowak",
+  "Wizardmon's Memory": "El Recuerdo de Wizardmon", "The Summit": "La Cima",
 };
 export const towerFloorName = (name) => (en() ? name : pick(TOWER_FLOOR_PT, null, TOWER_FLOOR_ES)[name] ?? name);
 
