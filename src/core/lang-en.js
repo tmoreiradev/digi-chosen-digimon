@@ -20,6 +20,19 @@ export const EN = {
   " — mapa da zona (clique num ícone para segui-lo)": " — zone map (click an icon to follow it)",
   "O tempo acabou: o enxame final chegou! Acorde o guardião.": "Time's up: the final swarm is here! Wake the guardian.",
   "Enxame final!": "Final swarm!",
+  " ouro": " gold",
+  " abates": " kills",
+  "Derrotado por ": "Defeated by ",
+  "Passiva": "Passive",
+  "Golpes": "Moves",
+  "Itens": "Items",
+  "Vitaminas": "Vitamins",
+  "Atributos": "Stats",
+  "HP máx.": "Max HP",
+  "Dano": "Damage",
+  "Crítico": "Crit",
+  "Armadura": "Armor",
+  "Velocidade": "Speed",
   "Interagir": "Interact",
   "Pulo": "Jump",
   "Pausar": "Pause",
@@ -333,6 +346,7 @@ export const bindTr = (fn) => {
 };
 
 export const EN_PATTERNS = [
+  [/^Acordar o guardião — E \(recomendado em (.+)\)$/, (t) => `Wake the guardian — E (best in ${t})`],
   // numbers and names
   [/^Nv (\d+)$/, (n) => `Lv ${n}`],
   [/^→ (.+) no Nv (\d+)$/, (s, n) => `→ ${s} at Lv ${n}`],

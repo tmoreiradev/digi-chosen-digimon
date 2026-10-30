@@ -337,14 +337,16 @@ export class Screens {
           { class: "card panel" },
           el("h2", {}, victory ? "Vitória!" : "Você desmaiou"),
           el("p", { class: "muted" }, lit(`${trainerName()} · ${p.species.name} · ${biomeName(run.biome)} · ${tr(run.difficulty.name)}`)),
+          !victory && stats.killedBy ? el("p", { class: "result-cause" }, "Derrotado por ", lit(stats.killedBy)) : null,
           el("div", { class: "result-grid" },
             el("div", {}, el("b", {}, fmtTime(run.time)), el("span", {}, "sobrevividos")),
             el("div", {}, el("b", {}, String(stats.kills)), el("span", {}, "abates")),
             el("div", {}, el("b", {}, String(stats.levels)), el("span", {}, "níveis")),
-            el("div", {}, el("b", {}, String(stats.items)), el("span", {}, "upgrades")),
+            el("div", {}, el("b", {}, String(stats.picks ?? stats.items)), el("span", {}, "upgrades")),
             el("div", {}, el("b", {}, String(Math.floor(stats.gold))), el("span", {}, "moedas")),
             el("div", {}, el("b", {}, String(Math.round(stats.damage))), el("span", {}, "dano"))
           ),
+          buildSummary(run),
           el(
             "div",
             { class: "result-actions" },
@@ -384,6 +386,7 @@ export class Screens {
           { class: "card panel" },
           el("h2", {}, "Pausado"),
           el("label", { class: "vol-row" }, el("span", {}, "Volume"), slider),
+          this.getRun() ? buildSummary(this.getRun()) : null,
           el(
             "div",
             { class: "result-actions" },
@@ -545,4 +548,22 @@ export class Screens {
       )
     );
   }
+}
+
+/** The run's build, shown on the pause menu and the results: passive, moves, items, vitamins, key stats. */
+function buildSummary(run) {
+  const p = run.player;
+  const s = p.stats;
+  const row = (label, ...items) => (items.length ? el("div", { class: "build-row" }, el("b", {}, label), el("span", {}, ...items)) : null);
+  const list = (entries) => entries.flatMap((e, i) => (i ? [" · ", ...e] : e));
+  const pct = (v) => `${Math.round(v * 100)}%`;
+  return el(
+    "div",
+    { class: "build" },
+    p.ability?.desc ? row("Passiva", el("i", {}, p.ability.name), " — ", p.ability.desc) : null,
+    row("Golpes", ...list(p.moves.map((m) => [lit(m.def.name), " ", `Nv ${m.level}`]))),
+    row("Itens", ...list([...run.upgrades.values()].map((u) => [u.name, lit(u.count > 1 ? ` ×${u.count}` : "")]))),
+    row("Vitaminas", ...list([...p.vitamins].map(([key, v]) => [run.rules.vitamins.find((d) => d.key === key)?.name ?? key, lit(v.level > 1 ? ` ×${v.level}` : "")]))),
+    row("Atributos", "HP máx.", lit(` ${p.maxHp} · `), "Dano", lit(` ${pct(s.damage)} · `), "Crítico", lit(` ${pct(s.critChance)} · `), "Armadura", lit(` ${Math.round(s.armor)} · `), "Velocidade", lit(` ${pct(s.moveSpeed)}`))
+  );
 }

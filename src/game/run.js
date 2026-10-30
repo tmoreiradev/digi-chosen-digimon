@@ -112,7 +112,8 @@ export class Run {
     this.floaters = [];
     this.lastDt = 0.016;
 
-    this.stats = { kills: 0, gold: 0, dust: 0, damage: 0, evolved: 0, levels: 0, items: 0 };
+    // picks: every level-up card taken (items counts only the item cards); killedBy: the last hit's attacker.
+    this.stats = { kills: 0, gold: 0, dust: 0, damage: 0, evolved: 0, levels: 0, items: 0, picks: 0, killedBy: null };
     // "First capture" means first capture of THIS run (see Capture.caught).
     this.capturesThisRun = 0;
     this.banished = new Set();
@@ -1298,6 +1299,7 @@ export class Run {
       if (itemSurvive(this)) return;
       p.hp = 0;
       p.dead = true;
+      this.stats.killedBy = source?.species?.name ?? null;
       this.state = "dead";
       this.opts.onDeath?.();
     }
@@ -1703,7 +1705,11 @@ export class Run {
 
     // Item upgrade: mod-bearing entries plus the scripted ones the engine implements; anything else
     // would be a card with no effect.
-    const pool = this.itemPool();
+    // A type plug-in only helps the types the partner is or attacks with (an Ice Plug-in did nothing for Agumon).
+    const kit = (this.data.rosterFor(p.speciesId)?.kit ?? []).map((k) => this.data.getMoveByKey(k)?.type);
+    const usedTypes = new Set([...p.types, ...p.moves.map((m) => m.def.type), ...kit]);
+    const typeTags = (u) => (u.tags ?? []).filter((t) => t.startsWith("type:")).map((t) => t.slice(5));
+    const pool = this.itemPool().filter((u) => !typeTags(u).length || typeTags(u).some((t) => usedTypes.has(t)));
     if (pool.length) {
       const available = [0, 1, 2, 3, 4].map((r) => pool.some((u) => u.rarity === r));
       const rarity = rollRarity({
@@ -1717,7 +1723,7 @@ export class Run {
       if (!bucket.length) bucket = pool;
       const chosen = this.rng.weighted(bucket, (u) => {
         if (!u.tags?.length) return 1;
-        if (u.tags.some((t) => t.startsWith("type:") && p.types.includes(t.slice(5)))) return 4;
+        if (typeTags(u).length) return 4; // only useful type plug-ins are left in the pool
         return 0.35;
       });
       if (chosen) {
@@ -1819,6 +1825,7 @@ export class Run {
 
   applyChoice(choice) {
     const p = this.player;
+    this.stats.picks++;
     if (choice.kind === "newMove") {
       const move = this.data.getMove(choice.id);
       const def = buildMoveDef(move, this.rules);

@@ -1132,7 +1132,7 @@ kbd {
 
 .event-panel {
   width: min(460px, 92vw);
-  max-height: min(340px, 85vh);
+  max-height: min(480px, 88vh);
   overflow-y: auto;
   background: var(--panel-2);
   border: 2px solid var(--edge);
@@ -1189,7 +1189,7 @@ kbd {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-height: 150px;
+  max-height: 240px; /* three items without scrolling (150 px showed two and a half) */
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -1728,4 +1728,34 @@ kbd {
   .touch-actions {
     bottom: calc(14px + env(safe-area-inset-bottom));
   }
+}
+
+/* ----- build summary (pause and results) ----- */
+.build {
+  display: grid;
+  gap: 4px;
+  margin: 10px 0 16px;
+  font-size: 12.5px;
+  line-height: 1.35;
+  max-height: 34vh;
+  overflow-y: auto;
+}
+.build-row b {
+  display: inline-block;
+  min-width: 78px;
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+.result-cause {
+  margin: 4px 0 0;
+  color: #ff9a9a;
+  font-weight: 800;
+}
+.hud-res small {
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 700;
 }

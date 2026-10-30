@@ -8,7 +8,7 @@
 //   altar   - free full heal, consumed on use
 //   guardian - classic mode: the zone's guardian altar; E wakes the guardian (no panel)
 
-import { clamp, dist } from "../core/math.js";
+import { clamp, dist, fmtTime } from "../core/math.js";
 import { el } from "../ui/dom.js";
 import { tr } from "../core/lang.js";
 import { applyVitaminPick } from "./vitamins.js";
@@ -26,6 +26,8 @@ export const SHOP_ITEMS = [
 // minutes without one in reach when they were scattered anywhere.
 const SPAWN_MIN = 12;
 const SPAWN_MAX = 24;
+/** Zone time (s) after which the guardian altar stops advising to wait (the test bot wakes it then too). */
+const GUARDIAN_READY_SECS = 300;
 // The guardian altar stands 45–70 units from where the zone starts: a walk, not a hunt.
 const ALTAR_MIN = 45;
 const ALTAR_MAX = 70;
@@ -142,7 +144,11 @@ export class WorldEvents {
   /** Proximity hint for an event; a recharging altar (Secret Key) shows its countdown instead of "E". */
   hintFor(ev) {
     if (ev.rechargeT > 0) return `Altar — ${Math.ceil(ev.rechargeT)} s`;
-    if (ev.kind === "guardian") return "Acordar o guardião — E";
+    if (ev.kind === "guardian") {
+      // Woken early, the guardian meets an under-levelled partner (playtest: dead in ~11 s at level 13, 3:55).
+      const left = GUARDIAN_READY_SECS - this.run.stageTime;
+      return left > 0 ? `Acordar o guardião — E (recomendado em ${fmtTime(left)})` : "Acordar o guardião — E";
+    }
     return ev.kind === "chest" ? "Baú — E" : ev.kind === "shop" ? "Loja — E" : "Altar — E";
   }
 

@@ -71,10 +71,10 @@ Relatório completo, com os números do bot por parceiro: `docs/PLAYTEST_2026-10
   do andar 5 da Torre~~ (fase 42). O Clássico parece fácil, mas o bot não consegue medir isso, porque foge e nunca é
   alcançado (fase 42). Precisa de uma pessoa jogando antes de mexer. Gabumon, Veemon, Hawkmon e Renamon continuam
   lentos na Torre.
-- **Média:** aviso no altar do guardião; ritmo do começo; plug-ins de tipo que o parceiro não usa; tela de resultado
-  ("UPGRADES" conta só itens, sem causa da morte nem build); build na pausa; loja apertada em 720 px; rótulos dos
-  contadores do HUD.
-- **Baixa:** "evolua" no "Como jogar"; melhorias de golpe com números pequenos.
+- **Média:** ~~aviso no altar do guardião~~, ~~plug-ins de tipo~~, ~~tela de resultado~~, ~~build na pausa~~, ~~loja
+  apertada~~, ~~rótulos do HUD~~ (fase 43). Ainda falta o ritmo do começo, que precisa de uma pessoa jogando.
+- **Baixa:** ~~"evolua" no "Como jogar"~~ (fase 43); melhorias de golpe com números pequenos; dust acumula sem uso
+  (saiu do HUD).
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 

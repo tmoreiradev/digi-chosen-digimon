@@ -64,11 +64,14 @@ export class Hud {
     this.minimap = el("canvas", { class: "hud-minimap", width: 220, height: 220 });
     this.root.append(el("div", { class: "hud-map-wrap" }, this.minimap));
 
-    // Left: currency
-    this.gold = el("div", { class: "hud-res" });
-    this.dust = el("div", { class: "hud-res" });
-    this.kills = el("div", { class: "hud-res" });
-    this.root.append(el("div", { class: "hud-res-wrap" }, this.gold, this.dust, this.kills));
+    // Left: gold and kills, each with its name (the dust counter is gone: nothing spends dust yet).
+    this.gold = el("b", {});
+    this.kills = el("b", {});
+    this.root.append(
+      el("div", { class: "hud-res-wrap" },
+        el("div", { class: "hud-res" }, "◈ ", this.gold, el("small", {}, " ouro")),
+        el("div", { class: "hud-res" }, "☠ ", this.kills, el("small", {}, " abates")))
+    );
 
     // Bottom-left: move slots + ult
     this.slots = el("div", { class: "hud-slots" });
@@ -165,9 +168,8 @@ export class Hud {
       this.bossWrap.classList.remove("show");
     }
 
-    this.gold.textContent = `◈ ${Math.floor(run.stats.gold)}`;
-    this.dust.textContent = `✦ ${run.stats.dust}`;
-    this.kills.textContent = `☠ ${run.stats.kills}`;
+    this.gold.textContent = String(Math.floor(run.stats.gold));
+    this.kills.textContent = String(run.stats.kills);
 
     // Move slots: rebuilt only when the loadout changes; per frame just the ready class and cooldown bar.
     const slotsKey = p.moves.map((mv) => mv.def.name + "|" + mv.def.type).join(",") + "#" + p.moveSlots;

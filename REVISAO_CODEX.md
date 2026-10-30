@@ -1592,3 +1592,32 @@ frase final nos três idiomas. Suíte **212 / 212**.
   - Suíte do fork **42 / 42**. Build, `check-bundle` e `npm run e2e` OK.
   - Telemetria final: no Clássico, 48 vitórias em 51 (antes 47); na Torre, 33 vitórias em 51 (antes 30) e nenhuma
     morte no andar 5 (antes 10).
+
+## 54. Fase 43 — Melhorias de interface do playtest (30/10/2026)
+
+- **Tela de resultado:**
+  - "UPGRADES" passa a contar todas as cartas escolhidas (`stats.picks`). Antes contava só as cartas de item
+    (`stats.items`, que segue existindo para as conquistas).
+  - A tela diz quem deu o último golpe (`stats.killedBy`, gravado em `hitPlayer` ao morrer).
+  - Mostra o build da run.
+- **Build na pausa:** passiva (nome e descrição), golpes com nível, itens, vitaminas e atributos (HP máximo, dano,
+  crítico, armadura, velocidade). É a mesma função (`buildSummary` em `screens.js`) da tela de resultado.
+- **Plug-ins de tipo:** só entram no sorteio os plug-ins dos tipos do parceiro ou dos golpes do kit dele. Antes, os
+  outros tipos tinham peso 0,35, e o Agumon recebia um "Ice Plug-in".
+- **Altar do guardião:** antes dos 5 min de zona, o aviso diz "(recomendado em m:ss)". É o tempo em que o bot de
+  teste acorda o guardião; no playtest, acordá-lo aos 3:55, no nível 13, matou em ~11 s.
+- **HUD:** os contadores têm rótulo ("ouro", "abates"). O ✦ (dust) saiu do HUD: o jogo acumula dust, mas nada o
+  gasta.
+- **Loja:** a lista mostra 3 itens sem rolagem (`max-height` de 150 → 240 px; o painel de 340 → 480 px).
+- **"Como jogar":** "evolua" virou "digievolua" pela troca de termos do pacote, nos três idiomas.
+- Os textos novos estão em pt-BR, en e es; o aviso do altar tem padrão próprio em `EN_PATTERNS`/`ES_PATTERNS`.
+- **Verificação:**
+  - `tests/interface.test.mjs` (agora no `npm test`), com os três testes falhando no código antigo:
+    - todas as cartas contadas e o atacante gravado ao morrer;
+    - em 400 sorteios, o Agumon só recebe plug-ins de tipos que usa;
+    - o aviso do altar antes e depois dos 5 min, em en/es.
+  - Suíte do fork **45 / 45**, incluindo a varredura de idiomas, que renderiza a tela de resultado em inglês.
+    Build, `check-bundle` e `npm run e2e` OK.
+  - No navegador do app: HUD com rótulos, aviso do altar com "recomendado em 4:53", pausa com o build e resultado
+    com "Derrotado por Togemon", "5 upgrades" e o build. Tudo conferido em captura de tela.
+  - A loja com 3 itens não foi aberta no navegador.

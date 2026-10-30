@@ -20,6 +20,19 @@ export const ES = {
   " — mapa da zona (clique num ícone para segui-lo)": " — mapa de la zona (haz clic en un icono para seguirlo)",
   "O tempo acabou: o enxame final chegou! Acorde o guardião.": "¡Se acabó el tiempo: llegó el enjambre final! Despierta al guardián.",
   "Enxame final!": "¡Enjambre final!",
+  " ouro": " oro",
+  " abates": " derribos",
+  "Derrotado por ": "Derrotado por ",
+  "Passiva": "Pasiva",
+  "Golpes": "Ataques",
+  "Itens": "Objetos",
+  "Vitaminas": "Vitaminas",
+  "Atributos": "Atributos",
+  "HP máx.": "PS máx.",
+  "Dano": "Daño",
+  "Crítico": "Crítico",
+  "Armadura": "Armadura",
+  "Velocidade": "Velocidad",
   "Interagir": "Interactuar",
   "Pulo": "Salto",
   "Pausar": "Pausar",
@@ -333,6 +346,7 @@ export const bindTrEs = (fn) => {
 };
 
 export const ES_PATTERNS = [
+  [/^Acordar o guardião — E \(recomendado em (.+)\)$/, (t) => `Despertar al guardián — E (mejor en ${t})`],
   [/^Nv (\d+)$/, (n) => `Nv ${n}`],
   [/^→ (.+) no Nv (\d+)$/, (s, n) => `→ ${s} al Nv ${n}`],
   [/^Fase (\d+)$/, (n) => `Fase ${n}`],
