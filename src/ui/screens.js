@@ -219,6 +219,7 @@ export class Screens {
 
     const species = this.data.get(this.selected);
     const entry = this.data.rosterById.get(this.selected);
+    const passive = entry && this.data.rules.abilityKits[entry.passive];
 
     this.root.append(
       el(
@@ -236,7 +237,8 @@ export class Screens {
           { class: "picker-foot" },
           el("div", { class: "picker-detail" },
             el("b", {}, species?.name ?? ""),
-            el("span", { class: "muted" }, entry ? ` · ${entry.role} · ${rankName(entry.rank)}` : "")
+            el("span", { class: "muted" }, entry ? ` · ${entry.role} · ${rankName(entry.rank)}` : ""),
+            passive?.desc ? el("div", { class: "picker-passive" }, el("b", {}, passive.name), " — ", passive.desc) : null
           ),
           el("button", { class: "btn big red", onclick: () => this.showSetup() }, "Continuar")
         )

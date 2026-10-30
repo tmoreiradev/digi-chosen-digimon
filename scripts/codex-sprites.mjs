@@ -2,6 +2,7 @@
 // engine reads (SpriteCollab folders, 40x40 portraits).
 //
 //   node scripts/codex-sprites.mjs [--kind walk|portrait|action|idle] [--only id,id] [--redo] [--workers 2] [--limit n]
+//   [--from-walk]  (idle only: draw the breath from the walk sheet, no Codex; for species the model draws too wide)
 //
 // walk: 4x8 walk sheet (32x40 cells) from Guilmon's NSS sheet (style, grid, direction order) and the
 //   Digimon's portrait. action: 6x8 sheet from the Digimon's own walk sheet, cut into Attack (4 frames),
@@ -17,7 +18,7 @@ import { spawn, execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { SPECIES, ROSTER } from "./digimon-species.mjs";
 import { readPng } from "./nss.mjs";
-import { recellFile, cutRaw, writeRgba } from "./recell.mjs";
+import { recellFile, cutRaw, writeRgba, idleFromWalk } from "./recell.mjs";
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
 const ASSETS = path.join(ROOT, "assets");
@@ -35,6 +36,8 @@ const workers = Number(opt("--workers", 2));
 const limit = Number(opt("--limit", Infinity));
 const kind = opt("--kind", "walk");
 const redo = args.includes("--redo");
+// --kind idle --from-walk: no Codex call, the idle is drawn from the walk sheet (idleFromWalk).
+const fromWalk = args.includes("--from-walk");
 
 const log = (line) => {
   fs.appendFileSync(LOG, `${new Date().toISOString()} ${line}\n`);
@@ -205,7 +208,8 @@ async function one(s) {
     ref(REFERENCE, "reference.png");
     ref(path.join(ASSETS, "portraits", `${s.id}.png`), "portrait.png");
   }
-  const code = await runCodex(dir, promptFor(s, refs), refs);
+  if (fromWalk) writeRgba(path.join(dir, "raw.png"), 64, 320, idleFromWalk(readPng(walkSheet)));
+  const code = fromWalk ? 0 : await runCodex(dir, promptFor(s, refs), refs);
   // The idle is cut from the raw art: Codex's own 64x320 squeezes the model's wide cells to half width.
   const made = path.join(dir, { walk: "walk.png", portrait: "portrait.png", action: "action.png", idle: "raw.png" }[kind]);
   if (!fs.existsSync(made)) {
@@ -218,9 +222,11 @@ async function one(s) {
   let reached = 1;
   if (kind === "idle") {
     execFileSync("magick", [made, "-define", "png:color-type=6", "-depth", "8", `PNG32:${out}`]);
-    const cut = cutRaw(readPng(out), readPng(walkSheet), 2, 8);
-    reached = cut.reached;
-    writeRgba(out, 64, 320, cut.px);
+    if (!fromWalk) {
+      const cut = cutRaw(readPng(out), readPng(walkSheet), 2, 8);
+      reached = cut.reached;
+      writeRgba(out, 64, 320, cut.px);
+    }
   } else {
     toPng32(made, size, out);
     if (kind !== "portrait") recellFile(out);

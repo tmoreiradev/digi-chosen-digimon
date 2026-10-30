@@ -216,6 +216,39 @@ export function cutRaw(raw, ref, cols, rows, fw = 32, fh = 40) {
   return { px: out, reached };
 }
 
+/**
+ * A 2-frame idle drawn from the walk sheet, for species the image model keeps drawing too wide:
+ * per direction, the walk's first frame, then the same drawing one pixel taller (the breath), feet fixed.
+ */
+export function idleFromWalk(walk, fw = 32, fh = 40) {
+  const w = fw * 2;
+  const out = new Uint8Array(w * fh * 8 * 4);
+  const at = (x, y) => (y * walk.w + x) * 4;
+  const put = (x, y, src) => out.set(walk.px.subarray(src, src + 4), (y * w + x) * 4);
+  for (let r = 0; r < 8; r++) {
+    let top = fh;
+    let bottom = -1;
+    for (let y = 0; y < fh; y++) {
+      for (let x = 0; x < fw; x++) {
+        if (walk.px[at(x, r * fh + y) + 3] < 128) continue;
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+      }
+    }
+    if (bottom < 0) continue;
+    const h = bottom - top + 1;
+    for (let y = 0; y < fh; y++) {
+      for (let x = 0; x < fw; x++) {
+        put(x, r * fh + y, at(x, r * fh + y));
+        if (y < top - 1 || y > bottom || top === 0) continue; // a drawing already at the top edge breathes in place
+        put(fw + x, r * fh + y, at(x, r * fh + bottom - Math.round(((bottom - y) * h) / (h + 1))));
+      }
+    }
+    if (top === 0) for (let y = 0; y < fh; y++) for (let x = 0; x < fw; x++) put(fw + x, r * fh + y, at(x, r * fh + y));
+  }
+  return out;
+}
+
 /** Write w x h RGBA pixels as an 8-bit RGBA PNG (through ImageMagick). */
 export function writeRgba(file, w, h, px) {
   const raw = `${file}.rgba`;

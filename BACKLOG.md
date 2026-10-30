@@ -58,10 +58,11 @@ etapa; é a lista para a próxima fase ("o que está faltando").
 - ~~Sprites de overworld para todos~~ — fase 31 (folhas de andar geradas pelo Codex).
 - ~~Itens/vitaminas com nomes Digimon~~, ~~Torre fácil demais~~ — fase 34.
 - ~~Mais regiões do Digimundo~~, ~~triângulo Vacina/Data/Vírus~~ — fase 35.
-- ~~Folhas de ação, portraits ausentes, Numemon~~ — fase 36. Arte com resíduos de efeito em alguns quadros (45, 76, 89,
-  106): refazer com `--kind action --redo --only <id>` se incomodar em jogo.
-- ~~Idle de verdade~~ — fase 37. Sem idle próprio (o modelo desenha largo demais para a altura do andar, duas
-  tentativas): 8, 25, 27, 41, 47, 108, 114, 126 — `--kind idle --redo --only <id>` de vez em quando. Clássico talvez fácil (10/10 seeds sobrevivem 10 min — validar com humano).
+- ~~Folhas de ação, portraits ausentes, Numemon~~ — fase 36; ~~resíduos de efeito em 45, 76, 89, 106~~ — fase 39.
+- ~~Idle de verdade~~ — fase 37; os 8 que o modelo desenhava largos demais (8, 25, 27, 41, 47, 108, 114, 126)
+  respiram com idle derivado do andar (`--from-walk`) desde a fase 39 — um idle desenhado pelo Codex seria mais vivo.
+- ~~Passivas dos parceiros~~ — fase 39 (brasões; `lowHp`/`typeBoost` dos kits passaram a valer). Clássico talvez fácil
+  (10/10 seeds sobrevivem 10 min — validar com humano).
 
 ## 3. Funcionalidades futuras (do README e da especificação)
 

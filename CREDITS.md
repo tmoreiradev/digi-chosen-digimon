@@ -10,5 +10,7 @@
   do Guilmon acima como referência de estilo e do portrait de cada Digimon (`scripts/codex-sprites.mjs`).
 - **Folhas de ação (ataque, dano, desmaio) e de respiração parada desses 137 e os portraits de ExVeemon, Paildramon, Ogremon, Datamon,
   Phantomon, BlackWarGreymon, Daemon, MaloMyotismon e MarineAngemon:** também geradas com o Codex CLI, a partir da
-  folha de andar de cada um (e dos portraits do NSS como referência de estilo).
+  folha de andar de cada um (e dos portraits do NSS como referência de estilo). Oito das folhas de respiração parada
+  (MetalGarurumon, WarGrowlmon, Salamon, Phoenixmon, Aquilamon, Raremon, SkullGreymon, Datamon) saem por script do
+  próprio quadro de andar (`--kind idle --from-walk`).
 - Digimon é marca de Bandai / Toei Animation / Akiyoshi Hongo; este projeto não é afiliado a eles.

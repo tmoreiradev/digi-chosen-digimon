@@ -8,7 +8,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { PACK } from "../src/content/pack.js";
 import { spriteTables, portraitPalette } from "./nss.mjs";
-import { SPECIES, MOVES, ROSTER, ULTIMATES, REGION, REGIONS, LEGENDARY } from "./digimon-species.mjs";
+import { SPECIES, MOVES, ROSTER, ULTIMATES, REGION, REGIONS, LEGENDARY, PASSIVES } from "./digimon-species.mjs";
 import { ITEM_NAMES } from "./digimon-items.mjs";
 
 // ids follow the order of SPECIES (the first 31 are fixed); families are the root of each line.
@@ -90,6 +90,7 @@ rules.boostMoves = [];
 rules.weatherMoves = {};
 rules.trapMoves = [];
 rules.roster = roster;
+rules.abilityKits = { ...rules.abilityKits, ...PASSIVES }; // the partner lines' own passives
 // Vaccine beats Virus, Virus beats Data, Data beats Vaccine; Free is neutral.
 rules.attributes = { beats: { vaccine: "virus", virus: "data", data: "vaccine" }, mult: 1.1 }; // 1.2 made the tower (mostly Virus) easy again
 // Item names: Digimon names over the engine's keys (effects stay keyed); type boosters by element.

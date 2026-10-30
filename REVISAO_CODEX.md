@@ -1488,3 +1488,23 @@ frase final nos três idiomas. Suíte **212 / 212**.
   - No bundle por `file://` num Edge headless, cada evento foi forçado na partida e capturado em tela, sem erro na
     página. A névoa e o eclipse mudam a luz, as marcas da tempestade aparecem e o Numemon aparece dourado.
   - O balanceamento não foi jogado por um humano.
+
+## 50. Fase 39 — Passivas dos parceiros e retoques de arte (30/10/2026)
+
+- **Achado:** dos kits passivos, a engine só aplicava `mods` e `dmgTaken`; `lowHp` e `typeBoost` eram ignorados. Agumon,
+  Guilmon, Veemon e Monodramon (`blaze`) e Gomamon e Armadillomon (`torrent`) jogavam sem passiva nenhuma; a passiva
+  também nunca aparecia na tela (o cartão mostra o atributo).
+- **Passivas:** `PASSIVES` em `scripts/digimon-species.mjs`, uma por linha de parceiro, com nome de brasão ou Digiovo
+  (Coragem, Amizade, Esperança… Hazard, Momentai, Travessura), copiadas para `rules.abilityKits` por
+  `make-digimon-data.mjs`. A engine passa a aplicar `typeBoost` (em `recompute`) e `lowHp` (em `hitEnemy`, abaixo de
+  40 % do HP). A tela de parceiro mostra nome e descrição da passiva no rodapé; en/es em `lang-en.js`/`lang-es.js`.
+- **Arte:** folhas de ação de 45, 76, 89 e 106 refeitas pelo Codex (`--redo`), sem os resíduos de efeito. Os 8 idles
+  que faltavam reprovaram pela terceira vez (desenho largo: 68–85 % da altura do andar); agora saem do próprio quadro
+  de andar por script (`--kind idle --from-walk`, `idleFromWalk` em `scripts/recell.mjs`: o quadro do andar e o mesmo
+  desenho 1 px mais alto, pés fixos).
+- **Verificação:** testes novos — passivas próprias, descritas e traduzidas, com Coragem dando +10 % Fogo e ×1,4 abaixo
+  de 40 % (falha no código antigo da engine); `idleFromWalk` (quadro do andar, depois 1 px mais alto com os pés no
+  lugar). Suíte do fork **37 / 37**; build, `check-bundle` e `npm run e2e` OK. Revisão visual: as 4 folhas de ação lado
+  a lado com as antigas e os 8 idles. No bundle por `file://`, a tela de parceiro mostra "Brasão da Coragem — …" sem
+  erro na página. A rolagem horizontal da tela de parceiro (914 px em 900) já existia antes. Balanceamento das
+  passivas não foi jogado por humano.

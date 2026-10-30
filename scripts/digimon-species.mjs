@@ -269,24 +269,49 @@ export const MOVES = [
 
 // Playable partners: starters first, then the partners unlocked by catching their line.
 export const ROSTER = [
-  { key: "agumon", role: "Blaze Assault", passive: "blaze", kit: ["pepper-breath", "claw-attack", "nova-blast", "terra-force"], rank: "common", start: true },
-  { key: "gabumon", role: "Frost Sniper", passive: "keen-eye", kit: ["blue-blaster", "horn-attack", "howling-blaster", "cocytus-breath"], rank: "common", start: true },
-  { key: "patamon", role: "Holy Support", passive: "levitate", kit: ["boom-bubble", "spiral-twister", "hand-of-fate", "seven-heavens"], rank: "common", start: true },
-  { key: "tentomon", role: "Storm Caller", passive: "swarm", kit: ["super-shocker", "electro-shocker", "horn-buster", "giga-blaster"], rank: "uncommon" },
-  { key: "palmon", role: "Bramble Healer", passive: "photosynthesis", kit: ["poison-ivy", "needle-spray", "flower-cannon", "thorn-whip"], rank: "uncommon" },
-  { key: "gomamon", role: "Tide Rider", passive: "torrent", kit: ["marching-fishes", "harpoon-torpedo", "vulcans-hammer", "arctic-blizzard"], rank: "uncommon" },
-  { key: "guilmon", role: "Wild Tamer", passive: "blaze", kit: ["pyro-sphere", "rock-breaker", "pyro-blaster", "royal-saber"], rank: "common", start: true },
-  { key: "salamon", role: "Holy Light", passive: "levitate", kit: ["puppy-howl", "lightning-paw", "celestial-arrow", "fire-tornado"], rank: "common", start: true },
-  { key: "biyomon", role: "Sky Flame", passive: "keen-eye", kit: ["spiral-twister", "meteor-wing", "wing-blade", "starlight-explosion"], rank: "uncommon" },
-  { key: "veemon", role: "Courage Striker", passive: "blaze", kit: ["vee-headbutt", "vee-laser", "desperado-blaster", "positron-laser"], rank: "rare" },
-  { key: "hawkmon", role: "Wind Ace", passive: "keen-eye", kit: ["feather-strike", "blast-rings", "static-force", "fimbulvetr"], rank: "uncommon" },
-  { key: "armadillomon", role: "Iron Wall", passive: "torrent", kit: ["rolling-stone", "tail-hammer", "kachina-bombs", "claw-attack"], rank: "uncommon" },
-  { key: "wormmon", role: "Web Spinner", passive: "swarm", kit: ["sticky-net", "spiking-strike", "hell-masquerade", "electric-thread"], rank: "uncommon" },
-  { key: "terriermon", role: "Bunny Gunner", passive: "swarm", kit: ["bunny-blast", "gargo-laser", "rapid-fire", "mega-barrage"], rank: "rare" },
-  { key: "renamon", role: "Fox Mystic", passive: "levitate", kit: ["diamond-storm", "fox-tail-inferno", "talisman-of-light", "amethyst-mandala"], rank: "rare" },
-  { key: "monodramon", role: "Dragon Brawler", passive: "blaze", kit: ["beat-knuckle", "strike-fang", "desolation-claw", "justice-kick"], rank: "rare" },
-  { key: "impmon", role: "Wild Imp", passive: "levitate", kit: ["bada-boom", "claw-attack", "death-claw", "double-impact"], rank: "rare" },
+  { key: "agumon", role: "Blaze Assault", passive: "courage", kit: ["pepper-breath", "claw-attack", "nova-blast", "terra-force"], rank: "common", start: true },
+  { key: "gabumon", role: "Frost Sniper", passive: "friendship", kit: ["blue-blaster", "horn-attack", "howling-blaster", "cocytus-breath"], rank: "common", start: true },
+  { key: "patamon", role: "Holy Support", passive: "hope", kit: ["boom-bubble", "spiral-twister", "hand-of-fate", "seven-heavens"], rank: "common", start: true },
+  { key: "tentomon", role: "Storm Caller", passive: "knowledge", kit: ["super-shocker", "electro-shocker", "horn-buster", "giga-blaster"], rank: "uncommon" },
+  { key: "palmon", role: "Bramble Healer", passive: "sincerity", kit: ["poison-ivy", "needle-spray", "flower-cannon", "thorn-whip"], rank: "uncommon" },
+  { key: "gomamon", role: "Tide Rider", passive: "reliability", kit: ["marching-fishes", "harpoon-torpedo", "vulcans-hammer", "arctic-blizzard"], rank: "uncommon" },
+  { key: "guilmon", role: "Wild Tamer", passive: "hazard", kit: ["pyro-sphere", "rock-breaker", "pyro-blaster", "royal-saber"], rank: "common", start: true },
+  { key: "salamon", role: "Holy Light", passive: "light", kit: ["puppy-howl", "lightning-paw", "celestial-arrow", "fire-tornado"], rank: "common", start: true },
+  { key: "biyomon", role: "Sky Flame", passive: "love", kit: ["spiral-twister", "meteor-wing", "wing-blade", "starlight-explosion"], rank: "uncommon" },
+  { key: "veemon", role: "Courage Striker", passive: "miracles", kit: ["vee-headbutt", "vee-laser", "desperado-blaster", "positron-laser"], rank: "rare" },
+  { key: "hawkmon", role: "Wind Ace", passive: "purity", kit: ["feather-strike", "blast-rings", "static-force", "fimbulvetr"], rank: "uncommon" },
+  { key: "armadillomon", role: "Iron Wall", passive: "iron-shell", kit: ["rolling-stone", "tail-hammer", "kachina-bombs", "claw-attack"], rank: "uncommon" },
+  { key: "wormmon", role: "Web Spinner", passive: "kindness", kit: ["sticky-net", "spiking-strike", "hell-masquerade", "electric-thread"], rank: "uncommon" },
+  { key: "terriermon", role: "Bunny Gunner", passive: "momentai", kit: ["bunny-blast", "gargo-laser", "rapid-fire", "mega-barrage"], rank: "rare" },
+  { key: "renamon", role: "Fox Mystic", passive: "fox-spirit", kit: ["diamond-storm", "fox-tail-inferno", "talisman-of-light", "amethyst-mandala"], rank: "rare" },
+  { key: "monodramon", role: "Dragon Brawler", passive: "dragon-instinct", kit: ["beat-knuckle", "strike-fang", "desolation-claw", "justice-kick"], rank: "rare" },
+  { key: "impmon", role: "Wild Imp", passive: "mischief", kit: ["bada-boom", "claw-attack", "death-claw", "double-impact"], rank: "rare" },
 ];
+
+/**
+ * Each partner line's passive (rules.abilityKits, read by Run.createPlayer): `mods` on the stats,
+ * `lowHp` (damage multiplier under 40 % HP), `typeBoost` (+damage to a type's attacks), `dmgTaken`.
+ * Names and descriptions are pt-BR; English and Spanish are in src/core/lang-en.js / lang-es.js.
+ */
+export const PASSIVES = {
+  courage: { name: "Brasão da Coragem", desc: "Abaixo de 40% do HP, +40% de dano. +10% de dano Fogo.", lowHp: 1.4, typeBoost: { fire: 0.1 } },
+  friendship: { name: "Brasão da Amizade", desc: "+15% de dano Gelo e +5 de armadura.", typeBoost: { ice: 0.15 }, mods: [{ stat: "armor", add: 5 }] },
+  hope: { name: "Brasão da Esperança", desc: "+1 de regeneração e +25% de cura.", mods: [{ stat: "regen", add: 1 }, { stat: "healing", mul: 1.25 }] },
+  knowledge: { name: "Brasão do Conhecimento", desc: "+10% de velocidade de ataque e +10% de dano Trovão.", typeBoost: { electric: 0.1 }, mods: [{ stat: "attackSpeed", mul: 1.1 }] },
+  sincerity: { name: "Brasão da Sinceridade", desc: "+1,5 de regeneração e +10% de dano Planta.", typeBoost: { grass: 0.1 }, mods: [{ stat: "regen", add: 1.5 }] },
+  reliability: { name: "Brasão da Confiança", desc: "Abaixo de 40% do HP, +40% de dano. +10% de dano Água.", lowHp: 1.4, typeBoost: { water: 0.1 } },
+  hazard: { name: "Marca Hazard", desc: "Abaixo de 40% do HP, +50% de dano. +10% de dano físico.", lowHp: 1.5, mods: [{ stat: "physical", mul: 1.1 }] },
+  light: { name: "Brasão da Luz", desc: "+10% de dano especial e +6% de esquiva.", mods: [{ stat: "special", mul: 1.1 }, { stat: "evasion", add: 0.06 }] },
+  love: { name: "Brasão do Amor", desc: "+10% de HP máximo e +30% de cura.", mods: [{ stat: "maxHp", mul: 1.1 }, { stat: "healing", mul: 1.3 }] },
+  miracles: { name: "Digiovo dos Milagres", desc: "Abaixo de 40% do HP, +30% de dano. +25% de dano crítico.", lowHp: 1.3, mods: [{ stat: "critDamage", add: 0.25 }] },
+  purity: { name: "Digiovo da Pureza", desc: "+8% de velocidade e +6% de crítico.", mods: [{ stat: "moveSpeed", mul: 1.08 }, { stat: "critChance", add: 0.06 }] },
+  "iron-shell": { name: "Casco de Ferro", desc: "Recebe 12% menos dano. +10% de dano Terra.", dmgTaken: 0.88, typeBoost: { ground: 0.1 } },
+  kindness: { name: "Brasão da Bondade", desc: "+25% de chance de status e +20% de dano de status.", mods: [{ stat: "statusChance", mul: 1.25 }, { stat: "statusDamage", mul: 1.2 }] },
+  momentai: { name: "Momentai", desc: "+8% de esquiva e +8% de velocidade de ataque.", mods: [{ stat: "evasion", add: 0.08 }, { stat: "attackSpeed", mul: 1.08 }] },
+  "fox-spirit": { name: "Espírito da Raposa", desc: "+10% de crítico e +5% de esquiva.", mods: [{ stat: "critChance", add: 0.1 }, { stat: "evasion", add: 0.05 }] },
+  "dragon-instinct": { name: "Instinto de Dragão", desc: "Abaixo de 40% do HP, +30% de dano. +15% de dano físico.", lowHp: 1.3, mods: [{ stat: "physical", mul: 1.15 }] },
+  mischief: { name: "Travessura", desc: "+25% de ouro e +6% de crítico.", mods: [{ stat: "gold", mul: 1.25 }, { stat: "critChance", add: 0.06 }] },
+};
 
 /** The ultimate of each partner-line species, named after its signature attack. */
 export const ULTIMATES = {

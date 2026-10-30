@@ -263,6 +263,8 @@ export class Run {
         stats.typeBoost[t] = (stats.typeBoost[t] ?? 1) + 0.3 * up.count;
       }
     }
+    // The partner's passive: +damage to its types' attacks (Courage: +10 % Fire).
+    for (const [t, v] of Object.entries(p.ability?.typeBoost ?? {})) stats.typeBoost[t] = (stats.typeBoost[t] ?? 1) + v;
 
     const prevMax = p.maxHp;
     p.stats = stats;
@@ -1160,6 +1162,7 @@ export class Run {
     // Choice Band: +50% damage.
     if (p.heldItem === "choice-band") amount *= 1.5;
     if (p.heldItem === "life-orb") amount *= 1.3; // paid in HP on each cast (fireMove)
+    if (p.ability?.lowHp && p.hp < p.maxHp * 0.4) amount *= p.ability.lowHp; // Courage, Hazard…: the partner's last stand
 
     if (p.types.includes(dtype)) amount *= 1.25;
     amount *= s.typeBoost?.[dtype] ?? 1;

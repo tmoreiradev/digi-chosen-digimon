@@ -30,6 +30,8 @@ npm run make:data    # regenerate src/data from scripts/make-digimon-data.mjs
   MaloMyotismon, Apocalymon…) as bosses; 77 signature attacks; six regions (File Island, Server
   Continent, Net Ocean, Freezeland, Spiral Mountain, Infinity Mountain), each with its own wild cast,
   guardians and Mega villains. Vaccine beats Virus, Virus beats Data, Data beats Vaccine (±10 % damage).
+  Each partner line has its own passive (`PASSIVES` in `scripts/digimon-species.mjs`), named after its Crest
+  or Digi-Egg — Courage, Friendship, Hope… — and shown on the partner screen.
 - **Zone events** — once per zone (`src/game/zoneevents.js`): Spectral Mist (XP ×2, Wind/Ghost foes),
   Thunderstorm (lightning on yellow marks), Eclipse (Darkness/Ghost foes, one shiny) and a golden Numemon that
   flees and drops coins on every hit.
@@ -50,8 +52,7 @@ effect names here (items, passive kits) are listed there.
 ## Known gaps
 
 - Eight generated Digimon (MetalGarurumon, WarGrowlmon, Salamon, Phoenixmon, Aquilamon, Raremon, SkullGreymon,
-  Datamon) stand with the walk cycle: their idle art came out wider than the walk allows. The art is AI-made and
-  uneven in places — some action sheets keep a stray speck of the move's effect in a neighbouring frame.
-- Passive kits keep the engine's keys (blaze, torrent…); their names never reach the screen.
+  Datamon) breathe with an idle drawn from their walk frame (`--kind idle --from-walk`): the image model kept drawing
+  them wider than the walk allows. The art is AI-made and uneven in places.
 - Balance is bot-tuned only: the tower bot wins 3 of 5 seeds in 8.5–10 min (level 25–38); Classic: 10 of 10 seeds
   survive 10 min (level 24–35).

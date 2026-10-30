@@ -273,9 +273,9 @@ test("Vaccine beats Virus, Virus beats Data, Data beats Vaccine — both ways, F
   const byAttr = (a) => data.pokemon.find((p) => p.attribute === a && !p.legendary && p.types.join() === "fire").id;
   const hit = (attr) => {
     const e = run.spawnEnemy(byAttr(attr), 30, 30);
-    e.hp = e.maxHp = 1e9;
+    e.hp = e.maxHp = 1e6;
     withRandom(0.99, () => run.hitEnemy(e, 100, { cls: "physical", type: "normal" }, true)); // no crit roll
-    return 1e9 - e.hp;
+    return 1e6 - e.hp;
   };
   const vsVirus = hit("virus");
   const vsData = hit("data");
@@ -354,4 +354,57 @@ test("idle from raw art: each drawing keeps its shape and stands as tall as the 
   assert.equal(rest.feet, 38);
   assert.equal(breath.feet, 38);
   assert.equal(breath.h, 31, "the breath keeps its extra height, at the same scale");
+});
+
+test("idle from the walk (species drawn too wide): the walk frame, then one pixel taller, feet fixed", async () => {
+  const { idleFromWalk } = await import("../scripts/recell.mjs");
+  const walk = { w: 128, h: 320, px: Buffer.alloc(128 * 320 * 4) };
+  for (let r = 0; r < 8; r++) for (let y = 9; y <= 38; y++) for (let x = 6; x < 26; x++) walk.px.set([90, 60, 200, 255], ((r * 40 + y) * 128 + x) * 4);
+  const px = idleFromWalk(walk);
+  const extent = (r, c) => {
+    const ys = [];
+    for (let y = 0; y < 40; y++) for (let x = 0; x < 32; x++) if (px[((r * 40 + y) * 64 + c * 32 + x) * 4 + 3]) ys.push(y);
+    return { top: Math.min(...ys), feet: Math.max(...ys) };
+  };
+  for (let r = 0; r < 8; r++) {
+    assert.deepEqual(extent(r, 0), { top: 9, feet: 38 }, `row ${r}: the walk's own frame`);
+    assert.deepEqual(extent(r, 1), { top: 8, feet: 38 }, `row ${r}: one pixel taller, same feet`);
+  }
+});
+
+test("every partner line has a passive of its own, described and translated, and the shown effects apply", () => {
+  const kits = data.rules.abilityKits;
+  const keys = data.rules.roster.map((r) => r.passive);
+  assert.equal(new Set(keys).size, keys.length, "no two partners share a passive");
+  const lang = getLang();
+  try {
+    for (const k of keys) {
+      const kit = kits[k];
+      assert.ok(kit?.name && kit.desc, k);
+      assert.ok(kit.mods?.length || kit.lowHp || kit.typeBoost || kit.dmgTaken, `${k} does something`);
+      for (const l of ["en", "es"]) {
+        setLang(l);
+        assert.notEqual(tr(kit.desc), kit.desc, `${l}: ${kit.desc}`);
+      }
+      setLang(lang);
+    }
+  } finally {
+    setLang(lang);
+  }
+
+  // Courage (Agumon): +10 % Fire on the type boost, +40 % damage under 40 % HP. Both were ignored before.
+  const { run } = makeRun({ speciesId: 1 });
+  const p = run.player;
+  assert.equal(p.abilityKey, "courage");
+  assert.ok(Math.abs(p.stats.typeBoost.fire - 1.1) < 1e-9);
+  const hit = () => {
+    const e = run.spawnEnemy(1, p.x + 3, p.z, "elite");
+    e.hp = e.maxHp = 1e6;
+    withRandom(0.99, () => run.hitEnemy(e, 10, { type: "normal", cls: "physical" }));
+    e.alive = false;
+    return 1e6 - e.hp;
+  };
+  const full = hit();
+  p.hp = p.maxHp * 0.3;
+  assert.ok(Math.abs(hit() / full - 1.4) < 1e-6, "last stand x1.4");
 });
