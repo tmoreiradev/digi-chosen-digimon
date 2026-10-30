@@ -17,6 +17,10 @@ npm run e2e          # plays the offline bundle in headless Edge/Chrome (Node �
 npm run make:data    # regenerate src/data from scripts/make-digimon-data.mjs
 ```
 
+Online: every push to `main` runs `.github/workflows/pages.yml` (tests, build, bundle check) and publishes
+`dist/` at https://tmoreiradev.github.io/digi-chosen-digimon/ — once the repository is public and
+Settings → Pages → Source is "GitHub Actions".
+
 ## What is here
 
 - **Content pack** — `src/content/pack.js`: elements on the engine's type keys (Fire, Ice,
