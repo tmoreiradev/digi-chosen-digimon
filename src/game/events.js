@@ -40,6 +40,7 @@ export const MAP_KINDS = {
   chest: { label: "Baú", color: "#c08a4a", glyph: "▣" },
   shop: { label: "Loja", color: "#3fa34d", glyph: "$" },
   altar: { label: "Altar de cura", color: "#4fa8f0", glyph: "✚" },
+  portal: { label: "Portal", color: "#b388ff", glyph: "◎" },
 };
 
 const CHEST_LOOT = [
@@ -115,6 +116,13 @@ export class WorldEvents {
     });
   }
 
+  /** Classic mode: the portal that opens where the zone guardian fell (Run.onBossDefeated). Never expires. */
+  placePortal(x, z) {
+    const half = this.run.biome.size / 2 - 6;
+    this.events = this.events.filter((ev) => ev.kind !== "portal");
+    this.events.push({ id: this.nextId++, kind: "portal", x: clamp(x + 4, -half, half), z: clamp(z, -half, half), life: Infinity, interacted: false, seen: true });
+  }
+
   /** The guardian altar of this zone, while it stands. */
   get guardianAltar() {
     return this.events.find((ev) => ev.kind === "guardian") ?? null;
@@ -123,7 +131,7 @@ export class WorldEvents {
   update(dt) {
     // Spawn new events on a timer (max 2 active at once; the guardian altar does not count).
     this.spawnTimer += dt;
-    if (this.spawnTimer >= this.spawnInterval && this.events.filter((ev) => ev.kind !== "guardian").length < 2) {
+    if (this.spawnTimer >= this.spawnInterval && this.events.filter((ev) => ev.kind !== "guardian" && ev.kind !== "portal").length < 2) {
       this.spawnTimer = 0;
       const roll = this.run.rng.range(0, 1);
       const kind = roll < 0.5 ? "chest" : roll < 0.8 ? "shop" : "altar";
@@ -149,6 +157,7 @@ export class WorldEvents {
       const left = GUARDIAN_READY_SECS - this.run.stageTime;
       return left > 0 ? `Acordar o guardião — E (recomendado em ${fmtTime(left)})` : "Acordar o guardião — E";
     }
+    if (ev.kind === "portal") return "Entrar no portal — E";
     return ev.kind === "chest" ? "Baú — E" : ev.kind === "shop" ? "Loja — E" : "Altar — E";
   }
 
@@ -185,6 +194,11 @@ export class WorldEvents {
     if (ev.kind === "guardian") {
       // No panel: the guardian wakes at once and the altar is spent.
       if (this.run.callGuardian()) ev.interacted = true;
+      return ev;
+    }
+    if (ev.kind === "portal") {
+      ev.interacted = true;
+      this.run.enterPortal();
       return ev;
     }
     this.openPanel(ev);
@@ -518,6 +532,20 @@ export class WorldEvents {
         ctx.beginPath();
         ctx.arc(0, -g * 0.45, g * 0.28 * pulse, 0, Math.PI * 2);
         ctx.fill();
+      } else if (ev.kind === "portal") {
+        // A violet swirl standing on the ground: rings that turn and pulse.
+        const g = zoom * 0.9;
+        for (let k = 0; k < 3; k++) {
+          ctx.strokeStyle = `rgba(179,136,255,${0.9 - k * 0.25})`;
+          ctx.lineWidth = 3 - k;
+          ctx.beginPath();
+          ctx.ellipse(0, -g * 0.9, g * (0.9 - k * 0.22) * pulse, g * (1.2 - k * 0.3), Math.sin(t * 2 + k) * 0.3, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        ctx.fillStyle = "rgba(179,136,255,0.25)";
+        ctx.beginPath();
+        ctx.ellipse(0, 0, g * 1.2, g * 0.45, 0, 0, Math.PI * 2);
+        ctx.fill();
       } else if (ev.kind === "altar") {
         ctx.fillStyle = "#90caf9";
         ctx.beginPath();
@@ -548,6 +576,7 @@ export class WorldEvents {
 
   titleFor(ev) {
     if (ev.kind === "guardian") return "Altar do guardião";
+    if (ev.kind === "portal") return "Portal";
     if (ev.kind === "chest") return "Baú do Tesouro";
     if (ev.kind === "shop") return "Loja Ambulante";
     return "Altar Antigo";

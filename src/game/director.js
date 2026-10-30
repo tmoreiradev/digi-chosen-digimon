@@ -137,6 +137,12 @@ export class Director {
     this.timeline.push({ t: 520, kind: "stampede", done: false });
     this.timeline.push({ t: this.stage === 1 ? 330 : 270, kind: "elitewave", done: false });
     this.timeline.push({ t: 450, kind: "elitewave", done: false });
+    // Classic mini-bosses (Boss machinery, as on the tower floors): a summoner in every zone, a totem from
+    // zone 2 on. Kiting alone kept the bot above ~90 % HP in zones 2-3; only bosses ever threatened it.
+    if (this.run.mode === "classic") {
+      this.timeline.push({ t: this.stage === 1 ? 240 : 250, kind: "summoner", done: false });
+      if (this.stage >= 2) this.timeline.push({ t: 140, kind: "totem", done: false });
+    }
     // One zone event (mist, storm, eclipse or golden runner) mid-zone; an endless zone lasts 300 s.
     this.timeline.push({ t: this.run.mode === "classic" ? this.rng.range(240, 420) : this.rng.range(120, 220), kind: "zoneEvent", done: false });
     this.timeline.sort((a, b) => a.t - b.t);
@@ -239,6 +245,15 @@ export class Director {
       case "zoneEvent":
         run.zoneEvent.startRandom();
         break;
+      case "totem":
+      case "summoner": {
+        // One boss at a time, and none once the guardian is awake or in the sanctuary.
+        if (run.boss.alive || run.zoneBossSpawned || run.sanctuary || !this.cards.length) break;
+        const strongest = [...this.cards].sort((a, b) => b.cost - a.cost)[0];
+        const spot = this.spawnPoint(14, 20);
+        if (spot) run.boss.spawn(strongest.id, spot.x, spot.z, kind);
+        break;
+      }
       case "alpha": {
         const card = this.cards.length ? this.rng.pick(this.cards) : null;
         if (!card) break;

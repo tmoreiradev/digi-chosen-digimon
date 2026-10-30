@@ -20,6 +20,9 @@ export const ES = {
   " — mapa da zona (clique num ícone para segui-lo)": " — mapa de la zona (haz clic en un icono para seguirlo)",
   "O tempo acabou: o enxame final chegou! Acorde o guardião.": "¡Se acabó el tiempo: llegó el enjambre final! Despierta al guardián.",
   "Enxame final!": "¡Enjambre final!",
+  "O caminho para o santuário se abriu: entre no portal.": "Se abrió el camino al santuario: entra en el portal.",
+  "Entrar no portal — E": "Entrar en el portal — E",
+  "Portal": "Portal",
   " ouro": " oro",
   " abates": " derribos",
   "Derrotado por ": "Derrotado por ",
@@ -346,6 +349,10 @@ export const bindTrEs = (fn) => {
 };
 
 export const ES_PATTERNS = [
+  [/^(.+), totem da (.+)!$/, (s, b) => `¡${s}, tótem de ${b}!`],
+  [/^(.+) chama reforços!$/, (s) => `¡${s} pide refuerzos!`],
+  [/^Derrote (.+) antes de acordar o guardião\.$/, (s) => `Derrota a ${s} antes de despertar al guardián.`],
+  [/^Zona (\d+) limpa! Entre no portal\.$/, (n) => `¡Zona ${n} despejada! Entra en el portal.`],
   [/^Acordar o guardião — E \(recomendado em (.+)\)$/, (t) => `Despertar al guardián — E (mejor en ${t})`],
   [/^Nv (\d+)$/, (n) => `Nv ${n}`],
   [/^→ (.+) no Nv (\d+)$/, (s, n) => `→ ${s} al Nv ${n}`],

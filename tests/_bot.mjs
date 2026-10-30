@@ -144,7 +144,9 @@ class Bot {
       }
     }
     // Five minutes into a classic zone: go wake the guardian, whatever is around.
-    const altar = run.mode === "classic" && !run.zoneBossSpawned && run.stageTime >= 300 ? run.events.guardianAltar : null;
+    const altar =
+      run.events.events.find((e) => e.kind === "portal") ?? // the guardian fell: on to the next zone
+      (run.mode === "classic" && !run.zoneBossSpawned && run.stageTime >= 300 ? run.events.guardianAltar : null);
     // A chest, shop or altar worth the walk.
     const ev = altar ?? this.wantedEvent(nearest);
     if (ev) {
@@ -191,7 +193,7 @@ class Bot {
     const p = run.player;
     if (nearestEnemy < 4) return null; // not with enemies on us
     const ev = run.events.findNear(p.x, p.z, 40);
-    if (!ev || ev.kind === "guardian") return null; // the guardian is woken on schedule (decide)
+    if (!ev || ev.kind === "guardian" || ev.kind === "portal") return null; // both handled in decide
     const seenWith = this.visited.get(ev.id);
     if (ev.kind === "altar") return p.hp < p.maxHp * 0.6 && seenWith === undefined ? ev : null;
     if (ev.kind === "shop") {

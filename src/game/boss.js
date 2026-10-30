@@ -132,7 +132,12 @@ export class Boss {
     this.attackGen++;
     this.downCancelled = false;
     this.kind = kind;
-    run.banner(`${this.name}, ${kind === "legendary" ? "o lendário" : "guardião da " + biomeName(run.biome)}!`);
+    run.banner(
+      kind === "totem" ? `${this.name}, totem da ${biomeName(run.biome)}!`
+        : kind === "summoner" ? `${this.name} chama reforços!`
+          : `${this.name}, ${kind === "legendary" ? "o lendário" : "guardião da " + biomeName(run.biome)}!`
+    );
+    this.summonT = kind === "summoner" && !inTower ? 0 : Infinity; // Classic summoners call adds (update)
     run.shake(0.4);
     return e;
   }
@@ -169,6 +174,17 @@ export class Boss {
   }
 
   update(dt) {
+    // A Classic summoner calls 6 of the zone's species around itself now and every 7 s while it lives.
+    if (this.alive && this.summonT !== Infinity && (this.summonT -= dt) <= 0) {
+      this.summonT = 7;
+      const run = this.run;
+      const e = this.enemy;
+      const cards = run.director.cards;
+      for (let i = 0; i < 6 && cards.length; i++) {
+        const a = (i / 6) * Math.PI * 2;
+        run.spawnEnemy(run.rng.pick(cards).id, e.x + Math.cos(a) * 3, e.z + Math.sin(a) * 3, "swarm");
+      }
+    }
     if (!this.alive) {
       if (this.index >= 0 && !this.dead) {
         this.dead = true;

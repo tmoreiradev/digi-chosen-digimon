@@ -20,6 +20,9 @@ export const EN = {
   " — mapa da zona (clique num ícone para segui-lo)": " — zone map (click an icon to follow it)",
   "O tempo acabou: o enxame final chegou! Acorde o guardião.": "Time's up: the final swarm is here! Wake the guardian.",
   "Enxame final!": "Final swarm!",
+  "O caminho para o santuário se abriu: entre no portal.": "The way to the sanctuary is open: enter the portal.",
+  "Entrar no portal — E": "Enter the portal — E",
+  "Portal": "Portal",
   " ouro": " gold",
   " abates": " kills",
   "Derrotado por ": "Defeated by ",
@@ -346,6 +349,10 @@ export const bindTr = (fn) => {
 };
 
 export const EN_PATTERNS = [
+  [/^(.+), totem da (.+)!$/, (s, b) => `${s}, totem of the ${b}!`],
+  [/^(.+) chama reforços!$/, (s) => `${s} calls for backup!`],
+  [/^Derrote (.+) antes de acordar o guardião\.$/, (s) => `Defeat ${s} before waking the guardian.`],
+  [/^Zona (\d+) limpa! Entre no portal\.$/, (n) => `Zone ${n} cleared! Enter the portal.`],
   [/^Acordar o guardião — E \(recomendado em (.+)\)$/, (t) => `Wake the guardian — E (best in ${t})`],
   // numbers and names
   [/^Nv (\d+)$/, (n) => `Lv ${n}`],

@@ -1621,3 +1621,33 @@ frase final nos três idiomas. Suíte **212 / 212**.
   - No navegador do app: HUD com rótulos, aviso do altar com "recomendado em 4:53", pausa com o build e resultado
     com "Derrotado por Togemon", "5 upgrades" e o build. Tudo conferido em captura de tela.
   - A loja com 3 itens não foi aberta no navegador.
+
+## 55. Fase 44 — Mini-chefes nas zonas do Clássico e portal depois do guardião (30/10/2026)
+
+- **Mini-chefes:** a linha do tempo do Clássico ganhou um invocador em toda zona (aos 240 s na zona 1, aos 250 s
+  nas zonas 2–3) e um totem a partir da zona 2 (aos 140 s).
+  - Eles usam a mesma máquina de chefe da Torre (`Boss.spawn` com `totem`/`summoner`): ataques telegrafados,
+    barra de HP, teto de dano e captura. A espécie é a carta mais forte do diretor na zona.
+  - Não nascem com outro chefe vivo, com o guardião já acordado ou no santuário.
+  - No Clássico, o invocador chama 6 inimigos da zona em volta de si ao nascer e a cada 7 s. Na Torre continua
+    como antes.
+  - Derrotar (ou capturar) um mini-chefe deixa um XP Chip e uma cura, e a zona continua.
+  - O guardião não acorda com um mini-chefe vivo, e o jogo avisa ("Derrote X antes de acordar o guardião.").
+- **Portal:** o guardião derrotado não passa mais de zona na hora. Ele abre um portal (`placePortal`, ícone ◎ no
+  mapa, "Entrar no portal — E"), que leva à zona seguinte ou, depois da zona 3, ao santuário (`Run.enterPortal`).
+  Antes de entrar dá para coletar orbes, abrir baús e usar a loja. O bot de teste entra no portal assim que ele
+  aparece.
+- **Dificuldade, sem mudança:** a telemetria de 51 runs deu 49 vitórias (antes 48). A mediana do HP mínimo ficou
+  em 90 % na zona 2 e 91 % na zona 3, igual a antes. Os mini-chefes tiraram 42–79 de 784 HP, e os inimigos comuns
+  não tiraram nada nas zonas 2–3: o bot nunca é tocado. Os mini-chefes são conteúdo novo; a dificuldade do Clássico
+  continua dependendo de uma pessoa jogando.
+- **Verificação:**
+  - `tests/minibosses.test.mjs` (agora no `npm test`), com os 4 testes falhando no código antigo:
+    - a linha do tempo por zona e modo;
+    - totem com recompensa, sem passar de zona, e o guardião esperando;
+    - o invocador chamando reforços no Clássico e não na Torre;
+    - o portal da zona 1 para a zona 2, e o da zona 3 para o santuário.
+  - `tests/playtest.test.mjs` passou a esperar os novos avisos de zona limpa.
+  - Suíte do fork **49 / 49**. Build, `check-bundle` e `npm run e2e` OK.
+  - No navegador do app, em captura de tela: o invocador com a barra "Kokuwamon · Invocador" e o portal violeta ao
+    lado do Digimon depois do guardião.

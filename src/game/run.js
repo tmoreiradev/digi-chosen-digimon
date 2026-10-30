@@ -366,6 +366,10 @@ export class Run {
   /** E at the guardian altar: wake the zone's guardian (biome.guardians, one list per zone). */
   callGuardian() {
     if (this.mode !== "classic" || this.sanctuary || this.zoneBossSpawned || this.state !== "running") return false;
+    if (this.boss.alive) {
+      this.banner(`Derrote ${this.boss.name} antes de acordar o guardião.`); // one boss at a time
+      return false;
+    }
     const candidates = this.biome.guardians?.[this.stage - 1] ?? [];
     const speciesId = candidates.length ? this.rng.pick(candidates) : this.biome.bosses?.[this.stage - 1];
     if (!speciesId) {
@@ -386,15 +390,29 @@ export class Run {
       return;
     }
     if (this.mode !== "classic") return;
+    if (kind === "totem" || kind === "summoner") {
+      // A mini-boss: a reward, and the zone goes on.
+      const p = this.player;
+      this.spawnPickup(p.x + 1.5, p.z, "candy", 1);
+      this.spawnPickup(p.x - 1.5, p.z, "heal", 1);
+      return;
+    }
     if (kind === "legendary") {
       this.state = "victory";
       this.opts.onVictory?.();
-    } else if (this.stage >= 3) {
-      this.enterSanctuary();
     } else {
-      this.banner(`Zona ${this.stage} limpa!`);
-      this.advanceStage();
+      // The way on opens where the guardian fell: collect what is left, then walk in (enterPortal).
+      this.banner(this.stage >= 3 ? "O caminho para o santuário se abriu: entre no portal." : `Zona ${this.stage} limpa! Entre no portal.`);
+      this.events.placePortal(this.player.x, this.player.z);
     }
+  }
+
+  /** E at the portal: the next zone, or the sanctuary after zone 3. */
+  enterPortal() {
+    if (this.mode !== "classic" || this.state !== "running") return false;
+    if (this.stage >= 3) this.enterSanctuary();
+    else this.advanceStage();
+    return true;
   }
 
   enterSanctuary() {
