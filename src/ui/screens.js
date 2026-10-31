@@ -341,10 +341,10 @@ export class Screens {
           el("div", { class: "result-grid" },
             el("div", {}, el("b", {}, fmtTime(run.time)), el("span", {}, "sobrevividos")),
             el("div", {}, el("b", {}, String(stats.kills)), el("span", {}, "abates")),
-            el("div", {}, el("b", {}, String(stats.levels)), el("span", {}, "níveis")),
+            el("div", {}, el("b", {}, String(stats.levels)), el("span", {}, "níveis ganhos")),
             el("div", {}, el("b", {}, String(stats.picks ?? stats.items)), el("span", {}, "upgrades")),
-            el("div", {}, el("b", {}, String(Math.floor(stats.gold))), el("span", {}, "moedas")),
-            el("div", {}, el("b", {}, String(Math.round(stats.damage))), el("span", {}, "dano"))
+            el("div", {}, el("b", {}, groupDigits(Math.floor(stats.gold))), el("span", {}, "ouro final")),
+            el("div", {}, el("b", {}, groupDigits(Math.round(stats.damage))), el("span", {}, "dano"))
           ),
           buildSummary(run),
           el(
@@ -566,4 +566,9 @@ function buildSummary(run) {
     row("Vitaminas", ...list([...p.vitamins].map(([key, v]) => [run.rules.vitamins.find((d) => d.key === key)?.name ?? key, lit(v.level > 1 ? ` ×${v.level}` : "")]))),
     row("Atributos", "HP máx.", lit(` ${p.maxHp} · `), "Dano", lit(` ${pct(s.damage)} · `), "Crítico", lit(` ${pct(s.critChance)} · `), "Armadura", lit(` ${Math.round(s.armor)} · `), "Velocidade", lit(` ${pct(s.moveSpeed)}`))
   );
+}
+
+/** 8177652 → "8.177.652" (pt-BR, es) or "8,177,652" (en). */
+function groupDigits(n) {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, getLang() === "en" ? "," : ".");
 }

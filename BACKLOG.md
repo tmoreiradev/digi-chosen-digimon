@@ -79,17 +79,8 @@ Relatório completo, com os números do bot por parceiro: `docs/PLAYTEST_2026-10
 ## 2f. Playtest de 30 min analisado pelo Codex (30/10)
 
 Parecer completo em `reviews/codex-playtest-2026-10-30.md`.
-- **P1:**
-  - o HUD da Torre mostra "Ilha File · Zona 1", sem andar, onda ou inimigos restantes.
-- **P2, correções diretas:**
-  - relógio: a hora do mundo aparece grande e a duração da run pequena;
-  - barra de XP cheia no nível 50 (trocar por "Nível máximo");
-  - a loja vende cura com o HP cheio;
-  - surgem loja e eventos no santuário, durante a luta final;
-  - o indicador de ameaça diz "CALMO" durante a luta contra um chefe;
-  - tela de resultado: "níveis ganhos", "ouro restante" e o dano sem separador de milhar;
-  - eventos de zona com pouca presença na tela;
-  - ícones de portal e altar no minimapa.
+- ~~**P1:** HUD da Torre~~ e ~~**P2, correções diretas:** relógio, nível 50, cura com HP cheio, eventos no santuário,
+  "CALMO" com chefe, rótulos do resultado, selo do evento de zona, portal e altar no minimapa~~ — todos na fase 47.
 - **P2, a medir antes de mexer:**
   - o chefe enfraquecido para captura se recupera 25–30 % várias vezes e alonga a luta;
   - curas garantidas (pickups de 25 %, elites, ultimate) apagam o desgaste nas lutas contra chefes;

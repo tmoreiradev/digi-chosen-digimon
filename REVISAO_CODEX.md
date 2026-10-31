@@ -1685,3 +1685,30 @@ frase final nos três idiomas. Suíte **212 / 212**.
     `BACKLOG.md` §2f.
 - **Não verificado:** nada do parecer foi corrigido nesta fase. Os achados de balanceamento vêm de um piloto que
   foge; ele mesmo os separa dos artefatos do piloto.
+
+## 58. Fase 47 — Correções diretas do playtest de 30 min (31/10/2026)
+
+- **P1, HUD da Torre:** a região mostra o andar ("1F — Vestíbulo") em vez de "Ilha File", sem as bolinhas de zona.
+  A linha de progresso diz "Onda 1/3 · 16 restantes" ou "Guardião do andar". Antes ficava "Zona 1" a Torre inteira.
+- **Relógio:** o grande agora é a duração da run; a hora do mundo (dia e noite) ficou pequena, com 🕗, na linha de
+  baixo. Antes, aos 15:01 de run, o grande mostrava 23:01.
+- **Ameaça:** com um chefe vivo, o indicador mostra "CHEFE" e a barra cheia. Antes podia dizer "CALMO" contra o
+  Devimon.
+- **Nível 50:** a barra de XP diz "Nível máximo" em vez de ficar parada em "XP 1426/1426".
+- **Loja:** a cura não pode ser comprada com HP cheio (`canApply`), salvo com sobrecura (Overheal).
+- **Santuário:** não surgem novos baús ou lojas durante a luta final (`WorldEvents.update`).
+- **Tela de resultado:** os rótulos viraram "níveis ganhos" e "ouro final", e os números têm separador de milhar
+  (8.177.652, ou 8,177,652 em inglês).
+- **Evento de zona:** ganhou um selo próprio no HUD, com nome, segundos e regra ("Tempestade elétrica · 38s — Saia
+  das marcas amarelas"). Cada evento ganhou a sua regra.
+- **Minimapa:** mostra os eventos já vistos com o mesmo ícone do mapa da zona. O portal e o altar do guardião
+  aparecem sempre e ficam presos na borda quando estão fora de vista.
+- Os textos novos estão em pt-BR, en e es.
+- **Verificação:**
+  - `tests/playtest-fixes.test.mjs` (agora no `npm test`), com os 5 testes falhando no código antigo: HUD da Torre;
+    relógio, "CHEFE" e "Nível máximo"; o selo do evento; a loja e o santuário; os rótulos do resultado.
+  - Suíte do fork **58 / 58**. Build, `check-bundle` e `npm run e2e` OK.
+  - Edge headless no bundle, em captura de tela: HUD do Clássico com o relógio novo, o selo da tempestade e o altar
+    na borda do minimapa; HUD da Torre com "1F — Vestíbulo" e "Onda 1/3 · 16 restantes".
+  - O ícone do portal no minimapa não foi capturado, porque o piloto entrou no portal antes da foto; o desenho é o
+    mesmo código do altar.

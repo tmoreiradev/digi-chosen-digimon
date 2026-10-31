@@ -130,7 +130,8 @@ export class WorldEvents {
 
   update(dt) {
     // Spawn new events on a timer (max 2 active at once; the guardian altar does not count).
-    this.spawnTimer += dt;
+    // The sanctuary is the final duel: no chest or shop panel pops up during it.
+    if (!this.run.sanctuary) this.spawnTimer += dt;
     if (this.spawnTimer >= this.spawnInterval && this.events.filter((ev) => ev.kind !== "guardian" && ev.kind !== "portal").length < 2) {
       this.spawnTimer = 0;
       const roll = this.run.rng.range(0, 1);
@@ -429,6 +430,8 @@ export class WorldEvents {
   /** False when the item's effect cannot be applied right now (e.g. Rare Candy at the level cap). */
   canApply(run, it) {
     if (it.kind === "xp") return run.player.level < MAX_LEVEL;
+    // A heal at full HP buys nothing, unless Overheal can bank it.
+    if (it.kind === "heal" || it.kind === "heal-full") return run.player.hp < run.player.maxHp || run.player.stats.overheal > 0;
     return true;
   }
 

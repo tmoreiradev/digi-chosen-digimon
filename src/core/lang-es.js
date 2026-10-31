@@ -20,6 +20,15 @@ export const ES = {
   " — mapa da zona (clique num ícone para segui-lo)": " — mapa de la zona (haz clic en un icono para seguirlo)",
   "O tempo acabou: o enxame final chegou! Acorde o guardião.": "¡Se acabó el tiempo: llegó el enjambre final! Despierta al guardián.",
   "Enxame final!": "¡Enjambre final!",
+  "Guardião do andar": "Guardián del piso",
+  "CHEFE": "JEFE",
+  "Nível máximo": "Nivel máximo",
+  "níveis ganhos": "niveles ganados",
+  "ouro final": "oro final",
+  "XP ×2": "XP ×2",
+  "Saia das marcas amarelas": "Sal de las marcas amarillas",
+  "Inimigos da noite, um deles shiny": "Criaturas de la noche, una de ellas shiny",
+  "Cada golpe nele solta moedas": "Cada golpe suelta monedas",
   "O caminho para o santuário se abriu: entre no portal.": "Se abrió el camino al santuario: entra en el portal.",
   "Entrar no portal — E": "Entrar en el portal — E",
   "Portal": "Portal",
@@ -349,6 +358,8 @@ export const bindTrEs = (fn) => {
 };
 
 export const ES_PATTERNS = [
+  [/^Onda (\d+)\/3$/, (n) => `Oleada ${n}/3`],
+  [/^(\d+) restantes$/, (n) => `quedan ${n}`],
   [/^(.+), totem da (.+)!$/, (s, b) => `¡${s}, tótem de ${b}!`],
   [/^(.+) chama reforços!$/, (s) => `¡${s} pide refuerzos!`],
   [/^Derrote (.+) antes de acordar o guardião\.$/, (s) => `Derrota a ${s} antes de despertar al guardián.`],

@@ -7,10 +7,10 @@
 import { PACK } from "../content/pack.js";
 
 export const ZONE_EVENTS = {
-  mist: { name: "Névoa espectral", dur: 45, xpMul: 2, types: ["flying", "ghost"], banner: "Névoa espectral! Uma névoa gelada cobre tudo... XP ×2" },
-  storm: { name: "Tempestade elétrica", dur: 40, banner: "Tempestade elétrica! Caem raios: afaste-se das marcas amarelas" },
-  eclipse: { name: "Eclipse", dur: 40, types: ["dark", "ghost"], banner: "Eclipse! A luz se apaga e saem os Pokémon da noite... e algum shiny" },
-  golden: { name: "Pokémon dourado", dur: 25, banner: "Um Pokémon dourado! Solta moedas a cada golpe. Pegue-o antes que escape!" },
+  mist: { name: "Névoa espectral", rule: "XP ×2", dur: 45, xpMul: 2, types: ["flying", "ghost"], banner: "Névoa espectral! Uma névoa gelada cobre tudo... XP ×2" },
+  storm: { name: "Tempestade elétrica", rule: "Saia das marcas amarelas", dur: 40, banner: "Tempestade elétrica! Caem raios: afaste-se das marcas amarelas" },
+  eclipse: { name: "Eclipse", rule: "Inimigos da noite, um deles shiny", dur: 40, types: ["dark", "ghost"], banner: "Eclipse! A luz se apaga e saem os Pokémon da noite... e algum shiny" },
+  golden: { name: "Pokémon dourado", rule: "Cada golpe nele solta moedas", dur: 25, banner: "Um Pokémon dourado! Solta moedas a cada golpe. Pegue-o antes que escape!" },
 };
 
 const STRIKE_WARN = 1.2; // seconds between the yellow mark and the bolt
@@ -39,7 +39,7 @@ export class ZoneEvents {
     const def = ZONE_EVENTS[kind];
     if (!def || this.active) return;
     const run = this.run;
-    this.active = { kind, name: def.name, t: 0, dur: def.dur, marks: [], strikeCd: 1, golden: null };
+    this.active = { kind, name: def.name, rule: def.rule, t: 0, dur: def.dur, marks: [], strikeCd: 1, golden: null };
     run.banner(def.banner);
     run.shake(0.15);
     if (def.types) {

@@ -7,6 +7,8 @@ import { clamp, fmtClock, fmtTime } from "../core/math.js";
 import { typeName, biomeName, THREAT_PT } from "../core/i18n.js";
 import { tr, getLang } from "../core/lang.js";
 import { ZONE_SECS } from "../game/director.js";
+import { MAP_KINDS } from "../game/events.js";
+import { MAX_LEVEL } from "../game/rules.js";
 
 export class Hud {
   constructor(root) {
@@ -42,6 +44,7 @@ export class Hud {
     this.threatLabel = el("div", { class: "hud-threat-label" });
     this.threatBar = el("div", { class: "hud-threat" });
     this.runTimer = el("div", { class: "hud-runtime" });
+    this.eventBadge = el("div", { class: "hud-event" }); // the zone event: name, seconds left, its rule
     // Boss bar: shown under the region block only while a boss is alive.
     this.bossName = el("div", { class: "hud-boss-name" });
     this.bossFill = el("i", { class: "fill boss" });
@@ -56,6 +59,7 @@ export class Hud {
         this.threatLabel,
         this.threatBar,
         this.runTimer,
+        this.eventBadge,
         this.bossWrap
       )
     );
@@ -136,26 +140,40 @@ export class Hud {
     if (!this.portraitReady) this.portraitReady = this.drawPortrait(p.species);
     this.level.textContent = tr(`Nv ${p.level}`);
 
-    this.region.textContent = biomeName(run.biome);
+    // The tower names its floor; zone pips belong to Classic and Endless.
+    this.region.textContent = run.tower ? tr(run.tower.where()) : biomeName(run.biome);
     clear(this.zonePips);
-    for (let i = 0; i < 3; i++) this.zonePips.append(el("i", { class: "pip" + (i < run.stage ? " on" : "") }));
+    if (!run.tower) for (let i = 0; i < 3; i++) this.zonePips.append(el("i", { class: "pip" + (i < run.stage ? " on" : "") }));
     this.difficulty.textContent = tr(run.difficulty.name).toUpperCase();
     this.difficulty.className = "hud-diff " + run.difficulty.id;
 
-    this.clock.textContent = fmtClock(8 * 3600 + run.time * 60);
-    // Classic: the zone clock until the final swarm, while the guardian still sleeps.
-    let zoneClock = "";
-    if (run.mode === "classic" && !run.sanctuary && !run.zoneBossSpawned) {
-      zoneClock = run.director.finalSwarm ? ` · ${tr("Enxame final!")}` : ` · ⏳ ${fmtTime(Math.max(0, ZONE_SECS - run.stageTime))}`;
+    // The run's length is the big clock; the world hour (day/night) is the small one.
+    this.clock.textContent = fmtTime(run.time);
+    const hour = `🕗 ${fmtClock(8 * 3600 + run.time * 60)}`;
+    let where;
+    if (run.tower) {
+      const t = run.tower;
+      const goal = t.def.waves[Math.min(t.wave - 1, t.def.waves.length - 1)];
+      where = t.guardianDown || t.pendingGuardian || goal <= 0
+        ? tr("Guardião do andar")
+        : `${tr(`Onda ${t.wave}/3`)} · ${tr(`${Math.max(0, goal - t.waveCount)} restantes`)}`;
+    } else {
+      // Classic: the zone clock until the final swarm, while the guardian still sleeps.
+      let zoneClock = "";
+      if (run.mode === "classic" && !run.sanctuary && !run.zoneBossSpawned) {
+        zoneClock = run.director.finalSwarm ? ` · ${tr("Enxame final!")}` : ` · ⏳ ${fmtTime(Math.max(0, ZONE_SECS - run.stageTime))}`;
+      }
+      where = tr(run.sanctuary ? "Santuário" : "Zona " + run.stage) + zoneClock;
     }
+    this.runTimer.textContent = `${hour} · ${where}`;
     const ze = run.zoneEvent?.active;
-    if (ze) zoneClock += ` · ${tr(ze.name)} ${Math.ceil(run.zoneEvent.left)}s`;
-    this.runTimer.textContent = `${fmtTime(run.time)} · ${tr(run.sanctuary ? "Santuário" : "Zona " + run.stage)}${zoneClock}`;
+    this.eventBadge.classList.toggle("show", !!ze);
+    if (ze) this.eventBadge.textContent = `${tr(ze.name)} · ${Math.ceil(run.zoneEvent.left)}s — ${tr(ze.rule)}`;
 
-    // Threat meter reflects enemy pressure over the stage.
-    const threat = clamp(run.enemies.length / 70, 0, 1);
+    // Threat: enemy pressure, and a boss fight is never "calm".
+    const threat = run.boss.alive ? 1 : clamp(run.enemies.length / 70, 0, 1);
     const labels = THREAT_PT;
-    this.threatLabel.textContent = tr(labels[Math.min(labels.length - 1, Math.floor(threat * labels.length))]);
+    this.threatLabel.textContent = run.boss.alive ? tr("CHEFE") : tr(labels[Math.min(labels.length - 1, Math.floor(threat * labels.length))]);
     this.threatBar.style.setProperty("--v", `${Math.round(threat * 100)}%`);
 
     // Boss bar
@@ -222,7 +240,7 @@ export class Hud {
     this.hpText.textContent = `${Math.ceil(p.hp)} / ${p.maxHp}${extra > 0 ? ` +${Math.ceil(extra)}` : ""}`;
     const xpPct = clamp(p.xp / p.xpNext, 0, 1);
     this.xpFill.style.width = `${xpPct * 100}%`;
-    this.xpText.textContent = `XP ${Math.floor(p.xp)} / ${p.xpNext}`;
+    this.xpText.textContent = p.level >= MAX_LEVEL ? tr("Nível máximo") : `XP ${Math.floor(p.xp)} / ${p.xpNext}`;
 
     this.drawMinimap(run);
   }
@@ -285,6 +303,30 @@ export class Hud {
       if (dx * dx + dz * dz > r * r) continue;
       g.fillStyle = pk.kind === "xp" ? "#60a5fa" : pk.kind === "candy" ? "#ff7ad9" : "#ffd166";
       g.fillRect(c + dx - 1, c + dz - 1, 2, 2);
+    }
+
+    // Events (as on the zone map): the ones seen, plus the portal and the guardian altar, which stay
+    // on the rim when they are out of view so the way on is always shown.
+    for (const ev of run.events.events) {
+      const kind = MAP_KINDS[ev.kind];
+      if (!kind || ev.interacted || !(ev.seen || ev.kind === "portal" || ev.kind === "guardian")) continue;
+      let dx = (ev.x - px) * scale;
+      let dz = (ev.z - pz) * scale;
+      const d = Math.hypot(dx, dz);
+      if (d > r - 9) {
+        if (ev.kind !== "portal" && ev.kind !== "guardian") continue;
+        dx *= (r - 9) / d;
+        dz *= (r - 9) / d;
+      }
+      g.fillStyle = kind.color;
+      g.beginPath();
+      g.arc(c + dx, c + dz, 7, 0, Math.PI * 2);
+      g.fill();
+      g.fillStyle = "#fff";
+      g.font = "bold 10px system-ui, sans-serif";
+      g.textAlign = "center";
+      g.textBaseline = "middle";
+      g.fillText(kind.glyph, c + dx, c + dz + 0.5);
     }
 
     // Player
